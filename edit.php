@@ -39,13 +39,33 @@ if (!$category) {
 }
 
 // Extract new values or fallback to original values
-$categoryCode = isset($_POST["category_code"]) ? trim($_POST["category_code"]) : $category["category_code"];
-$categoryName = isset($_POST["category_name"]) ? trim($_POST["category_name"]) : $category["category_name"];
+$categoryCode = isset($_POST["category_code"]) ? preg_replace('/\s+/', ' ', trim($_POST["category_code"])) : $category["category_code"];
+$categoryName = isset($_POST["category_name"]) ? preg_replace('/\s+/', ' ', trim($_POST["category_name"])) : $category["category_name"];
+
+// Trim and normalize original database values just in case
+$origCategoryName = preg_replace('/\s+/', ' ', trim($category["category_name"]));
 
 if ($categoryCode === "" || $categoryName === "") {
     http_response_code(400);
     echo json_encode(["message" => "Category Code and Category Name cannot be empty."]);
     exit;
+}
+
+// Check if the new Category Name already exists for another category (case-insensitive & trimmed)
+if (strcasecmp($categoryName, $origCategoryName) !== 0) {
+    $check_name_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE LOWER(TRIM(category_name)) = LOWER(?) AND id != ?");
+    if ($check_name_stmt) {
+        mysqli_stmt_bind_param($check_name_stmt, "si", $categoryName, $id);
+        mysqli_stmt_execute($check_name_stmt);
+        mysqli_stmt_store_result($check_name_stmt);
+        if (mysqli_stmt_num_rows($check_name_stmt) > 0) {
+            mysqli_stmt_close($check_name_stmt);
+            http_response_code(400);
+            echo json_encode(["message" => "Category Name '$categoryName' already exists."]);
+            exit;
+        }
+        mysqli_stmt_close($check_name_stmt);
+    }
 }
 
 $stmt = mysqli_prepare($conn, "UPDATE category SET category_code = ?, category_name = ? WHERE id = ?");

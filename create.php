@@ -10,13 +10,28 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     exit;
 }
 
-$category_code = trim($_POST["category_code"] ?? '');
-$category_name = trim($_POST["category_name"] ?? '');
+$category_code = preg_replace('/\s+/', ' ', trim($_POST["category_code"] ?? ''));
+$category_name = preg_replace('/\s+/', ' ', trim($_POST["category_name"] ?? ''));
 
 if ($category_code === "" || $category_name === "") {
     http_response_code(400);
     echo json_encode(["message" => "Both Category Code and Category Name are required."]);
     exit;
+}
+
+// Check if Category Name already exists (case-insensitive & trimmed)
+$check_name_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE LOWER(TRIM(category_name)) = LOWER(?)");
+if ($check_name_stmt) {
+    mysqli_stmt_bind_param($check_name_stmt, "s", $category_name);
+    mysqli_stmt_execute($check_name_stmt);
+    mysqli_stmt_store_result($check_name_stmt);
+    if (mysqli_stmt_num_rows($check_name_stmt) > 0) {
+        mysqli_stmt_close($check_name_stmt);
+        http_response_code(400);
+        echo json_encode(["message" => "Category Name '$category_name' already exists."]);
+        exit;
+    }
+    mysqli_stmt_close($check_name_stmt);
 }
 
 $stmt = mysqli_prepare($conn, "INSERT INTO category (category_code, category_name) VALUES (?, ?)");

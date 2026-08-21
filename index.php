@@ -101,6 +101,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     </div>
 
     <script>
+    function timeAgo(date) {
+        const seconds = Math.floor((new Date() - date) / 1000);
+        let interval = Math.floor(seconds / 31536000);
+        if (interval >= 1) return interval + "y ago";
+        interval = Math.floor(seconds / 2592000);
+        if (interval >= 1) return interval + "mo ago";
+        interval = Math.floor(seconds / 86400);
+        if (interval >= 1) return interval + "d ago";
+        interval = Math.floor(seconds / 3600);
+        if (interval >= 1) return interval + "h ago";
+        interval = Math.floor(seconds / 60);
+        if (interval >= 1) return interval + "m ago";
+        return "just now";
+    }
+
     $(function() {
         const resizingModes = ['nextColumn', 'widget'];
 
@@ -111,7 +126,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             stateStoring: {
                 enabled: true,
                 type: "localStorage",
-                storageKey: "categoryGridStateV2"
+                storageKey: "categoryGridStateV3"
             },
             dataSource: new DevExpress.data.CustomStore({
                 key: "id",
@@ -200,6 +215,24 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     allowEditing: false
                 },
                 {
+                    dataField: "lastupdate",
+                    caption: "Last Updated",
+                    dataType: "datetime",
+                    format: "yyyy-MM-dd HH:mm:ss",
+                    allowEditing: false,
+                    cellTemplate: function (container, options) {
+                        if (!options.value) {
+                            $("<span>").text("-").appendTo(container);
+                            return;
+                        }
+
+                        const date = new Date(options.value);
+                        $("<span>")
+                            .text(timeAgo(date))
+                            .appendTo(container);
+                    }
+                },
+                {
                     type: "buttons",
                     caption: "Action",
                     width: 110,
@@ -211,10 +244,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 return $("<a>")
                                     .addClass("dx-link dx-link-edit")
                                     .attr("title", "Edit")
-                                    .on("click", function(e) {
-                                        e.preventDefault();
-                                        options.component.editRow(options.rowIndex);
-                                    })
                                     .append(svg);
                             }
                         },
@@ -225,10 +254,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 return $("<a>")
                                     .addClass("dx-link dx-link-delete")
                                     .attr("title", "Delete")
-                                    .on("click", function(e) {
-                                        e.preventDefault();
-                                        options.component.deleteRow(options.rowIndex);
-                                    })
                                     .append(svg);
                             }
                         }
@@ -285,6 +310,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             },
             searchPanel: {
                 visible: false // Hidden as we use our custom search input
+            },
+            onSaved: function (e) {
+                e.component.refresh();
             }
         });
 
