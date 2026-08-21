@@ -556,3 +556,46 @@ tbody tr:hover {
   margin-bottom: 0;
 }
 
+/* =========================
+   SEARCH & EXPORT CONTAINER
+========================= */
+
+.search-and-export {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.search-and-export .search-wrapper {
+  margin-left: 0;
+  margin-bottom: 0;
+}
+
+.export-icon-btn {
+  background: transparent;
+  border: 1px solid #10b981;
+  color: #10b981;
+  border-radius: 4px;
+  padding: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 30px;
+  width: 32px;
+}
+
+.export-icon-btn:hover {
+  background: rgba(16, 185, 129, 0.1);
+  color: #34d399;
+  border-color: #34d399;
+}
+
+/* Hide default DevExtreme Grid Header/Toolbar panel to remove long background */
+#gridContainer .dx-datagrid-header-panel {
+  display: none !important;
+}
+
