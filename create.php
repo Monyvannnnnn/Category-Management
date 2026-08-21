@@ -19,7 +19,7 @@ if ($category_code === "" || $category_name === "") {
     exit;
 }
 
-$stmt = mysqli_prepare($conn, "INSERT INTO categories (category_code, category_name) VALUES (?, ?)");
+$stmt = mysqli_prepare($conn, "INSERT INTO category (category_code, category_name) VALUES (?, ?)");
 if ($stmt) {
     mysqli_stmt_bind_param($stmt, "ss", $category_code, $category_name);
     if (mysqli_stmt_execute($stmt)) {

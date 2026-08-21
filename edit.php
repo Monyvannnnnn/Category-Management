@@ -19,7 +19,7 @@ if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
 $id = (int)$_GET["id"];
 
 // First get existing category
-$stmt = mysqli_prepare($conn, "SELECT * FROM categories WHERE id = ?");
+$stmt = mysqli_prepare($conn, "SELECT * FROM category WHERE id = ?");
 if ($stmt) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     mysqli_stmt_execute($stmt);
@@ -48,7 +48,7 @@ if ($categoryCode === "" || $categoryName === "") {
     exit;
 }
 
-$stmt = mysqli_prepare($conn, "UPDATE categories SET category_code = ?, category_name = ? WHERE id = ?");
+$stmt = mysqli_prepare($conn, "UPDATE category SET category_code = ?, category_name = ? WHERE id = ?");
 if ($stmt) {
     mysqli_stmt_bind_param($stmt, "ssi", $categoryCode, $categoryName, $id);
     if (mysqli_stmt_execute($stmt)) {

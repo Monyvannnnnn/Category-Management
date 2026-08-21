@@ -5,7 +5,7 @@ require_once "database.php";
 // API Endpoint to read category list
 if (isset($_GET["action"]) && $_GET["action"] === "read") {
     header("Content-Type: application/json");
-    $sql = "SELECT * FROM categories ORDER BY id DESC";
+    $sql = "SELECT * FROM category ORDER BY id DESC";
     $result = mysqli_query($conn, $sql);
     $categories = [];
     if ($result) {

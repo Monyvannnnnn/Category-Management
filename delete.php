@@ -18,7 +18,7 @@ if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
 
 $id = (int)$_GET["id"];
 
-$stmt = mysqli_prepare($conn, "DELETE FROM categories WHERE id = ?");
+$stmt = mysqli_prepare($conn, "DELETE FROM category WHERE id = ?");
 if ($stmt) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     if (mysqli_stmt_execute($stmt)) {
