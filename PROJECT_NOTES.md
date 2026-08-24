@@ -78,6 +78,7 @@ CREATE TABLE IF NOT EXISTS `category` (
 * **Excel Exporting Integration:** Uses the ExcelJS framework. The "Export Current Page" feature is executed by programmatically instantiating a temporary hidden DataGrid populated solely by the visible rows to execute a focused print.
 * **State Storage:** Saved state parameters use `categoryGridStateV7` in localStorage. Old `V6` properties are ignored to prevent layout bugs.
 * **Touchpad Horizontal Scrolling:** Registered a native `wheel` listener with `{ passive: false }` on the `.table-wrapper` container in [index.php](file:///D:/xammp/htdocs/Inventory/index.php). It dynamically detects horizontal and vertical scroll inputs and routes the scroll motion directly (`target.scrollLeft += delta`) to either the DevExtreme inner container (`.dx-scrollable-container`) or the parent wrapper, optimized for Windows touchpads (e.g. ASUS TUF laptops) to prevent lockups.
+* **Column Fixing & Custom Context Menu:** Enables column fixing globally on the grid. Replaces default `"Fix"` and `"Unfix"` header context menu options with customized options: `"Fix Left"`, `"Fix Right"`, `"Fix Sticky"` (sticks to the nearest boundary edge during scroll), and `"Unfix"`.
 
 ---
 

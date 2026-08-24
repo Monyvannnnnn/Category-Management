@@ -138,10 +138,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             allowColumnReordering: true,
             allowColumnResizing: true,
             columnResizingMode: localStorage.getItem("categoryGridResizeMode") || "widget",
+            columnFixing: {
+                enabled: true
+            },
             stateStoring: {
                 enabled: true,
                 type: "localStorage",
-                storageKey: "categoryGridStateV7"
+                storageKey: "categoryGridStateV9"
             },
 
             dataSource: new DevExpress.data.CustomStore({
@@ -210,6 +213,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             columns: [{
                     dataField: "category_code",
                     caption: "Category Code",
+                    fixed: true,
+                    fixedPosition: "left",
                     minWidth: 120,
                     validationRules: [{
                         type: "required",
@@ -427,18 +432,24 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             onSaved: function(e) {
                 e.component.refresh();
             },
-            onContextMenuPreparing: function (e) {
+            onContextMenuPreparing: function(e) {
                 if (e.target === "header") {
                     var column = e.column;
 
-                    // Don't show move options for command/action columns
-                    if (column && column.dataField) {
-                        if (!e.items) e.items = [];
+                    if (!e.items) e.items = [];
 
+                    // Remove default Fix/Unfix items to prevent duplicates
+                    e.items = (e.items || []).filter(function(item) {
+                        return !item.text || (item.text !== "Fix" &&
+                            item.text !== "Unfix" && item.text !== "Sticky");
+                    });
+
+                    // Don't show options for command/action columns
+                    if (column && column.dataField) {
                         e.items.push({
                             text: "Move Left",
                             icon: "arrowleft",
-                            onItemClick: function () {
+                            onItemClick: function() {
                                 var currentIndex = column.visibleIndex;
                                 var columns = e.component.getVisibleColumns();
                                 var targetColumn = null;
@@ -450,7 +461,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 }
 
                                 // Swap only if target is a valid, reorderable data column
-                                if (targetColumn && targetColumn.dataField && targetColumn.allowReordering !== false) {
+                                if (targetColumn && targetColumn.dataField &&
+                                    targetColumn.allowReordering !== false) {
                                     e.component.beginUpdate();
                                     e.component.columnOption(
                                         column.index,
@@ -470,7 +482,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         e.items.push({
                             text: "Move Right",
                             icon: "arrowright",
-                            onItemClick: function () {
+                            onItemClick: function() {
                                 var currentIndex = column.visibleIndex;
                                 var columns = e.component.getVisibleColumns();
                                 var targetColumn = null;
@@ -482,7 +494,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 }
 
                                 // Swap only if target is a valid, reorderable data column
-                                if (targetColumn && targetColumn.dataField && targetColumn.allowReordering !== false) {
+                                if (targetColumn && targetColumn.dataField &&
+                                    targetColumn.allowReordering !== false) {
                                     e.component.beginUpdate();
                                     e.component.columnOption(
                                         column.index,
@@ -498,6 +511,54 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 }
                             }
                         });
+
+                        // Set fix position left, right, sticky, and unfix options.
+                        // Skip command columns (buttons) and columns that
+                        // disallow fixing - fixing them breaks the layout.
+                        var isCommandColumn = column.type === "buttons" ||
+                            column.command !== undefined;
+                        if (!isCommandColumn && column.allowFixing !== false) {
+                        e.items.push({
+                            text: "Fix Left",
+                            icon: "pinleft",
+                            onItemClick: function() {
+                                e.component.columnOption(column.index, {
+                                    fixed: true,
+                                    fixedPosition: "left"
+                                });
+                            }
+                        });
+
+                        e.items.push({
+                            text: "Fix Right",
+                            icon: "pinright",
+                            onItemClick: function() {
+                                e.component.columnOption(column.index, {
+                                    fixed: true,
+                                    fixedPosition: "right"
+                                });
+                            }
+                        });
+
+                        e.items.push({
+                            text: "Fix Sticky",
+                            icon: "pin",
+                            onItemClick: function() {
+                                e.component.columnOption(column.index, {
+                                    fixed: true,
+                                    fixedPosition: "sticky"
+                                });
+                            }
+                        });
+
+                        e.items.push({
+                            text: "Unfix",
+                            icon: "unpin",
+                            onItemClick: function() {
+                                e.component.columnOption(column.index, "fixed", false);
+                            }
+                        });
+                        } // end allowFixing guard
                     }
                 }
             }
@@ -516,27 +577,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         });
 
         // Touchpad horizontal scrolling for Windows laptops (ASUS TUF etc.)
-        // Targets BOTH the wrapper and DevExtreme's internal scrollable container.
+        // The grid's own internal scroller is the only horizontal scroll now.
         $(".table-wrapper").each(function() {
             this.addEventListener("wheel", function(e) {
-                var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+                if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
 
-                if (delta !== 0) {
-                    // Scroll whichever element is actually overflowing:
-                    // DevExtreme's inner scroller if present, else our wrapper.
-                    var $inner = $(this).find(".dx-datagrid-rowsview .dx-scrollable-container")
-                        .first();
-                    var target = ($inner.length && $inner[0].scrollWidth > $inner[0]
-                            .clientWidth) ?
-                        $inner[0] :
-                        this;
+                var $inner = $(this).find(
+                    ".dx-datagrid-rowsview .dx-scrollable-container"
+                ).first();
+                if (!$inner.length) return;
 
-                    target.scrollLeft += delta;
+                var el = $inner[0];
+                if (el.scrollWidth > el.clientWidth) {
+                    el.scrollLeft += e.deltaX;
                     e.preventDefault();
                 }
-            }, {
-                passive: false
-            });
+            }, { passive: false });
         });
 
         function exportGrid(pageOnly) {

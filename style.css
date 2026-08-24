@@ -117,7 +117,11 @@ body {
 ========================= */
 
 .table-wrapper {
-  overflow-x: auto;
+  /* Do NOT set overflow-x here. DevExtreme DataGrid must own the horizontal
+     scrolling for fixed/sticky columns to work - an outer scroller moves the
+     whole grid while its internal fixed-column overlays stay put. */
+  overflow-x: visible;
+  width: 100%;
 }
 
 table {
@@ -428,7 +432,9 @@ tbody tr:hover {
 
 .dx-datagrid .dx-row > td {
   padding: 14px 10px !important;
-  background-color: transparent !important;
+  /* IMPORTANT: cells must stay OPAQUE. Fixed/sticky columns render other
+     columns sliding underneath them - a transparent background lets the
+     scrolled content show through and breaks the fixed-column effect. */
 }
 
 .dx-datagrid-headers {
@@ -447,8 +453,13 @@ tbody tr:hover {
   background-color: #202020;
 }
 
+/* Fixed / sticky columns render other columns sliding underneath them,
+   so every cell must be OPAQUE (no transparent backgrounds anywhere). */
+.dx-datagrid-rowsview .dx-row > td {
+  background-color: #292929;
+}
 .dx-datagrid-rowsview .dx-row-alt > td {
-  background-color: transparent !important;
+  background-color: #202020;
 }
 
 .dx-datagrid-rowsview .dx-row:hover,
@@ -463,7 +474,6 @@ tbody tr:hover {
 .dx-datagrid .actions-cell {
   text-align: center !important;
   vertical-align: middle !important;
-  background-color: transparent !important;
 }
 
 .actions-wrapper {
@@ -681,11 +691,13 @@ tbody tr:hover {
 /* ---- ACTION COLUMN: match other columns ---- */
 
 /* Remove focus outline & tint on cells containing buttons */
-.dx-datagrid .dx-cell-focus-disabled,
+.dx-datagrid .dx-cell-focus-disabled {
+    outline: none !important;
+    box-shadow: none !important;
+}
 .dx-datagrid .actions-cell {
     outline: none !important;
     box-shadow: none !important;
-    background-color: transparent !important;
 }
 
 /* Hover behaves exactly like every other cell */
