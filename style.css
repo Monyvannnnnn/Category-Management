@@ -428,7 +428,7 @@ tbody tr:hover {
 
 .dx-datagrid .dx-row > td {
   padding: 14px 10px !important;
-  vertical-align: middle;
+  background-color: transparent !important;
 }
 
 .dx-datagrid-headers {
@@ -447,8 +447,36 @@ tbody tr:hover {
   background-color: #202020;
 }
 
-.dx-datagrid-rowsview .dx-row:hover {
+.dx-datagrid-rowsview .dx-row-alt > td {
+  background-color: transparent !important;
+}
+
+.dx-datagrid-rowsview .dx-row:hover,
+.dx-datagrid-rowsview .dx-row:hover > td,
+.dx-datagrid-rowsview .dx-row-alt:hover,
+.dx-datagrid-rowsview .dx-row-alt:hover > td {
   background-color: #303030 !important;
+}
+
+/* Action column: keep the edit/delete buttons centered
+   no matter what width the user drags it to */
+.dx-datagrid .actions-cell {
+  text-align: center !important;
+  vertical-align: middle !important;
+  background-color: transparent !important;
+}
+
+.actions-wrapper {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  width: 100%;
+}
+
+/* Make the header resize handles a bit easier to grab */
+.dx-datagrid-headers .dx-resize-handle {
+  width: 8px;
 }
 
 /* DevExtreme Command Links (Edit / Delete) Styling */
@@ -524,9 +552,12 @@ tbody tr:hover {
 .dx-popup-bottom.dx-toolbar .dx-button-default:hover {
   background-color: #4f46e5 !important;
 }
+/* Commented out for compliance with DevExtreme free license banner requirement on public deployment.
+   Uncomment only for local development if preferred.
 .dx-license {
   display: none !important;
 }
+*/
 
 /* =========================
    OPTIONS CONTAINER & SELECT BOX
@@ -572,30 +603,105 @@ tbody tr:hover {
   margin-bottom: 0;
 }
 
-.export-icon-btn {
-  background: transparent;
-  border: 1px solid #10b981;
-  color: #10b981;
-  border-radius: 4px;
-  padding: 6px;
-  font-size: 14px;
-  cursor: pointer;
-  transition: 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+#customExportBtn {
   height: 30px;
-  width: 32px;
+  display: inline-block;
+  vertical-align: middle;
 }
 
-.export-icon-btn:hover {
-  background: rgba(16, 185, 129, 0.1);
-  color: #34d399;
-  border-color: #34d399;
+#customExportBtn .dx-button {
+  background: transparent !important;
+  border: 1px solid #10b981 !important;
+  color: #10b981 !important;
+  height: 30px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  font-family: inherit !important;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+  padding: 0 10px !important;
+}
+
+#customExportBtn .dx-button:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #34d399 !important;
+  border-color: #34d399 !important;
+}
+
+#customExportBtn .dx-icon {
+  color: #10b981 !important;
+  margin-right: 5px !important;
+}
+
+#customExportBtn .dx-button:hover .dx-icon {
+  color: #34d399 !important;
 }
 
 /* Hide default DevExtreme Grid Header/Toolbar panel to remove long background */
 #gridContainer .dx-datagrid-header-panel {
   display: none !important;
+}
+
+/* Force light text everywhere in the grid */
+.dx-datagrid,
+.dx-datagrid td,
+.dx-datagrid .dx-row,
+.dx-datagrid .dx-cell-focus-disabled,
+.dx-datagrid .dx-header-row td {
+    color: #e5e7eb !important;
+}
+
+/* Header text */
+.dx-datagrid-headers .dx-datagrid-text-content {
+    color: #9ca3af !important;
+}
+
+/* Popup form labels + inputs */
+.dx-popup-content .dx-field-item-label-text {
+    color: #cbd5e1 !important;
+}
+
+/* Pager + page-size selector text */
+.dx-pager {
+    color: #94a3b8 !important;
+}
+.dx-pager .dx-page,
+.dx-pager .dx-page-size {
+    color: #e5e7eb !important;
+}
+.dx-pager .dx-page-active {
+    color: #fff !important;
+    background: #6366f1 !important;
+}
+
+/* Links inside grid (edit/delete fallbacks) */
+.dx-datagrid .dx-link {
+    color: inherit;
+}
+
+/* ---- ACTION COLUMN: match other columns ---- */
+
+/* Remove focus outline & tint on cells containing buttons */
+.dx-datagrid .dx-cell-focus-disabled,
+.dx-datagrid .actions-cell {
+    outline: none !important;
+    box-shadow: none !important;
+    background-color: transparent !important;
+}
+
+/* Hover behaves exactly like every other cell */
+.dx-datagrid-rowsview .dx-row:hover td,
+.dx-datagrid-rowsview .dx-row:hover .actions-cell,
+.dx-datagrid-rowsview .dx-row-alt:hover td,
+.dx-datagrid-rowsview .dx-row-alt:hover .actions-cell {
+    background-color: #303030 !important;
+}
+
+.actions-cell .dx-link-edit   { color: #7dd3fc !important; }
+.actions-cell .dx-link-delete { color: #f87171 !important; }
+
+.dx-datagrid-headers td[aria-label="Action"],
+.dx-datagrid-headers .dx-header-row td:last-child {
+    background-color: #272727 !important;
+    color: #9ca3af !important;
 }
 

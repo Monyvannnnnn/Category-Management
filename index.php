@@ -37,7 +37,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
     <!-- jQuery -->
-    <link rel="stylesheet" href="styles.css" />
+
 
     <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.1.6/css/dx.dark.css" />
 
@@ -45,7 +45,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
 
     <!-- App CSS Styles -->
-    <link rel="stylesheet" href="style.css?v=1.0.1">
+    <link rel="stylesheet" href="style.css?v=1.0.4">
 
 </head>
 
@@ -59,7 +59,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             <div class="header">
 
                 <h1>
-                    Category Management
+                    Category-Management
                 </h1>
 
                 <button type="button" class="add-btn" id="openAddModalBtn">
@@ -80,9 +80,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     <div id="select-resizing"></div>
                 </div>
                 <div class="search-and-export">
-                    <button type="button" class="export-icon-btn" id="customExportBtn" title="Export Excel">
-                        <i class="fa-solid fa-file-excel"></i>
-                    </button>
+                    <div id="customExportBtn"></div>
                     <div class="search-wrapper">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchInput" placeholder="Search...">
@@ -121,17 +119,29 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         return "just now";
     }
 
+    function formatDateTime(date) {
+        if (!date) return "-";
+        const d = new Date(date);
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        const hours = String(d.getHours()).padStart(2, '0');
+        const minutes = String(d.getMinutes()).padStart(2, '0');
+        const seconds = String(d.getSeconds()).padStart(2, '0');
+        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    }
+
     $(function() {
-        const resizingModes = ['nextColumn', 'widget'];
+        const resizingModes = ['widget', 'nextColumn'];
 
         $("#gridContainer").dxDataGrid({
             allowColumnReordering: true,
             allowColumnResizing: true,
-            columnResizingMode: localStorage.getItem("categoryGridResizeMode") || resizingModes[0],
+            columnResizingMode: localStorage.getItem("categoryGridResizeMode") || "widget",
             stateStoring: {
                 enabled: true,
                 type: "localStorage",
-                storageKey: "categoryGridStateV5"
+                storageKey: "categoryGridStateV7"
             },
 
             dataSource: new DevExpress.data.CustomStore({
@@ -200,6 +210,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             columns: [{
                     dataField: "category_code",
                     caption: "Category Code",
+                    minWidth: 120,
                     validationRules: [{
                         type: "required",
                         message: "Category Code is required"
@@ -208,6 +219,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 {
                     dataField: "category_name",
                     caption: "Category Name",
+                    minWidth: 150,
                     validationRules: [{
                         type: "required",
                         message: "Category Name is required"
@@ -215,16 +227,93 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 },
                 {
                     dataField: "created_at",
-                    caption: "Created At",
+                    caption: "Date Created",
                     dataType: "datetime",
-                    format: "yyyy-MM-dd HH:mm:ss",
+                    format: "dd/MM/yyyy HH:mm:ss",
+                    minWidth: 180,
+                    allowEditing: false
+                },
+                {
+                    dataField: "created_at",
+                    caption: "Created Date",
+                    dataType: "date",
+                    format: "dd/MM/yyyy",
+                    minWidth: 120,
+                    allowEditing: false
+                },
+                {
+                    dataField: "created_at",
+                    caption: "Created Time",
+                    dataType: "datetime",
+                    format: "HH:mm:ss",
+                    minWidth: 120,
+                    allowEditing: false
+                },
+                {
+                    dataField: "created_at",
+                    caption: "Formatted Date",
+                    dataType: "date",
+                    format: "dd-MMMM-yyyy",
+                    minWidth: 160,
+                    allowEditing: false
+                },
+                {
+                    dataField: "created_at",
+                    caption: "Formatted Time",
+                    dataType: "datetime",
+                    format: "hh:mm:ss a",
+                    minWidth: 140,
+                    allowEditing: false
+                },
+                {
+                    dataField: "created_at",
+                    caption: "Formatted Date & Time",
+                    dataType: "datetime",
+                    format: "dd-MMMM-yyyy hh:mm:ss a",
+                    minWidth: 260,
                     allowEditing: false
                 },
                 {
                     dataField: "lastupdate",
                     caption: "Last Updated",
                     dataType: "datetime",
-                    format: "yyyy-MM-dd HH:mm:ss",
+                    minWidth: 280,
+                    allowEditing: false,
+                    cellTemplate: function(container, options) {
+                        if (!options.value) {
+                            $("<span>").text("-").appendTo(container);
+                            return;
+                        }
+
+                        const date = new Date(options.value);
+                        const formatted = formatDateTime(date);
+                        const ago = timeAgo(date);
+                        $("<span>")
+                            .text(formatted + " (" + ago + ")")
+                            .appendTo(container);
+                    }
+                },
+                {
+                    dataField: "lastupdate",
+                    caption: "Last Date",
+                    dataType: "date",
+                    format: "dd/MM/yyyy",
+                    minWidth: 120,
+                    allowEditing: false
+                },
+                {
+                    dataField: "lastupdate",
+                    caption: "Last Time",
+                    dataType: "datetime",
+                    format: "HH:mm:ss",
+                    minWidth: 120,
+                    allowEditing: false
+                },
+                {
+                    dataField: "lastupdate",
+                    caption: "Time Ago",
+                    dataType: "datetime",
+                    minWidth: 120,
                     allowEditing: false,
                     cellTemplate: function(container, options) {
                         if (!options.value) {
@@ -241,30 +330,47 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 {
                     type: "buttons",
                     caption: "Action",
-                    width: 110,
-                    buttons: [{
-                            name: "edit",
-                            template: function(container, options) {
-                                var svg =
-                                    '<svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><g fill-rule="evenodd" fill="rgb(0,0,0)" fill-rule="evenodd"><path d="m20.6 2c-.3639 0-.7001.11429-.9929.40712l-9.3188 9.31888-.81771 2.8034 2.80351-.8177 9.3188-9.3188c.2146-.2146.4071-.66113.4071-.99291 0-.74771-.6523-1.39999-1.4-1.39999zm-2.4071-1.007095c.7072-.707166 1.571-.992905 2.4071-.992905 1.8523 0 3.4 1.54771 3.4 3.39999 0 .86822-.4075 1.82172-.9929 2.40712l-9.5 9.49999c-.1188.1189-.2657.2058-.4271.2529l-4.8 1.4c-.35053.1022-.72892.0053-.98711-.2529s-.35513-.6366-.25289-.9871l1.39999-4.8c.04707-.1613.13404-.3082.2529-.4271z" fill="currentColor" /><path d="m0 7c0-2.75228 2.24772-5 5-5h6c.5523 0 1 .44772 1 1s-.4477 1-1 1h-6c-1.64772 0-3 1.35228-3 3v12c0 1.6477 1.35228 3 3 3h12c1.6477 0 3-1.3523 3-3v-6c0-.5523.4477-1 1-1s1 .4477 1 1v6c0 2.7523-2.2477 5-5 5h-12c-2.75228 0-5-2.2477-5-5z" fill="currentColor" /></g></svg>';
-                                return $("<a>")
-                                    .addClass("dx-link dx-link-edit")
-                                    .attr("title", "Edit")
-                                    .append(svg);
-                            }
-                        },
-                        {
-                            name: "delete",
-                            template: function(container, options) {
-                                var svg =
-                                    '<svg id="Capa_1" enable-background="new 0 0 440 440" height="18" viewBox="0 0 440 440" width="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><g><g id="delete_1_"><path d="m412 88h-384c-6.627 0-12-5.373-12-12s5.373-12 12-12h384c6.627 0 12 5.373 12 12s-5.373 12-12 12z" fill="currentColor" /><path d="m316 88h-192c-3.693-.012-7.175-1.723-9.44-4.64-2.234-2.91-3.055-6.663-2.24-10.24l9.92-39.84c4.969-19.547 22.551-33.244 42.72-33.28h110.08c20.169.036 37.751 13.733 42.72 33.28l9.92 39.84c.815 3.577-.006 7.33-2.24 10.24-2.265 2.917-5.747 4.628-9.44 4.64zm-176-24h160l-5.6-24.8c-1.882-9.226-9.945-15.889-19.36-16h-110.08c-9.415.111-17.478 6.774-19.36 16z" fill="currentColor" /><path d="m286.4 440h-132.8c-46.24 0-84.8-29.12-89.76-67.68l-16-231.52c-.442-6.627 4.573-12.358 11.2-12.8s12.358 4.573 12.8 11.2l16 230.72c3.36 25.92 32 46.08 65.92 46.08h132.8c34.24 0 62.56-20.16 65.92-46.88l16-229.92c.442-6.627 6.173-11.642 12.8-11.2s11.642 6.173 11.2 12.8l-16 230.72c-5.28 39.36-44.48 68.48-90.08 68.48z" fill="currentColor" /></g></g></svg>';
-                                return $("<a>")
-                                    .addClass("dx-link dx-link-delete")
-                                    .attr("title", "Delete")
-                                    .append(svg);
-                            }
-                        }
-                    ]
+                    width: 130,
+                    minWidth: 100,
+                    allowExporting: false,
+                    allowColumnResizing: true,
+                    allowFiltering: false,
+                    allowSorting: false,
+                    fixed: true,
+                    fixedPosition: "right",
+                    allowReordering: false,
+                    cellTemplate: function(container, options) {
+                        container.addClass("actions-cell");
+
+                        var editSvg =
+                            '<svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><g fill-rule="evenodd"><path d="m20.6 2c-.3639 0-.7001.11429-.9929.40712l-9.3188 9.31888-.81771 2.8034 2.80351-.8177 9.3188-9.3188c.2146-.2146.4071-.66113.4071-.99291 0-.74771-.6523-1.39999-1.4-1.39999zm-2.4071-1.007095c.7072-.707166 1.571-.992905 2.4071-.992905 1.8523 0 3.4 1.54771 3.4 3.39999 0 .86822-.4075 1.82172-.9929 2.40712l-9.5 9.49999c-.1188.1189-.2657.2058-.4271.2529l-4.8 1.4c-.35053.1022-.72892.0053-.98711-.2529s-.35513-.6366-.25289-.9871l1.39999-4.8c.04707-.1613.13404-.3082.2529-.4271z" fill="currentColor" /><path d="m0 7c0-2.75228 2.24772-5 5-5h6c.5523 0 1 .44772 1 1s-.4477 1-1 1h-6c-1.64772 0-3 1.35228-3 3v12c0 1.6477 1.35228 3 3 3h12c1.6477 0 3-1.3523 3-3v-6c0-.5523.4477-1 1-1s1 .4477 1 1v6c0 2.7523-2.2477 5-5 5h-12c-2.75228 0-5-2.2477-5-5z" fill="currentColor" /></g></svg>';
+                        var $editBtn = $("<a>")
+                            .addClass("dx-link dx-link-edit")
+                            .attr("title", "Edit")
+                            .append(editSvg)
+                            .on("click", function(e) {
+                                options.component.editRow(options.rowIndex);
+                                e.preventDefault();
+                            });
+
+                        var deleteSvg =
+                            '<svg id="Capa_1" enable-background="new 0 0 440 440" height="18" viewBox="0 0 440 440" width="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><g><g id="delete_1_"><path d="m412 88h-384c-6.627 0-12-5.373-12-12s5.373-12 12-12h384c6.627 0 12 5.373 12 12s-5.373 12-12 12z" fill="currentColor" /><path d="m316 88h-192c-3.693-.012-7.175-1.723-9.44-4.64-2.234-2.91-3.055-6.663-2.24-10.24l9.92-39.84c4.969-19.547 22.551-33.244 42.72-33.28h110.08c20.169.036 37.751 13.733 42.72 33.28l9.92 39.84c.815 3.577-.006 7.33-2.24 10.24-2.265 2.917-5.747 4.628-9.44 4.64zm-176-24h160l-5.6-24.8c-1.882-9.226-9.945-15.889-19.36-16h-110.08c-9.415.111-17.478 6.774-19.36 16z" fill="currentColor" /><path d="m286.4 440h-132.8c-46.24 0-84.8-29.12-89.76-67.68l-16-231.52c-.442-6.627 4.573-12.358 11.2-12.8s12.358 4.573 12.8 11.2l16 230.72c3.36 25.92 32 46.08 65.92 46.08h132.8c34.24 0 62.56-20.16 65.92-46.88l16-229.92c.442-6.627 6.173-11.642 12.8-11.2s11.642 6.173 11.2 12.8l-16 230.72c-5.28 39.36-44.48 68.48-90.08 68.48z" fill="currentColor" /></g></g></svg>';
+                        var $deleteBtn = $("<a>")
+                            .addClass("dx-link dx-link-delete")
+                            .attr("title", "Delete")
+                            .append(deleteSvg)
+                            .on("click", function(e) {
+                                options.component.deleteRow(options.rowIndex);
+                                e.preventDefault();
+                            });
+
+                        var $wrapper = $("<div>")
+                            .addClass("actions-wrapper")
+                            .append($editBtn)
+                            .append($deleteBtn);
+
+                        container.append($wrapper);
+                    }
                 }
             ],
             editing: {
@@ -335,28 +441,136 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             grid.addRow();
         });
 
-        // Wire up custom Export Excel Button
-        $("#customExportBtn").on("click", function() {
+        // Touchpad horizontal scrolling for Windows laptops (ASUS TUF etc.)
+        // Targets BOTH the wrapper and DevExtreme's internal scrollable container.
+        $(".table-wrapper").each(function() {
+            this.addEventListener("wheel", function(e) {
+                var delta = Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
+
+                if (delta !== 0) {
+                    // Scroll whichever element is actually overflowing:
+                    // DevExtreme's inner scroller if present, else our wrapper.
+                    var $inner = $(this).find(".dx-datagrid-rowsview .dx-scrollable-container")
+                        .first();
+                    var target = ($inner.length && $inner[0].scrollWidth > $inner[0]
+                            .clientWidth) ?
+                        $inner[0] :
+                        this;
+
+                    target.scrollLeft += delta;
+                    e.preventDefault();
+                }
+            }, {
+                passive: false
+            });
+        });
+
+        function exportGrid(pageOnly) {
             try {
                 var gridInstance = $("#gridContainer").dxDataGrid("instance");
                 var workbook = new ExcelJS.Workbook();
                 var worksheet = workbook.addWorksheet('Category');
 
-                DevExpress.excelExporter.exportDataGrid({
-                    component: gridInstance,
-                    worksheet: worksheet,
-                    autoFilterEnabled: true
-                }).then(function() {
-                    workbook.xlsx.writeBuffer().then(function(buffer) {
-                        saveAs(new Blob([buffer], { type: 'application/octet-stream' }), 'Categories.xlsx');
+                if (pageOnly) {
+                    var visibleData = gridInstance.getVisibleRows()
+                        .filter(function(row) {
+                            return row.rowType === "data";
+                        })
+                        .map(function(row) {
+                            return row.data;
+                        });
+
+                    var tempDiv = $("<div>").appendTo("body").css({
+                        position: "absolute",
+                        left: "-9999px",
+                        top: "-9999px",
+                        width: "1000px",
+                        height: "600px"
                     });
-                }).catch(function(err) {
-                    alert("Export Error: " + err.message);
-                });
+                    var exported = false;
+
+                    tempDiv.dxDataGrid({
+                        dataSource: visibleData,
+                        columns: gridInstance.option("columns"),
+                        onContentReady: function(e) {
+                            if (exported) return;
+                            exported = true;
+
+                            DevExpress.excelExporter.exportDataGrid({
+                                component: e.component,
+                                worksheet: worksheet,
+                                autoFilterEnabled: true
+                            }).then(function() {
+                                return workbook.xlsx.writeBuffer();
+                            }).then(function(buffer) {
+                                const today = new Date();
+                                const yyyy = today.getFullYear();
+                                const mm = String(today.getMonth() + 1).padStart(2, '0');
+                                const dd = String(today.getDate()).padStart(2, '0');
+                                const formattedDate = `${yyyy}-${mm}-${dd}`;
+                                const fileName = `Categories_${formattedDate}_Page.xlsx`;
+                                saveAs(new Blob([buffer], {
+                                    type: 'application/octet-stream'
+                                }), fileName);
+                            }).then(function() {
+                                tempDiv.remove();
+                            }).catch(function(err) {
+                                tempDiv.remove();
+                                alert("Export Error: " + err.message);
+                            });
+                        }
+                    });
+                } else {
+                    DevExpress.excelExporter.exportDataGrid({
+                        component: gridInstance,
+                        worksheet: worksheet,
+                        autoFilterEnabled: true
+                    }).then(function() {
+                        return workbook.xlsx.writeBuffer();
+                    }).then(function(buffer) {
+                        const today = new Date();
+                        const yyyy = today.getFullYear();
+                        const mm = String(today.getMonth() + 1).padStart(2, '0');
+                        const dd = String(today.getDate()).padStart(2, '0');
+                        const formattedDate = `${yyyy}-${mm}-${dd}`;
+                        const fileName = `Categories_${formattedDate}.xlsx`;
+                        saveAs(new Blob([buffer], {
+                            type: 'application/octet-stream'
+                        }), fileName);
+                    }).catch(function(err) {
+                        alert("Export Error: " + err.message);
+                    });
+                }
             } catch (err) {
-                alert("Click Handler Error: " + err.message);
+                alert("Export Handler Error: " + err.message);
+            }
+        }
+
+        // Initialize custom Export Excel DropDownButton
+        $("#customExportBtn").dxDropDownButton({
+            text: "Export Excel",
+            icon: "xlsxfile",
+            items: [{
+                    id: "all",
+                    text: "Export All Pages",
+                    icon: "unorderedlist"
+                },
+                {
+                    id: "current",
+                    text: "Export Current Page",
+                    icon: "export"
+                }
+            ],
+            displayExpr: "text",
+            keyExpr: "id",
+            dropDownOptions: {
+                width: 200
+            },
+            onItemClick: function(e) {
+                exportGrid(e.itemData.id === "current");
             }
         });
+
 
         // Initialize Column Resizing Mode dxSelectBox
         $('#select-resizing').dxSelectBox({
