@@ -45,7 +45,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
 
     <!-- App CSS Styles -->
-    <link rel="stylesheet" href="style.css?v=1.0.4">
+    <link rel="stylesheet" href="style.css?v=1.0.5">
 
 </head>
 
@@ -518,46 +518,47 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         var isCommandColumn = column.type === "buttons" ||
                             column.command !== undefined;
                         if (!isCommandColumn && column.allowFixing !== false) {
-                        e.items.push({
-                            text: "Fix Left",
-                            icon: "pinleft",
-                            onItemClick: function() {
-                                e.component.columnOption(column.index, {
-                                    fixed: true,
-                                    fixedPosition: "left"
-                                });
-                            }
-                        });
+                            e.items.push({
+                                text: "Fix Left",
+                                icon: "pinleft",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.index, {
+                                        fixed: true,
+                                        fixedPosition: "left"
+                                    });
+                                }
+                            });
 
-                        e.items.push({
-                            text: "Fix Right",
-                            icon: "pinright",
-                            onItemClick: function() {
-                                e.component.columnOption(column.index, {
-                                    fixed: true,
-                                    fixedPosition: "right"
-                                });
-                            }
-                        });
+                            e.items.push({
+                                text: "Fix Right",
+                                icon: "pinright",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.index, {
+                                        fixed: true,
+                                        fixedPosition: "right"
+                                    });
+                                }
+                            });
 
-                        e.items.push({
-                            text: "Fix Sticky",
-                            icon: "pin",
-                            onItemClick: function() {
-                                e.component.columnOption(column.index, {
-                                    fixed: true,
-                                    fixedPosition: "sticky"
-                                });
-                            }
-                        });
+                            e.items.push({
+                                text: "Fix Sticky",
+                                icon: "pin",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.index, {
+                                        fixed: true,
+                                        fixedPosition: "sticky"
+                                    });
+                                }
+                            });
 
-                        e.items.push({
-                            text: "Unfix",
-                            icon: "unpin",
-                            onItemClick: function() {
-                                e.component.columnOption(column.index, "fixed", false);
-                            }
-                        });
+                            e.items.push({
+                                text: "Unfix",
+                                icon: "unpin",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.index, "fixed",
+                                        false);
+                                }
+                            });
                         } // end allowFixing guard
                     }
                 }
@@ -592,7 +593,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     el.scrollLeft += e.deltaX;
                     e.preventDefault();
                 }
-            }, { passive: false });
+            }, {
+                passive: false
+            });
         });
 
         function exportGrid(pageOnly) {
