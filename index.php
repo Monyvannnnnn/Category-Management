@@ -426,6 +426,80 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             },
             onSaved: function(e) {
                 e.component.refresh();
+            },
+            onContextMenuPreparing: function (e) {
+                if (e.target === "header") {
+                    var column = e.column;
+
+                    // Don't show move options for command/action columns
+                    if (column && column.dataField) {
+                        if (!e.items) e.items = [];
+
+                        e.items.push({
+                            text: "Move Left",
+                            icon: "arrowleft",
+                            onItemClick: function () {
+                                var currentIndex = column.visibleIndex;
+                                var columns = e.component.getVisibleColumns();
+                                var targetColumn = null;
+                                for (var i = 0; i < columns.length; i++) {
+                                    if (columns[i].visibleIndex === currentIndex - 1) {
+                                        targetColumn = columns[i];
+                                        break;
+                                    }
+                                }
+
+                                // Swap only if target is a valid, reorderable data column
+                                if (targetColumn && targetColumn.dataField && targetColumn.allowReordering !== false) {
+                                    e.component.beginUpdate();
+                                    e.component.columnOption(
+                                        column.index,
+                                        "visibleIndex",
+                                        currentIndex - 1
+                                    );
+                                    e.component.columnOption(
+                                        targetColumn.index,
+                                        "visibleIndex",
+                                        currentIndex
+                                    );
+                                    e.component.endUpdate();
+                                }
+                            }
+                        });
+
+                        e.items.push({
+                            text: "Move Right",
+                            icon: "arrowright",
+                            onItemClick: function () {
+                                var currentIndex = column.visibleIndex;
+                                var columns = e.component.getVisibleColumns();
+                                var targetColumn = null;
+                                for (var i = 0; i < columns.length; i++) {
+                                    if (columns[i].visibleIndex === currentIndex + 1) {
+                                        targetColumn = columns[i];
+                                        break;
+                                    }
+                                }
+
+                                // Swap only if target is a valid, reorderable data column
+                                if (targetColumn && targetColumn.dataField && targetColumn.allowReordering !== false) {
+                                    e.component.beginUpdate();
+                                    e.component.columnOption(
+                                        column.index,
+                                        "visibleIndex",
+                                        currentIndex + 1
+                                    );
+                                    e.component.columnOption(
+                                        targetColumn.index,
+                                        "visibleIndex",
+                                        currentIndex
+                                    );
+                                    e.component.endUpdate();
+                                }
+                            }
+                        });
+                    }
+                }
             }
         });
 
@@ -553,7 +627,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             items: [{
                     id: "all",
                     text: "Export All Pages",
-                    icon: "unorderedlist"
+                    icon: "bulletlist"
                 },
                 {
                     id: "current",
