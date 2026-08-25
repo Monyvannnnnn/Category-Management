@@ -28,17 +28,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Category Management (DevExtreme)</title>
+    <title>Category Management</title>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <!-- Required for DevExtreme DataGrid PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- Required for DevExtreme PDF Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
     <!-- Required for DevExtreme Excel Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
 
-    <!-- jQuery -->
-
-
+    <!-- DevExtreme CSS & JS -->
     <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.1.6/css/dx.dark.css" />
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
@@ -80,6 +84,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     <div id="select-resizing"></div>
                 </div>
                 <div class="search-and-export">
+                    <div id="customPdfExportBtn"></div>
                     <div id="customExportBtn"></div>
                     <div class="search-wrapper">
                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -137,6 +142,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         $("#gridContainer").dxDataGrid({
             allowColumnReordering: true,
             allowColumnResizing: true,
+            columnAutoWidth: true,
             columnResizingMode: localStorage.getItem("categoryGridResizeMode") || "widget",
             columnFixing: {
                 enabled: true
@@ -144,7 +150,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             stateStoring: {
                 enabled: true,
                 type: "localStorage",
-                storageKey: "categoryGridStateV9"
+                storageKey: "categoryGridStateV12"
             },
 
             dataSource: new DevExpress.data.CustomStore({
@@ -211,78 +217,105 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 }
             }),
             columns: [{
+                    name: "category_code",
                     dataField: "category_code",
                     caption: "Category Code",
                     fixed: true,
                     fixedPosition: "left",
-                    minWidth: 120,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     validationRules: [{
                         type: "required",
                         message: "Category Code is required"
                     }]
                 },
                 {
+                    name: "category_name",
                     dataField: "category_name",
                     caption: "Category Name",
-                    minWidth: 150,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     validationRules: [{
                         type: "required",
                         message: "Category Name is required"
                     }]
                 },
                 {
+                    name: "date_created",
                     dataField: "created_at",
                     caption: "Date Created",
                     dataType: "datetime",
                     format: "dd/MM/yyyy HH:mm:ss",
-                    minWidth: 180,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "created_date",
                     dataField: "created_at",
                     caption: "Created Date",
                     dataType: "date",
                     format: "dd/MM/yyyy",
-                    minWidth: 120,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "created_time",
                     dataField: "created_at",
                     caption: "Created Time",
                     dataType: "datetime",
                     format: "HH:mm:ss",
-                    minWidth: 120,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "formatted_date",
                     dataField: "created_at",
                     caption: "Formatted Date",
                     dataType: "date",
                     format: "dd-MMMM-yyyy",
-                    minWidth: 160,
+                    width: 100, // Default initial width
+                    minWidth: 100, // Prevents dragging smaller than 100px
+                    maxWidth: 250,
                     allowEditing: false
                 },
                 {
+                    name: "formatted_time",
                     dataField: "created_at",
                     caption: "Formatted Time",
                     dataType: "datetime",
                     format: "hh:mm:ss a",
-                    minWidth: 140,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "formatted_datetime",
                     dataField: "created_at",
                     caption: "Formatted Date & Time",
                     dataType: "datetime",
                     format: "dd-MMMM-yyyy hh:mm:ss a",
-                    minWidth: 260,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "last_updated",
                     dataField: "lastupdate",
                     caption: "Last Updated",
                     dataType: "datetime",
-                    minWidth: 280,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false,
                     cellTemplate: function(container, options) {
                         if (!options.value) {
@@ -299,26 +332,35 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 {
+                    name: "last_date",
                     dataField: "lastupdate",
                     caption: "Last Date",
                     dataType: "date",
                     format: "dd/MM/yyyy",
-                    minWidth: 120,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "last_time",
                     dataField: "lastupdate",
                     caption: "Last Time",
                     dataType: "datetime",
                     format: "HH:mm:ss",
-                    minWidth: 120,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false
                 },
                 {
+                    name: "time_ago",
                     dataField: "lastupdate",
                     caption: "Time Ago",
                     dataType: "datetime",
-                    minWidth: 120,
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
                     allowEditing: false,
                     cellTemplate: function(container, options) {
                         if (!options.value) {
@@ -341,6 +383,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     allowColumnResizing: true,
                     allowFiltering: false,
                     allowSorting: false,
+                    allowFixing: true,
                     fixed: true,
                     fixedPosition: "right",
                     allowReordering: false,
@@ -379,7 +422,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 }
             ],
             editing: {
-                mode: "popup", // edit/add opens in popup modal
+                mode: "popup",
                 allowUpdating: true,
                 allowDeleting: true,
                 useIcons: true,
@@ -427,7 +470,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 pageSize: 10
             },
             searchPanel: {
-                visible: false // Hidden as we use our custom search input
+                visible: false
             },
             onSaved: function(e) {
                 e.component.refresh();
@@ -438,128 +481,51 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
                     if (!e.items) e.items = [];
 
-                    // Remove default Fix/Unfix items to prevent duplicates
+                    // Clear default context menu items to avoid duplicates
                     e.items = (e.items || []).filter(function(item) {
-                        return !item.text || (item.text !== "Fix" &&
-                            item.text !== "Unfix" && item.text !== "Sticky");
+                        return !item.text || (item.text !== "Fix" && item.text !==
+                            "Unfix" && item.text !== "Sticky");
                     });
 
-                    // Don't show options for command/action columns
-                    if (column && column.dataField) {
-                        e.items.push({
-                            text: "Move Left",
-                            icon: "arrowleft",
-                            onItemClick: function() {
-                                var currentIndex = column.visibleIndex;
-                                var columns = e.component.getVisibleColumns();
-                                var targetColumn = null;
-                                for (var i = 0; i < columns.length; i++) {
-                                    if (columns[i].visibleIndex === currentIndex - 1) {
-                                        targetColumn = columns[i];
-                                        break;
-                                    }
-                                }
+                    // Allow fixing options if column exists and allowFixing is not false
+                    if (column && column.allowFixing !== false) {
+                        var colIdentifier = column.index !== undefined ? column.index : column.name;
 
-                                // Swap only if target is a valid, reorderable data column
-                                if (targetColumn && targetColumn.dataField &&
-                                    targetColumn.allowReordering !== false) {
-                                    e.component.beginUpdate();
-                                    e.component.columnOption(
-                                        column.index,
-                                        "visibleIndex",
-                                        currentIndex - 1
-                                    );
-                                    e.component.columnOption(
-                                        targetColumn.index,
-                                        "visibleIndex",
-                                        currentIndex
-                                    );
-                                    e.component.endUpdate();
-                                }
+                        // Direct "Fix Left" option
+                        e.items.push({
+                            text: "Freeze Left",
+                            icon: "lock",
+                            disabled: column.fixed && column.fixedPosition === "left",
+                            onItemClick: function() {
+                                e.component.columnOption(colIdentifier, {
+                                    fixed: true,
+                                    fixedPosition: "left"
+                                });
                             }
                         });
 
+                        // Direct "Fix Right" option
                         e.items.push({
-                            text: "Move Right",
-                            icon: "arrowright",
+                            text: "Freeze Right",
+                            icon: "lock",
+                            disabled: column.fixed && column.fixedPosition === "right",
                             onItemClick: function() {
-                                var currentIndex = column.visibleIndex;
-                                var columns = e.component.getVisibleColumns();
-                                var targetColumn = null;
-                                for (var i = 0; i < columns.length; i++) {
-                                    if (columns[i].visibleIndex === currentIndex + 1) {
-                                        targetColumn = columns[i];
-                                        break;
-                                    }
-                                }
-
-                                // Swap only if target is a valid, reorderable data column
-                                if (targetColumn && targetColumn.dataField &&
-                                    targetColumn.allowReordering !== false) {
-                                    e.component.beginUpdate();
-                                    e.component.columnOption(
-                                        column.index,
-                                        "visibleIndex",
-                                        currentIndex + 1
-                                    );
-                                    e.component.columnOption(
-                                        targetColumn.index,
-                                        "visibleIndex",
-                                        currentIndex
-                                    );
-                                    e.component.endUpdate();
-                                }
+                                e.component.columnOption(colIdentifier, {
+                                    fixed: true,
+                                    fixedPosition: "right"
+                                });
                             }
                         });
 
-                        // Set fix position left, right, sticky, and unfix options.
-                        // Skip command columns (buttons) and columns that
-                        // disallow fixing - fixing them breaks the layout.
-                        var isCommandColumn = column.type === "buttons" ||
-                            column.command !== undefined;
-                        if (!isCommandColumn && column.allowFixing !== false) {
-                            e.items.push({
-                                text: "Fix Left",
-                                icon: "pinleft",
-                                onItemClick: function() {
-                                    e.component.columnOption(column.index, {
-                                        fixed: true,
-                                        fixedPosition: "left"
-                                    });
-                                }
-                            });
-
-                            e.items.push({
-                                text: "Fix Right",
-                                icon: "pinright",
-                                onItemClick: function() {
-                                    e.component.columnOption(column.index, {
-                                        fixed: true,
-                                        fixedPosition: "right"
-                                    });
-                                }
-                            });
-
-                            e.items.push({
-                                text: "Fix Sticky",
-                                icon: "pin",
-                                onItemClick: function() {
-                                    e.component.columnOption(column.index, {
-                                        fixed: true,
-                                        fixedPosition: "sticky"
-                                    });
-                                }
-                            });
-
-                            e.items.push({
-                                text: "Unfix",
-                                icon: "unpin",
-                                onItemClick: function() {
-                                    e.component.columnOption(column.index, "fixed",
-                                        false);
-                                }
-                            });
-                        } // end allowFixing guard
+                        // Direct "Unfix" option
+                        e.items.push({
+                            text: "Unfreeze",
+                            icon: "unlock",
+                            disabled: !column.fixed,
+                            onItemClick: function() {
+                                e.component.columnOption(colIdentifier, "fixed", false);
+                            }
+                        });
                     }
                 }
             }
@@ -577,8 +543,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             grid.addRow();
         });
 
-        // Touchpad horizontal scrolling for Windows laptops (ASUS TUF etc.)
-        // The grid's own internal scroller is the only horizontal scroll now.
+        // Touchpad horizontal scrolling
         $(".table-wrapper").each(function() {
             this.addEventListener("wheel", function(e) {
                 if (Math.abs(e.deltaX) <= Math.abs(e.deltaY)) return;
@@ -597,6 +562,202 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 passive: false
             });
         });
+
+        function exportPDF(pageOnly) {
+            try {
+                var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                const {
+                    jsPDF
+                } = window.jspdf;
+
+                // Use landscape mode ('l') on A4 or A3 to fit wide data tables
+                const doc = new jsPDF('l', 'pt', 'a3');
+
+                var options = {
+                    jsPDFDocument: doc,
+                    component: pageOnly ? getTempPageGrid(gridInstance) : gridInstance,
+                    autoTableOptions: {
+                        // Red theme for exported PDF headers (#ef4444)
+                        headStyles: {
+                            fillColor: [239, 68, 68], // Red background
+                            textColor: [255, 255, 255], // White text
+                            fontStyle: 'bold',
+                            halign: 'center',
+                            fontSize: 8
+                        },
+                        styles: {
+                            fontSize: 7,
+                            cellPadding: 4,
+                            overflow: 'linebreak',
+                            textColor: [30, 41, 59],
+                            lineColor: [226, 232, 240],
+                            lineWidth: 0.5
+                        },
+                        // Subtle red-tinted zebra striping (#fef2f2)
+                        alternateRowStyles: {
+                            fillColor: [254, 242, 242]
+                        },
+                        margin: {
+                            top: 20,
+                            right: 20,
+                            bottom: 20,
+                            left: 20
+                        }
+                    },
+                    // Keeps column widths proportional to the grid
+                    keepColumnWidths: true,
+                    customizeCell: function(options) {
+                        // Remove custom action buttons or unwanted HTML content during export
+                        if (options.gridCell.rowType === "data" && options.gridCell.column.type ===
+                            "buttons") {
+                            options.text = "";
+                        }
+                    }
+                };
+
+                if (pageOnly) {
+                    // Process current page rows
+                    var visibleData = gridInstance.getVisibleRows()
+                        .filter(function(row) {
+                            return row.rowType === "data";
+                        })
+                        .map(function(row) {
+                            return row.data;
+                        });
+
+                    var tempDiv = $("<div>").appendTo("body").css({
+                        position: "absolute",
+                        left: "-9999px",
+                        top: "-9999px"
+                    });
+
+                    tempDiv.dxDataGrid({
+                        dataSource: visibleData,
+                        columns: gridInstance.option("columns"),
+                        onContentReady: function(e) {
+                            options.component = e.component;
+                            DevExpress.pdfExporter.exportDataGrid(options).then(function() {
+                                doc.save(
+                                    `Categories_Page_${new Date().toISOString().slice(0, 10)}.pdf`
+                                );
+                                tempDiv.remove();
+                            });
+                        }
+                    });
+                } else {
+                    // Process all pages
+                    DevExpress.pdfExporter.exportDataGrid(options).then(function() {
+                        doc.save(`Categories_All_${new Date().toISOString().slice(0, 10)}.pdf`);
+                    }).catch(function(err) {
+                        alert("PDF Export Error: " + err.message);
+                    });
+                }
+            } catch (err) {
+                alert("PDF Handler Error: " + err.message);
+            }
+        }
+
+        function exportPDF(pageOnly) {
+            try {
+                var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                const {
+                    jsPDF
+                } = window.jspdf;
+
+                // Use landscape mode ('l') on A3 paper size
+                const doc = new jsPDF('l', 'pt', 'a3');
+
+                // Helper export options
+                var exportOptions = {
+                    jsPDFDocument: doc,
+                    keepColumnWidths: false, // Set to false to allow columns to scale naturally
+                    autoTableOptions: {
+                        headStyles: {
+                            fillColor: [239, 68, 68], // PDF Red header (#ef4444)
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold',
+                            halign: 'center',
+                            fontSize: 8
+                        },
+                        styles: {
+                            fontSize: 7,
+                            cellPadding: 3,
+                            overflow: 'linebreak', // Forces text wrapping instead of '...'
+                            textColor: [30, 41, 59],
+                            lineColor: [226, 232, 240],
+                            lineWidth: 0.5,
+                            cellWidth: 'auto' // Let pdfMake/autoTable size cells dynamically
+                        },
+                        alternateRowStyles: {
+                            fillColor: [254, 242, 242]
+                        },
+                        margin: {
+                            top: 20,
+                            right: 20,
+                            bottom: 20,
+                            left: 20
+                        }
+                    },
+                    customizeCell: function(options) {
+                        // Hide command action buttons text
+                        if (options.gridCell.rowType === "data" && options.gridCell.column.type ===
+                            "buttons") {
+                            options.text = "";
+                        }
+                    }
+                };
+
+                if (pageOnly) {
+                    // Export current page rows
+                    var visibleData = gridInstance.getVisibleRows()
+                        .filter(function(row) {
+                            return row.rowType === "data";
+                        })
+                        .map(function(row) {
+                            return row.data;
+                        });
+
+                    var tempDiv = $("<div>").appendTo("body").css({
+                        position: "absolute",
+                        left: "-9999px",
+                        top: "-9999px",
+                        width: "1600px" // Provide wide container to give auto-table breathing room
+                    });
+
+                    var exported = false;
+
+                    tempDiv.dxDataGrid({
+                        dataSource: visibleData,
+                        columns: gridInstance.option("columns"),
+                        onContentReady: function(e) {
+                            if (exported) return;
+                            exported = true;
+
+                            exportOptions.component = e.component;
+                            DevExpress.pdfExporter.exportDataGrid(exportOptions).then(function() {
+                                doc.save(
+                                    `Categories_Page_${new Date().toISOString().slice(0, 10)}.pdf`
+                                );
+                                tempDiv.remove();
+                            }).catch(function(err) {
+                                tempDiv.remove();
+                                alert("PDF Export Error: " + err.message);
+                            });
+                        }
+                    });
+                } else {
+                    // Export all grid data
+                    exportOptions.component = gridInstance;
+                    DevExpress.pdfExporter.exportDataGrid(exportOptions).then(function() {
+                        doc.save(`Categories_All_${new Date().toISOString().slice(0, 10)}.pdf`);
+                    }).catch(function(err) {
+                        alert("PDF Export Error: " + err.message);
+                    });
+                }
+            } catch (err) {
+                alert("PDF Handler Error: " + err.message);
+            }
+        }
 
         function exportGrid(pageOnly) {
             try {
@@ -678,7 +839,30 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 alert("Export Handler Error: " + err.message);
             }
         }
-
+        // Dedicated PDF Export DropDownButton
+        $("#customPdfExportBtn").dxDropDownButton({
+            text: "Export PDF",
+            icon: "fa-solid fa-file-pdf",
+            items: [{
+                    id: "all",
+                    text: "Export All Pages",
+                    icon: "bulletlist"
+                },
+                {
+                    id: "current",
+                    text: "Export Current Page",
+                    icon: "export"
+                }
+            ],
+            displayExpr: "text",
+            keyExpr: "id",
+            dropDownOptions: {
+                width: 200
+            },
+            onItemClick: function(e) {
+                exportPDF(e.itemData.id === "current");
+            }
+        });
         // Initialize custom Export Excel DropDownButton
         $("#customExportBtn").dxDropDownButton({
             text: "Export Excel",
@@ -704,7 +888,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             }
         });
 
-
         // Initialize Column Resizing Mode dxSelectBox
         $('#select-resizing').dxSelectBox({
             items: resizingModes,
@@ -721,6 +904,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         });
     });
     </script>
+    <script src="khmer-font.js"></script>
 
 </body>
 
