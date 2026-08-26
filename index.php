@@ -40,6 +40,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <!-- Required for DevExtreme DataGrid PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <!-- Khmer font (sets window.KhmerOsSeimreapBase64 for the exporter) -->
+    <script src="js/KhmerOSSiemreap.js"></script>
+    <!-- html2canvas: captures the browser-shaped Khmer HTML table into the PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script>
+        // Expose the Khmer base64 for the PDF webfont, and register it as a real
+        // CSS webfont so the BROWSER shapes Khmer (jsPDF cannot shape complex scripts).
+        window.__khmerB64 = window.KhmerOsSeimreapBase64 || "";
+        (function () {
+            if (!window.__khmerB64) return;
+            var s = document.createElement("style");
+            s.textContent = '@font-face{font-family:"KhmerOSWeb";src:url(data:font/ttf;base64,' +
+                window.__khmerB64 + ') format("truetype");font-weight:normal;font-style:normal;font-display:swap;}';
+            document.head.appendChild(s);
+        })();
+    </script>
     <!-- Required for DevExtreme PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
@@ -53,7 +69,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 
     <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
-    <script src="js/NotoSansKhmer-Regular-normal.js"></script>
+    <script src="js/KhmerOSSiemreap.js"></script>
     <!-- App CSS Styles -->
     <!-- Update the version number whenever you upload new CSS -->
     <link rel="stylesheet" href="style.css?v=1.1">
@@ -158,7 +174,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             stateStoring: {
                 enabled: true,
                 type: "localStorage",
-                storageKey: "categoryGridStateV12"
+                storageKey: "categoryGridStateV13"
             },
 
             dataSource: new DevExpress.data.CustomStore({
@@ -490,7 +506,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 visible: false
             },
             onSaved: function(e) {
-                e.component.refresh();
+                // Force a TRUE reload from the server (reload() re-runs the
+                // CustomStore load; refresh() alone can keep stale data with a
+                // remote store). Then reset the view so the new row is visible.
+                var grid = e.component;
+                grid.getDataSource().reload().done(function() {
+                    grid.pageIndex(0);
+                    grid.clearFilter();
+                    grid.searchByText("");
+                    $("#searchInput").val("");
+                    $("#searchInput").trigger("input");
+                });
             },
             onContextMenuPreparing: function(e) {
                 if (e.target === "header") {
@@ -580,126 +606,121 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             });
         });
 
-        function exportPDF(pageOnly) {
-            const {
-                jsPDF
-            } = window.jspdf;
+        async function exportPDF(pageOnly) {
+            const $btn = $("#customPdfExportBtn");
+            let overlay = null;
+            try {
+                $btn.prop("disabled", true).css("opacity", "0.6");
 
-            const doc = new jsPDF('l', 'pt', 'a3');
+                var gridInstance = $("#gridContainer").dxDataGrid("instance");
 
-            // 1. Add Khmer Font (Noto Sans Khmer also contains full Latin glyphs,
-            //    so English text renders correctly with it too)
-            if (window.NotoSansKhmerBase64) {
-                doc.addFileToVFS("NotoSansKhmer.ttf", window.NotoSansKhmerBase64);
-                doc.addFont("NotoSansKhmer.ttf", "NotoSansKhmer", "normal");
-            } else {
-                alert("NotoSansKhmerBase64 string is missing!");
-                return;
-            }
+                // 1) Read rows from the LIVE grid (same data shown on this page)
+                var exportData;
+                if (pageOnly) {
+                    exportData = gridInstance.getVisibleRows()
+                        .filter(function(r) { return r.rowType === "data"; })
+                        .map(function(r) { return r.data; });
+                } else {
+                    exportData = await gridInstance.getDataSource().store().load();
+                }
+                if (!exportData || exportData.length === 0) {
+                    alert("No data to export.");
+                    return;
+                }
 
-            // 2. Draw Title
-            doc.setFont("NotoSansKhmer");
-            doc.setFontSize(16);
+                // 2) Columns from the grid (skip the Action/buttons column)
+                var visibleColumns = gridInstance.option("columns").filter(function(col) {
+                    return col.type !== "buttons" && col.caption !== "Action" &&
+                        col.dataField !== "action";
+                });
 
+                // 3) Build a plain table styled like index.php (red header, white body)
+                var thead = "<thead><tr>";
+                visibleColumns.forEach(function(col) {
+                    thead += "<th>" + (col.caption || col.dataField || "") + "</th>";
+                });
+                thead += "</tr></thead>";
 
-            var gridInstance = $("#gridContainer").dxDataGrid("instance");
-
-            // Helper: run exportDataGrid for the currently displayed grid page
-            function drawCurrentGridPage() {
-                return DevExpress.pdfExporter.exportDataGrid({
-                    jsPDFDocument: doc,
-                    component: gridInstance,
-                    keepColumnWidths: false,
-                    autoTableOptions: {
-                        styles: {
-                            font: 'NotoSansKhmer', // handles both Khmer & English
-                            fontSize: 8,
-                            cellPadding: 6,
-                            overflow: 'linebreak',
-                            textColor: [30, 41, 59],
-                            lineColor: [226, 232, 240],
-                            lineWidth: 0.5
-                        },
-                        headStyles: {
-                            font: 'NotoSansKhmer',
-                            fillColor: [239, 68, 68],
-                            textColor: [255, 255, 255],
-                            fontStyle: 'normal', // NotoSansKhmer only has a normal weight
-                            halign: 'center',
-                            fontSize: 9
-                        },
-                        alternateRowStyles: {
-                            fillColor: [254, 242, 242]
-                        },
-                        margin: {
-                            top: 60,
-                            right: 20,
-                            bottom: 30,
-                            left: 20
-                        },
-                        didDrawPage: function(data) {
-                            var str = "Page " + doc.internal.getNumberOfPages();
-                            doc.setFont("NotoSansKhmer");
-                            doc.setFontSize(8);
-                            var pageSize = doc.internal.pageSize;
-                            var pageHeight = pageSize.height ? pageSize.height : pageSize
-                            .getHeight();
-                            doc.text(str, data.settings.margin.left, pageHeight - 10);
+                var tbody = "<tbody>";
+                exportData.forEach(function(row) {
+                    tbody += "<tr>";
+                    visibleColumns.forEach(function(col) {
+                        var val = row[col.dataField];
+                        if (val === null || val === undefined) val = "";
+                        if ((col.dataField === "created_at" || col.dataField === "lastupdate") && val) {
+                            val = formatDateTime(new Date(val));
                         }
-                    },
-                    customizeCell: function(options) {
-                        // Remove command / action button columns
-                        if (options.gridCell.column.type === "buttons" || options.gridCell.column
-                            .caption === "Action") {
-                            options.text = "";
-                            return;
-                        }
+                        tbody += "<td>" + String(val)
+                            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</td>";
+                    });
+                    tbody += "</tr>";
+                });
+                tbody += "</tbody>";
 
-                        // Always use the embedded Khmer font: it covers both the
-                        // Khmer block AND basic Latin, so mixed-language cells
-                        // render correctly instead of falling back to a font that
-                        // drops one of the scripts.
-                        options.font = {
-                            name: "NotoSansKhmer",
-                            style: "normal",
-                            size: options.gridCell.rowType === "header" ? 9 : 8
-                        };
+                // 4) Render off-screen (NOT visible on screen) but still painted by the
+                //    browser, so html2canvas can capture real pixels without a flash.
+                overlay = $(
+                    '<div id="pdfCaptureOverlay">' +
+                    '<style>' +
+                    '#pdfCaptureOverlay{position:fixed;left:-10000px;top:0;z-index:-1;background:#fff !important;padding:24px;}' +
+                    '#pdfTable{font-family:"KhmerOSWeb","Khmer OS Siemreap",Arial,sans-serif;' +
+                    'border-collapse:collapse;width:100%;color:#000;font-size:12px;font-weight:normal;background:#fff !important;}' +
+                    '#pdfTable th{background:#fff !important;color:#000;padding:8px 10px;text-align:left;' +
+                    'border:1px solid #999;font-weight:normal;}' +
+                    '#pdfTable td{padding:7px 10px;border:1px solid #999;color:#000;font-weight:normal;background:#fff !important;}' +
+                    '#pdfTable tr:nth-child(even) td{background:#fff !important;}' +
+                    '</style>' +
+                    '<table id="pdfTable">' + thead + tbody + '</table>' +
+                    '</div>'
+                ).appendTo("body");
+
+                // Wait for the Khmer webfont to shape text
+                if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
+                await new Promise(function(r) { setTimeout(r, 500); });
+
+                // 5) Capture the VISIBLE table, then move it into jsPDF
+                const canvas = await html2canvas(overlay[0], {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: "#ffffff",
+                    logging: false,
+                    onclone: function(clonedDoc) {
+                        try {
+                            if (window.__khmerB64) {
+                                var s = clonedDoc.createElement("style");
+                                s.textContent = '@font-face{font-family:"KhmerOSWeb";' +
+                                    'src:url(data:font/ttf;base64,' + window.__khmerB64 +
+                                    ') format("truetype");font-weight:normal;font-style:normal;}';
+                                clonedDoc.head.appendChild(s);
+                            }
+                        } catch (e) {}
                     }
                 });
-            }
+                overlay.remove();
+                overlay = null;
 
-            function finish() {
-                doc.save(`Categories_Export_${new Date().toISOString().slice(0, 10)}.pdf`);
-            }
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF("l", "pt", "a3");
+                const pageW = pdf.internal.pageSize.getWidth();
+                const pageH = pdf.internal.pageSize.getHeight();
+                const margin = 20;
 
-            if (pageOnly) {
-                // Export only the page currently visible in the grid
-                drawCurrentGridPage().then(finish).catch(function(err) {
-                    alert("PDF Export Error: " + err.message);
-                });
-            } else {
-                // Export ALL pages: walk through every grid page, drawing each one
-                var savedPageIndex = gridInstance.pageIndex();
-                var pageCount = gridInstance.pageCount();
-                var promise = Promise.resolve();
-                for (var p = 0; p < pageCount; p++) {
-                    (function(idx) {
-                        promise = promise.then(function() {
-                            gridInstance.pageIndex(idx);
-                            return new Promise(function(resolve) {
-                                // let the grid repaint with the new page
-                                setTimeout(resolve, 300);
-                            }).then(drawCurrentGridPage);
-                        });
-                    })(p);
+                const imgData = canvas.toDataURL("image/png");
+                const imgProps = pdf.getImageProperties(imgData);
+                let imgW = pageW - margin * 2;
+                let imgH = (imgProps.height * imgW) / imgProps.width;
+                if (imgH > pageH - margin * 2) {
+                    imgH = pageH - margin * 2;
+                    imgW = (imgProps.width * imgH) / imgProps.height;
                 }
-                promise.then(function() {
-                    gridInstance.pageIndex(savedPageIndex);
-                    finish();
-                }).catch(function(err) {
-                    gridInstance.pageIndex(savedPageIndex);
-                    alert("PDF Export Error: " + err.message);
-                });
+                pdf.addImage(imgData, "PNG", margin, margin, imgW, imgH);
+                pdf.save("Categories_" + (pageOnly ? "Page" : "All") + "_" + new Date().toISOString().slice(0, 10) + ".pdf");
+            } catch (err) {
+                console.error("PDF Export Error:", err);
+                alert("Export failed: " + err.message);
+            } finally {
+                if (overlay && overlay.length) { try { overlay.remove(); } catch (e) {} }
+                $btn.prop("disabled", false).css("opacity", "1");
             }
         }
 
@@ -783,10 +804,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 alert("Export Handler Error: " + err.message);
             }
         }
-        // Dedicated PDF Export DropDownButton
+        // Dedicated PDF Export DropDownButton (matches Export Excel style)
         $("#customPdfExportBtn").dxDropDownButton({
             text: "Export PDF",
-            icon: "fa-solid fa-file-pdf",
+            icon: "export",
             items: [{
                     id: "all",
                     text: "Export All Pages",

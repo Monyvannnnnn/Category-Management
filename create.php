@@ -38,8 +38,17 @@ $stmt = mysqli_prepare($conn, "INSERT INTO category (category_code, category_nam
 if ($stmt) {
     mysqli_stmt_bind_param($stmt, "ss", $category_code, $category_name);
     if (mysqli_stmt_execute($stmt)) {
+        $newId = mysqli_insert_id($conn);
         mysqli_stmt_close($stmt);
-        echo json_encode(["success" => true]);
+        // Return the full inserted row so DevExtreme's store stays consistent
+        // and the new row shows immediately with correct id/created_at.
+        $sel = mysqli_prepare($conn, "SELECT * FROM category WHERE id = ?");
+        mysqli_stmt_bind_param($sel, "i", $newId);
+        mysqli_stmt_execute($sel);
+        $row = mysqli_stmt_get_result($sel);
+        $data = mysqli_fetch_assoc($row);
+        mysqli_stmt_close($sel);
+        echo json_encode($data);
         exit;
     } else {
         $errno = mysqli_errno($conn);
