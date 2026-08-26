@@ -5,6 +5,10 @@ require_once "database.php";
 // API Endpoint to read category list
 if (isset($_GET["action"]) && $_GET["action"] === "read") {
     header("Content-Type: application/json");
+    // Prevent caching so newly added/edited/deleted rows always show up live
+    header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+    header("Pragma: no-cache");
+    header("Expires: 0");
     $sql = "SELECT * FROM category ORDER BY id DESC";
     $result = mysqli_query($conn, $sql);
     $categories = [];
@@ -32,6 +36,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
     <!-- Required for DevExtreme DataGrid PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
@@ -46,10 +51,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <link rel="stylesheet" href="https://cdn3.devexpress.com/jslib/23.1.6/css/dx.dark.css" />
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-    <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
 
+    <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
+    <script src="js/NotoSansKhmer-Regular-normal.js"></script>
     <!-- App CSS Styles -->
-    <link rel="stylesheet" href="style.css?v=1.0.5">
+    <!-- Update the version number whenever you upload new CSS -->
+    <link rel="stylesheet" href="style.css?v=1.1">
+
 
 </head>
 
@@ -158,7 +166,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 loadMode: "raw",
                 load: function() {
                     return new Promise(function(resolve, reject) {
-                        $.getJSON("index.php?action=read")
+                        // cache:false forces jQuery to append ?_=timestamp so the
+                        // browser / shared host (InfinityFree) never serves a stale
+                        // GET response. Without this, newly added rows won't show
+                        // after refresh() because the read is cached.
+                        $.ajax({
+                            url: "index.php?action=read",
+                            method: "GET",
+                            cache: false,
+                            dataType: "json"
+                        })
                             .done(function(data) {
                                 resolve(data);
                             })
@@ -564,198 +581,125 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         });
 
         function exportPDF(pageOnly) {
-            try {
-                var gridInstance = $("#gridContainer").dxDataGrid("instance");
-                const {
-                    jsPDF
-                } = window.jspdf;
+            const {
+                jsPDF
+            } = window.jspdf;
 
-                // Use landscape mode ('l') on A4 or A3 to fit wide data tables
-                const doc = new jsPDF('l', 'pt', 'a3');
+            const doc = new jsPDF('l', 'pt', 'a3');
 
-                var options = {
+            // 1. Add Khmer Font (Noto Sans Khmer also contains full Latin glyphs,
+            //    so English text renders correctly with it too)
+            if (window.NotoSansKhmerBase64) {
+                doc.addFileToVFS("NotoSansKhmer.ttf", window.NotoSansKhmerBase64);
+                doc.addFont("NotoSansKhmer.ttf", "NotoSansKhmer", "normal");
+            } else {
+                alert("NotoSansKhmerBase64 string is missing!");
+                return;
+            }
+
+            // 2. Draw Title
+            doc.setFont("NotoSansKhmer");
+            doc.setFontSize(16);
+
+
+            var gridInstance = $("#gridContainer").dxDataGrid("instance");
+
+            // Helper: run exportDataGrid for the currently displayed grid page
+            function drawCurrentGridPage() {
+                return DevExpress.pdfExporter.exportDataGrid({
                     jsPDFDocument: doc,
-                    component: pageOnly ? getTempPageGrid(gridInstance) : gridInstance,
+                    component: gridInstance,
+                    keepColumnWidths: false,
                     autoTableOptions: {
-                        // Red theme for exported PDF headers (#ef4444)
-                        headStyles: {
-                            fillColor: [239, 68, 68], // Red background
-                            textColor: [255, 255, 255], // White text
-                            fontStyle: 'bold',
-                            halign: 'center',
-                            fontSize: 8
-                        },
                         styles: {
-                            fontSize: 7,
-                            cellPadding: 4,
+                            font: 'NotoSansKhmer', // handles both Khmer & English
+                            fontSize: 8,
+                            cellPadding: 6,
                             overflow: 'linebreak',
                             textColor: [30, 41, 59],
                             lineColor: [226, 232, 240],
                             lineWidth: 0.5
                         },
-                        // Subtle red-tinted zebra striping (#fef2f2)
-                        alternateRowStyles: {
-                            fillColor: [254, 242, 242]
-                        },
-                        margin: {
-                            top: 20,
-                            right: 20,
-                            bottom: 20,
-                            left: 20
-                        }
-                    },
-                    // Keeps column widths proportional to the grid
-                    keepColumnWidths: true,
-                    customizeCell: function(options) {
-                        // Remove custom action buttons or unwanted HTML content during export
-                        if (options.gridCell.rowType === "data" && options.gridCell.column.type ===
-                            "buttons") {
-                            options.text = "";
-                        }
-                    }
-                };
-
-                if (pageOnly) {
-                    // Process current page rows
-                    var visibleData = gridInstance.getVisibleRows()
-                        .filter(function(row) {
-                            return row.rowType === "data";
-                        })
-                        .map(function(row) {
-                            return row.data;
-                        });
-
-                    var tempDiv = $("<div>").appendTo("body").css({
-                        position: "absolute",
-                        left: "-9999px",
-                        top: "-9999px"
-                    });
-
-                    tempDiv.dxDataGrid({
-                        dataSource: visibleData,
-                        columns: gridInstance.option("columns"),
-                        onContentReady: function(e) {
-                            options.component = e.component;
-                            DevExpress.pdfExporter.exportDataGrid(options).then(function() {
-                                doc.save(
-                                    `Categories_Page_${new Date().toISOString().slice(0, 10)}.pdf`
-                                );
-                                tempDiv.remove();
-                            });
-                        }
-                    });
-                } else {
-                    // Process all pages
-                    DevExpress.pdfExporter.exportDataGrid(options).then(function() {
-                        doc.save(`Categories_All_${new Date().toISOString().slice(0, 10)}.pdf`);
-                    }).catch(function(err) {
-                        alert("PDF Export Error: " + err.message);
-                    });
-                }
-            } catch (err) {
-                alert("PDF Handler Error: " + err.message);
-            }
-        }
-
-        function exportPDF(pageOnly) {
-            try {
-                var gridInstance = $("#gridContainer").dxDataGrid("instance");
-                const {
-                    jsPDF
-                } = window.jspdf;
-
-                // Use landscape mode ('l') on A3 paper size
-                const doc = new jsPDF('l', 'pt', 'a3');
-
-                // Helper export options
-                var exportOptions = {
-                    jsPDFDocument: doc,
-                    keepColumnWidths: false, // Set to false to allow columns to scale naturally
-                    autoTableOptions: {
                         headStyles: {
-                            fillColor: [239, 68, 68], // PDF Red header (#ef4444)
+                            font: 'NotoSansKhmer',
+                            fillColor: [239, 68, 68],
                             textColor: [255, 255, 255],
-                            fontStyle: 'bold',
+                            fontStyle: 'normal', // NotoSansKhmer only has a normal weight
                             halign: 'center',
-                            fontSize: 8
-                        },
-                        styles: {
-                            fontSize: 7,
-                            cellPadding: 3,
-                            overflow: 'linebreak', // Forces text wrapping instead of '...'
-                            textColor: [30, 41, 59],
-                            lineColor: [226, 232, 240],
-                            lineWidth: 0.5,
-                            cellWidth: 'auto' // Let pdfMake/autoTable size cells dynamically
+                            fontSize: 9
                         },
                         alternateRowStyles: {
                             fillColor: [254, 242, 242]
                         },
                         margin: {
-                            top: 20,
+                            top: 60,
                             right: 20,
-                            bottom: 20,
+                            bottom: 30,
                             left: 20
+                        },
+                        didDrawPage: function(data) {
+                            var str = "Page " + doc.internal.getNumberOfPages();
+                            doc.setFont("NotoSansKhmer");
+                            doc.setFontSize(8);
+                            var pageSize = doc.internal.pageSize;
+                            var pageHeight = pageSize.height ? pageSize.height : pageSize
+                            .getHeight();
+                            doc.text(str, data.settings.margin.left, pageHeight - 10);
                         }
                     },
                     customizeCell: function(options) {
-                        // Hide command action buttons text
-                        if (options.gridCell.rowType === "data" && options.gridCell.column.type ===
-                            "buttons") {
+                        // Remove command / action button columns
+                        if (options.gridCell.column.type === "buttons" || options.gridCell.column
+                            .caption === "Action") {
                             options.text = "";
+                            return;
                         }
+
+                        // Always use the embedded Khmer font: it covers both the
+                        // Khmer block AND basic Latin, so mixed-language cells
+                        // render correctly instead of falling back to a font that
+                        // drops one of the scripts.
+                        options.font = {
+                            name: "NotoSansKhmer",
+                            style: "normal",
+                            size: options.gridCell.rowType === "header" ? 9 : 8
+                        };
                     }
-                };
+                });
+            }
 
-                if (pageOnly) {
-                    // Export current page rows
-                    var visibleData = gridInstance.getVisibleRows()
-                        .filter(function(row) {
-                            return row.rowType === "data";
-                        })
-                        .map(function(row) {
-                            return row.data;
+            function finish() {
+                doc.save(`Categories_Export_${new Date().toISOString().slice(0, 10)}.pdf`);
+            }
+
+            if (pageOnly) {
+                // Export only the page currently visible in the grid
+                drawCurrentGridPage().then(finish).catch(function(err) {
+                    alert("PDF Export Error: " + err.message);
+                });
+            } else {
+                // Export ALL pages: walk through every grid page, drawing each one
+                var savedPageIndex = gridInstance.pageIndex();
+                var pageCount = gridInstance.pageCount();
+                var promise = Promise.resolve();
+                for (var p = 0; p < pageCount; p++) {
+                    (function(idx) {
+                        promise = promise.then(function() {
+                            gridInstance.pageIndex(idx);
+                            return new Promise(function(resolve) {
+                                // let the grid repaint with the new page
+                                setTimeout(resolve, 300);
+                            }).then(drawCurrentGridPage);
                         });
-
-                    var tempDiv = $("<div>").appendTo("body").css({
-                        position: "absolute",
-                        left: "-9999px",
-                        top: "-9999px",
-                        width: "1600px" // Provide wide container to give auto-table breathing room
-                    });
-
-                    var exported = false;
-
-                    tempDiv.dxDataGrid({
-                        dataSource: visibleData,
-                        columns: gridInstance.option("columns"),
-                        onContentReady: function(e) {
-                            if (exported) return;
-                            exported = true;
-
-                            exportOptions.component = e.component;
-                            DevExpress.pdfExporter.exportDataGrid(exportOptions).then(function() {
-                                doc.save(
-                                    `Categories_Page_${new Date().toISOString().slice(0, 10)}.pdf`
-                                );
-                                tempDiv.remove();
-                            }).catch(function(err) {
-                                tempDiv.remove();
-                                alert("PDF Export Error: " + err.message);
-                            });
-                        }
-                    });
-                } else {
-                    // Export all grid data
-                    exportOptions.component = gridInstance;
-                    DevExpress.pdfExporter.exportDataGrid(exportOptions).then(function() {
-                        doc.save(`Categories_All_${new Date().toISOString().slice(0, 10)}.pdf`);
-                    }).catch(function(err) {
-                        alert("PDF Export Error: " + err.message);
-                    });
+                    })(p);
                 }
-            } catch (err) {
-                alert("PDF Handler Error: " + err.message);
+                promise.then(function() {
+                    gridInstance.pageIndex(savedPageIndex);
+                    finish();
+                }).catch(function(err) {
+                    gridInstance.pageIndex(savedPageIndex);
+                    alert("PDF Export Error: " + err.message);
+                });
             }
         }
 
@@ -904,7 +848,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         });
     });
     </script>
-    <script src="khmer-font.js"></script>
+
 
 </body>
 
