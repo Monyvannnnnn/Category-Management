@@ -276,17 +276,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }]
                 },
                 {
-                    name: "date_created",
-                    dataField: "created_at",
-                    caption: "Date Created",
-                    dataType: "datetime",
-                    format: "dd/MM/yyyy HH:mm:ss",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
-                    allowEditing: false
-                },
-                {
                     name: "created_date",
                     dataField: "created_at",
                     caption: "Created Date",
@@ -301,8 +290,29 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     name: "created_time",
                     dataField: "created_at",
                     caption: "Created Time",
+                    dataType: "string",
+                    calculateCellValue: function (rowData) {
+                        if (!rowData.created_at) return "";
+                        const d = new Date(rowData.created_at);
+                        return d.toLocaleTimeString('en-GB'); // "13:45:00"
+                    },
+                    calculateSortValue: function (rowData) {
+                        if (!rowData.created_at) return 0;
+                        const d = new Date(rowData.created_at);
+                        // Convert to total seconds from midnight to sort properly
+                        return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+                    },
+                    minWidth: 100,
+                    width: 260,
+                    maxWidth: 300,
+                    allowEditing: false
+                },
+                {
+                    name: "date_created",
+                    dataField: "created_at",
+                    caption: "Date Created",
                     dataType: "datetime",
-                    format: "HH:mm:ss",
+                    format: "dd/MM/yyyy HH:mm:ss",
                     minWidth: 100,
                     width: 260,
                     maxWidth: 300,
@@ -314,8 +324,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Formatted Date",
                     dataType: "date",
                     format: "dd-MMMM-yyyy",
-                    width: 100, // Default initial width
-                    minWidth: 100, // Prevents dragging smaller than 100px
+                    width: 100,
+                    minWidth: 100,
                     maxWidth: 250,
                     allowEditing: false
                 },
@@ -355,7 +365,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             $("<span>").text("-").appendTo(container);
                             return;
                         }
-
                         const date = new Date(options.value);
                         const formatted = formatDateTime(date);
                         const ago = timeAgo(date);
@@ -379,8 +388,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     name: "last_time",
                     dataField: "lastupdate",
                     caption: "Last Time",
-                    dataType: "datetime",
-                    format: "HH:mm:ss",
+                    dataType: "string",
+                    calculateCellValue: function (rowData) {
+                        if (!rowData.lastupdate) return "";
+                        const d = new Date(rowData.lastupdate);
+                        return d.toLocaleTimeString('en-GB'); // "13:45:00"
+                    },
+                    calculateSortValue: function (rowData) {
+                        if (!rowData.lastupdate) return 0;
+                        const d = new Date(rowData.lastupdate);
+                        return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+                    },
                     minWidth: 100,
                     width: 260,
                     maxWidth: 300,
@@ -400,7 +418,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             $("<span>").text("-").appendTo(container);
                             return;
                         }
-
                         const date = new Date(options.value);
                         $("<span>")
                             .text(timeAgo(date))
@@ -570,6 +587,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             }
                         });
                     }
+
+                    // "View Created As" submenu — ONLY on the Date Created column header.
+                    // Must match by name (date_created) because several columns share
+                    // dataField "created_at"; we want this feature on Date Created alone.
+                    if (column && column.name === "date_created") {
+                        e.items.push({
+                            text: "View Created As",
+                            icon: "calendar",
+                            items: [
+                                { text: "Date", onItemClick: function() { applyCreatedView("date"); } },
+                                { text: "Time", onItemClick: function() { applyCreatedView("time"); } },
+                                { text: "Month", onItemClick: function() { applyCreatedView("month"); } }
+                            ]
+                        });
+                    }
                 }
             }
         });
@@ -579,6 +611,31 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             var grid = $("#gridContainer").dxDataGrid("instance");
             grid.searchByText($(this).val());
         });
+
+        // Applies "View Created As: Date / Time / Month" to the Date Created column.
+        // Swaps calculateCellValue + calculateSortValue so the column shows AND sorts
+        // purely by date, time-of-day, or month — triggered by right-click on the header.
+        function applyCreatedView(mode) {
+            var grid = $("#gridContainer").dxDataGrid("instance");
+            var cell, sort;
+            if (mode === "date") {
+                cell = function(r){ if(!r.created_at) return ""; return new Date(r.created_at).toLocaleDateString('en-GB'); };
+                sort = function(r){ return r.created_at ? new Date(r.created_at).getTime() : 0; };
+            } else if (mode === "time") {
+                cell = function(r){ if(!r.created_at) return ""; return new Date(r.created_at).toLocaleTimeString('en-GB'); };
+                sort = function(r){ if(!r.created_at) return 0; var d=new Date(r.created_at); return d.getHours()*3600+d.getMinutes()*60+d.getSeconds(); };
+            } else { // month
+                cell = function(r){ if(!r.created_at) return ""; return new Date(r.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); };
+                sort = function(r){ if(!r.created_at) return 0; var d=new Date(r.created_at); return d.getFullYear()*12 + d.getMonth(); };
+            }
+            grid.columnOption("date_created", {
+                calculateCellValue: cell,
+                calculateSortValue: sort,
+                dataType: "string",
+                format: null,
+                sortOrder: undefined
+            });
+        }
 
         // Wire up custom Add Category Button to DevExtreme DataGrid addRow
         $("#openAddModalBtn").on("click", function() {
