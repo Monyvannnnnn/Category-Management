@@ -678,7 +678,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
                 await new Promise(function(r) { setTimeout(r, 500); });
 
-                // 5) Capture the VISIBLE table, then move it into jsPDF
+                // 5) Capture the (painted, off-screen) table, then move it into jsPDF.
+                //    scale:2 + high-quality JPEG keeps text sharp (small file thanks to JPEG).
                 const canvas = await html2canvas(overlay[0], {
                     scale: 2,
                     useCORS: true,
@@ -700,12 +701,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 overlay = null;
 
                 const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF("l", "pt", "a3");
+                const pdf = new jsPDF("l", "pt", "a4");
                 const pageW = pdf.internal.pageSize.getWidth();
                 const pageH = pdf.internal.pageSize.getHeight();
                 const margin = 20;
 
-                const imgData = canvas.toDataURL("image/png");
+                const imgData = canvas.toDataURL("image/jpeg", 0.92);
                 const imgProps = pdf.getImageProperties(imgData);
                 let imgW = pageW - margin * 2;
                 let imgH = (imgProps.height * imgW) / imgProps.width;
@@ -713,7 +714,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     imgH = pageH - margin * 2;
                     imgW = (imgProps.width * imgH) / imgProps.height;
                 }
-                pdf.addImage(imgData, "PNG", margin, margin, imgW, imgH);
+                pdf.addImage(imgData, "JPEG", margin, margin, imgW, imgH);
                 pdf.save("Categories_" + (pageOnly ? "Page" : "All") + "_" + new Date().toISOString().slice(0, 10) + ".pdf");
             } catch (err) {
                 console.error("PDF Export Error:", err);
