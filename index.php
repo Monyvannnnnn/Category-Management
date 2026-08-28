@@ -1,5 +1,12 @@
 <?php
 
+// Prevent the browser from caching this HTML page, so edits to the grid
+// config (paging/scrolling) always take effect on reload instead of running
+// a stale cached version. Safe for the JSON API too (no harmful side-effects).
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 require_once "database.php";
 
 // API Endpoint to read category list
@@ -45,16 +52,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <!-- html2canvas: captures the browser-shaped Khmer HTML table into the PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script>
-        // Expose the Khmer base64 for the PDF webfont, and register it as a real
-        // CSS webfont so the BROWSER shapes Khmer (jsPDF cannot shape complex scripts).
-        window.__khmerB64 = window.KhmerOsSeimreapBase64 || "";
-        (function () {
-            if (!window.__khmerB64) return;
-            var s = document.createElement("style");
-            s.textContent = '@font-face{font-family:"KhmerOSWeb";src:url(data:font/ttf;base64,' +
-                window.__khmerB64 + ') format("truetype");font-weight:normal;font-style:normal;font-display:swap;}';
-            document.head.appendChild(s);
-        })();
+    // Expose the Khmer base64 for the PDF webfont, and register it as a real
+    // CSS webfont so the BROWSER shapes Khmer (jsPDF cannot shape complex scripts).
+    window.__khmerB64 = window.KhmerOsSeimreapBase64 || "";
+    (function() {
+        if (!window.__khmerB64) return;
+        var s = document.createElement("style");
+        s.textContent = '@font-face{font-family:"KhmerOSWeb";src:url(data:font/ttf;base64,' +
+            window.__khmerB64 + ') format("truetype");font-weight:normal;font-style:normal;font-display:swap;}';
+        document.head.appendChild(s);
+    })();
     </script>
     <!-- Required for DevExtreme PDF Export -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
@@ -70,11 +77,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
     <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
     <script src="js/KhmerOSSiemreap.js"></script>
-    <!-- App CSS Styles -->
-    <!-- Update the version number whenever you upload new CSS -->
-    <link rel="stylesheet" href="style.css?v=1.1">
-
-
+    <link rel="stylesheet" href="style.css?v=<?php echo date('Y-m-d-H-i-s', filemtime(__DIR__ . '/style.css')); ?>">
 </head>
 
 <body>
@@ -110,6 +113,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 <div class="search-and-export">
                     <div id="customPdfExportBtn"></div>
                     <div id="customExportBtn"></div>
+                    <div id="customCsvExportBtn"></div>
                     <div class="search-wrapper">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchInput" placeholder="Search...">
@@ -163,6 +167,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     $(function() {
         const resizingModes = ['widget', 'nextColumn'];
 
+        // Clear any STALE saved grid state (old "all rows" view) from a previous
+        // stateStoring session, so it can never re-apply after the data loads.
+        try {
+            localStorage.removeItem("categoryGridStateV13");
+        } catch (e) {}
+
         $("#gridContainer").dxDataGrid({
             allowColumnReordering: true,
             allowColumnResizing: true,
@@ -171,10 +181,15 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             columnFixing: {
                 enabled: true
             },
-            stateStoring: {
-                enabled: true,
-                type: "localStorage",
-                storageKey: "categoryGridStateV13"
+            // Fixed height so the GRID scrolls internally instead of the whole page.
+            // Height is computed in JS (fitGridHeight) so the pager is always
+            // inside the visible grid regardless of header/toolbar height.
+            height: 400,
+
+            // Plain internal row scrolling (no virtualization). The fixed height
+            // makes ONLY the rows scroll inside the grid; the page itself stays put.
+            scrolling: {
+                mode: "standard"
             },
 
             dataSource: new DevExpress.data.CustomStore({
@@ -182,16 +197,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 loadMode: "raw",
                 load: function() {
                     return new Promise(function(resolve, reject) {
-                        // cache:false forces jQuery to append ?_=timestamp so the
-                        // browser / shared host (InfinityFree) never serves a stale
-                        // GET response. Without this, newly added rows won't show
-                        // after refresh() because the read is cached.
                         $.ajax({
-                            url: "index.php?action=read",
-                            method: "GET",
-                            cache: false,
-                            dataType: "json"
-                        })
+                                url: "index.php?action=read",
+                                method: "GET",
+                                cache: false,
+                                dataType: "json"
+                            })
                             .done(function(data) {
                                 resolve(data);
                             })
@@ -291,12 +302,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     dataField: "created_at",
                     caption: "Created Time",
                     dataType: "string",
-                    calculateCellValue: function (rowData) {
+                    calculateCellValue: function(rowData) {
                         if (!rowData.created_at) return "";
                         const d = new Date(rowData.created_at);
                         return d.toLocaleTimeString('en-GB'); // "13:45:00"
                     },
-                    calculateSortValue: function (rowData) {
+                    calculateSortValue: function(rowData) {
                         if (!rowData.created_at) return 0;
                         const d = new Date(rowData.created_at);
                         // Convert to total seconds from midnight to sort properly
@@ -389,12 +400,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     dataField: "lastupdate",
                     caption: "Last Time",
                     dataType: "string",
-                    calculateCellValue: function (rowData) {
+                    calculateCellValue: function(rowData) {
                         if (!rowData.lastupdate) return "";
                         const d = new Date(rowData.lastupdate);
                         return d.toLocaleTimeString('en-GB'); // "13:45:00"
                     },
-                    calculateSortValue: function (rowData) {
+                    calculateSortValue: function(rowData) {
                         if (!rowData.lastupdate) return 0;
                         const d = new Date(rowData.lastupdate);
                         return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
@@ -517,7 +528,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             },
             paging: {
                 enabled: true,
-                pageSize: 10
+                pageSize: 5
             },
             searchPanel: {
                 visible: false
@@ -534,6 +545,31 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     $("#searchInput").val("");
                     $("#searchInput").trigger("input");
                 });
+            },
+            onContentReady: function(e) {
+                // Force 5 rows ONLY on the very first load (so refresh defaults to 5).
+                // Do NOT re-force on later renders, or clicking 10/20 would snap back to 5.
+                var grid = e.component;
+                if (!grid._initDone && grid.option("paging.pageSize") !== 5) {
+                    grid.option("paging.pageSize", 5);
+                }
+                grid._initDone = true;
+            },
+            onOptionChanged: function(e) {
+                // Re-fit the grid height when page size changes so the pager
+                // (Next / page numbers) stays visible without scrolling.
+                if (e.name === "pageSize" || e.name === "paging.pageSize") {
+                    setTimeout(fitGridHeight, 0);
+                }
+            },
+            onPageSizeChanged: function(e) {
+                // Guaranteed handler for page-size selection (5/10/20).
+                // Apply the chosen size, reset to page 1 (so you don't land on an
+                // out-of-range page when coming from a later page), and refit height.
+                var grid = e.component;
+                grid.option("paging.pageSize", e.pageSize);
+                grid.option("paging.pageIndex", 0); // 0-based: go back to first page
+                setTimeout(fitGridHeight, 0);
             },
             onContextMenuPreparing: function(e) {
                 if (e.target === "header") {
@@ -595,16 +631,80 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         e.items.push({
                             text: "View Created As",
                             icon: "calendar",
-                            items: [
-                                { text: "Date", onItemClick: function() { applyCreatedView("date"); } },
-                                { text: "Time", onItemClick: function() { applyCreatedView("time"); } },
-                                { text: "Month", onItemClick: function() { applyCreatedView("month"); } }
+                            items: [{
+                                    text: "Date",
+                                    onItemClick: function() {
+                                        applyCreatedView("date");
+                                    }
+                                },
+                                {
+                                    text: "Time",
+                                    onItemClick: function() {
+                                        applyCreatedView("time");
+                                    }
+                                },
+                                {
+                                    text: "Month",
+                                    onItemClick: function() {
+                                        applyCreatedView("month");
+                                    }
+                                },
+                                {
+                                    text: "Year",
+                                    onItemClick: function() {
+                                        applyCreatedView("year");
+                                    }
+                                },
+                                {
+                                    text: "Day of Week",
+                                    onItemClick: function() {
+                                        applyCreatedView("weekday");
+                                    }
+                                },
+                                {
+                                    text: "Date & Time",
+                                    onItemClick: function() {
+                                        applyCreatedView("datetime");
+                                    }
+                                },
+                                {
+                                    text: "Relative",
+                                    onItemClick: function() {
+                                        applyCreatedView("relative");
+                                    }
+                                }
                             ]
                         });
                     }
+
                 }
             }
         });
+
+        // Compute the grid height so it fits the viewport with the pager visible,
+        // leaving the page itself non-scrolling. Called on load and on resize.
+        function fitGridHeight() {
+            var wrapper = document.querySelector('.table-wrapper');
+            if (!wrapper) return;
+            var rect = wrapper.getBoundingClientRect();
+            var available = window.innerHeight - rect.top - 24; // 24px bottom margin
+            if (available < 200) available = 200;
+            var grid = $("#gridContainer").dxDataGrid("instance");
+            if (!grid) return;
+            // Measure the grid's natural (content) height, then decide:
+            // - if content fits the available space -> height "auto" (no empty gap)
+            // - if content is taller -> cap at available px (grid scrolls internally)
+            grid.option("height", "auto");
+            var natural = grid.$element().outerHeight();
+            if (natural <= available) {
+                grid.option("height", "auto"); // fits the 5 rows snugly
+            } else {
+                grid.option("height", available); // many rows -> internal scroll
+            }
+        }
+        $(window).on("resize", fitGridHeight);
+        setTimeout(fitGridHeight, 300);
+        $(window).on("load", fitGridHeight);
 
         // Wire up custom Search Input to DevExtreme DataGrid search
         $("#searchInput").on("input", function() {
@@ -619,14 +719,73 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             var grid = $("#gridContainer").dxDataGrid("instance");
             var cell, sort;
             if (mode === "date") {
-                cell = function(r){ if(!r.created_at) return ""; return new Date(r.created_at).toLocaleDateString('en-GB'); };
-                sort = function(r){ return r.created_at ? new Date(r.created_at).getTime() : 0; };
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    return new Date(r.created_at).toLocaleDateString('en-GB');
+                };
+                sort = function(r) {
+                    return r.created_at ? new Date(r.created_at).getTime() : 0;
+                };
             } else if (mode === "time") {
-                cell = function(r){ if(!r.created_at) return ""; return new Date(r.created_at).toLocaleTimeString('en-GB'); };
-                sort = function(r){ if(!r.created_at) return 0; var d=new Date(r.created_at); return d.getHours()*3600+d.getMinutes()*60+d.getSeconds(); };
-            } else { // month
-                cell = function(r){ if(!r.created_at) return ""; return new Date(r.created_at).toLocaleDateString('en-GB',{month:'long',year:'numeric'}); };
-                sort = function(r){ if(!r.created_at) return 0; var d=new Date(r.created_at); return d.getFullYear()*12 + d.getMonth(); };
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    return new Date(r.created_at).toLocaleTimeString('en-GB');
+                };
+                sort = function(r) {
+                    if (!r.created_at) return 0;
+                    var d = new Date(r.created_at);
+                    return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
+                };
+            } else if (mode === "month") {
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    return new Date(r.created_at).toLocaleDateString('en-GB', {
+                        month: 'long',
+                        year: 'numeric'
+                    });
+                };
+                sort = function(r) {
+                    if (!r.created_at) return 0;
+                    var d = new Date(r.created_at);
+                    return d.getFullYear() * 12 + d.getMonth();
+                };
+            } else if (mode === "year") {
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    return String(new Date(r.created_at).getFullYear());
+                };
+                sort = function(r) {
+                    if (!r.created_at) return 0;
+                    return new Date(r.created_at).getFullYear();
+                };
+            } else if (mode === "weekday") {
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    return new Date(r.created_at).toLocaleDateString('en-GB', {
+                        weekday: 'long'
+                    });
+                };
+                sort = function(r) {
+                    if (!r.created_at) return 0;
+                    return new Date(r.created_at).getDay();
+                };
+            } else if (mode === "datetime") {
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    var d = new Date(r.created_at);
+                    return d.toLocaleDateString('en-GB') + " " + d.toLocaleTimeString('en-GB');
+                };
+                sort = function(r) {
+                    return r.created_at ? new Date(r.created_at).getTime() : 0;
+                };
+            } else { // relative
+                cell = function(r) {
+                    if (!r.created_at) return "";
+                    return timeAgo(new Date(r.created_at));
+                };
+                sort = function(r) {
+                    return r.created_at ? new Date(r.created_at).getTime() : 0;
+                };
             }
             grid.columnOption("date_created", {
                 calculateCellValue: cell,
@@ -637,7 +796,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             });
         }
 
-        // Wire up custom Add Category Button to DevExtreme DataGrid addRow
         $("#openAddModalBtn").on("click", function() {
             var grid = $("#gridContainer").dxDataGrid("instance");
             grid.addRow();
@@ -675,8 +833,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 var exportData;
                 if (pageOnly) {
                     exportData = gridInstance.getVisibleRows()
-                        .filter(function(r) { return r.rowType === "data"; })
-                        .map(function(r) { return r.data; });
+                        .filter(function(r) {
+                            return r.rowType === "data";
+                        })
+                        .map(function(r) {
+                            return r.data;
+                        });
                 } else {
                     exportData = await gridInstance.getDataSource().store().load();
                 }
@@ -704,11 +866,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     visibleColumns.forEach(function(col) {
                         var val = row[col.dataField];
                         if (val === null || val === undefined) val = "";
-                        if ((col.dataField === "created_at" || col.dataField === "lastupdate") && val) {
+                        if ((col.dataField === "created_at" || col.dataField ===
+                                "lastupdate") && val) {
                             val = formatDateTime(new Date(val));
                         }
                         tbody += "<td>" + String(val)
-                            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</td>";
+                            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g,
+                                "&gt;") + "</td>";
                     });
                     tbody += "</tr>";
                 });
@@ -732,8 +896,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 ).appendTo("body");
 
                 // Wait for the Khmer webfont to shape text
-                if (document.fonts && document.fonts.ready) { await document.fonts.ready; }
-                await new Promise(function(r) { setTimeout(r, 500); });
+                if (document.fonts && document.fonts.ready) {
+                    await document.fonts.ready;
+                }
+                await new Promise(function(r) {
+                    setTimeout(r, 500);
+                });
 
                 // 5) Capture the (painted, off-screen) table, then move it into jsPDF.
                 //    scale:2 + high-quality JPEG keeps text sharp (small file thanks to JPEG).
@@ -757,7 +925,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 overlay.remove();
                 overlay = null;
 
-                const { jsPDF } = window.jspdf;
+                const {
+                    jsPDF
+                } = window.jspdf;
                 const pdf = new jsPDF("l", "pt", "a4");
                 const pageW = pdf.internal.pageSize.getWidth();
                 const pageH = pdf.internal.pageSize.getHeight();
@@ -772,12 +942,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     imgW = (imgProps.width * imgH) / imgProps.height;
                 }
                 pdf.addImage(imgData, "JPEG", margin, margin, imgW, imgH);
-                pdf.save("Categories_" + (pageOnly ? "Page" : "All") + "_" + new Date().toISOString().slice(0, 10) + ".pdf");
+                pdf.save("Categories_" + (pageOnly ? "Page" : "All") + "_" + new Date().toISOString().slice(
+                    0, 10) + ".pdf");
             } catch (err) {
                 console.error("PDF Export Error:", err);
                 alert("Export failed: " + err.message);
             } finally {
-                if (overlay && overlay.length) { try { overlay.remove(); } catch (e) {} }
+                if (overlay && overlay.length) {
+                    try {
+                        overlay.remove();
+                    } catch (e) {}
+                }
                 $btn.prop("disabled", false).css("opacity", "1");
             }
         }
@@ -862,6 +1037,106 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 alert("Export Handler Error: " + err.message);
             }
         }
+
+        // CSV export (client-side, no server script). Exports the chosen
+        // rows (current page or all) as a downloaded .csv file.
+        function exportCSV(pageOnly) {
+            try {
+                var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                var rows, cols;
+
+                if (pageOnly) {
+                    rows = gridInstance.getVisibleRows()
+                        .filter(function(r) { return r.rowType === "data"; })
+                        .map(function(r) { return r.data; });
+                } else {
+                    rows = gridInstance.getDataSource().store().load();
+                }
+
+                var finish = function(data) {
+                    if (!data || data.length === 0) {
+                        alert("No data to export.");
+                        return;
+                    }
+                    cols = gridInstance.option("columns").filter(function(col) {
+                        return col.type !== "buttons" && col.caption !== "Action" &&
+                            col.dataField !== "action";
+                    });
+
+                    // Build CSV (quote fields that contain comma/quote/newline)
+                    var escape = function(v) {
+                        if (v === null || v === undefined) v = "";
+                        v = String(v);
+                        if (v.search(/[",\n]/) !== -1) {
+                            v = '"' + v.replace(/"/g, '""') + '"';
+                        }
+                        return v;
+                    };
+                    var header = cols.map(function(c) {
+                        return escape(c.caption || c.dataField || "");
+                    }).join(",");
+                    var body = data.map(function(row) {
+                        return cols.map(function(c) {
+                            var val = row[c.dataField];
+                            // Compact date/time for CSV so it fits Excel's default
+                            // column width AND shows the time (no #### overflow).
+                            if ((c.dataField === "created_at" || c.dataField === "lastupdate") && val) {
+                                var d = new Date(val);
+                                if (!isNaN(d.getTime())) {
+                                    var p = function(n) { return String(n).padStart(2, "0"); };
+                                    val = p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear() +
+                                        " " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
+                                }
+                            }
+                            // Force Excel to treat ONLY date/time columns as TEXT
+                            // (leading single-quote, hidden by Excel) so they show
+                            // fully with no ####. ID / code / name stay normal.
+                            var dateTimeFields = [
+                                "created_at", "lastupdate", "created_date", "created_time",
+                                "formatted_date", "formatted_time", "formatted_date_time",
+                                "last_date", "last_time", "date_created", "last_updated", "time_ago"
+                            ];
+                            if (dateTimeFields.indexOf(c.dataField) !== -1 && val !== "" && val != null) {
+                                return "'" + escape(val);
+                            }
+                            return escape(val);
+                        }).join(",");
+                    }).join("\n");
+                    var csv = "﻿" + header + "\n" + body;
+
+                    var today = new Date();
+                    var yyyy = today.getFullYear();
+                    var mm = String(today.getMonth() + 1).padStart(2, '0');
+                    var dd = String(today.getDate()).padStart(2, '0');
+                    var fileName = "Categories_" + yyyy + "-" + mm + "-" + dd +
+                        (pageOnly ? "_Page" : "") + ".csv";
+
+                    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    if (navigator.msSaveOrOpenBlob) {
+                        navigator.msSaveOrOpenBlob(blob, fileName);
+                    } else {
+                        var url = URL.createObjectURL(blob);
+                        var a = document.createElement("a");
+                        a.href = url;
+                        a.download = fileName;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }
+                };
+
+                if (pageOnly) {
+                    finish(rows);
+                } else {
+                    Promise.resolve(rows).then(finish).catch(function(err) {
+                        alert("Export Error: " + err.message);
+                    });
+                }
+            } catch (err) {
+                alert("Export Handler Error." + err.message);
+            }
+        }
         // Dedicated PDF Export DropDownButton (matches Export Excel style)
         $("#customPdfExportBtn").dxDropDownButton({
             text: "Export PDF",
@@ -908,6 +1183,30 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             },
             onItemClick: function(e) {
                 exportGrid(e.itemData.id === "current");
+            }
+        });
+        // Initialize custom Export CSV DropDownButton (matches the others)
+        $("#customCsvExportBtn").dxDropDownButton({
+            text: "Export CSV",
+            icon: "fa fa-file-csv",
+            items: [{
+                    id: "all",
+                    text: "Export All Pages",
+                    icon: "bulletlist"
+                },
+                {
+                    id: "current",
+                    text: "Export Current Page",
+                    icon: "export"
+                }
+            ],
+            displayExpr: "text",
+            keyExpr: "id",
+            dropDownOptions: {
+                width: 200
+            },
+            onItemClick: function(e) {
+                exportCSV(e.itemData.id === "current");
             }
         });
 

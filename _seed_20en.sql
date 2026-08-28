@@ -1,0 +1,22 @@
+USE inventory;
+INSERT INTO category (category_code, category_name) VALUES
+('CAT-006','Sports & Fitness'),
+('CAT-007','Home & Garden'),
+('CAT-008','Automotive'),
+('CAT-009','Mobile Phones'),
+('CAT-010','Computers & Laptops'),
+('CAT-011','Toys & Games'),
+('CAT-012','Beauty & Cosmetics'),
+('CAT-013','Baby & Kids'),
+('CAT-014','Pets Supplies'),
+('CAT-015','Books & Media'),
+('CAT-016','Music & Instruments'),
+('CAT-017','Movies & DVD'),
+('CAT-018','Travel & Luggage'),
+('CAT-019','Office Supplies'),
+('CAT-020','Industrial & Tools'),
+('CAT-021','Jewelry & Watches'),
+('CAT-022','Arts & Crafts'),
+('CAT-023','Grocery & Market'),
+('CAT-024','Pharmacy'),
+('CAT-025','Software & Apps');

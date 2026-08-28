@@ -16,11 +16,10 @@ body {
 }
 
 .category-card {
-  background: #1e293b;
-  border: 1px solid #334155;
-
+  background: transparent;
+  border: none;
+  box-shadow: none;
   padding: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
 /* =========================
@@ -122,6 +121,20 @@ body {
      whole grid while its internal fixed-column overlays stay put. */
   overflow-x: visible;
   width: 100%;
+  /* Flex so the wrapper fills the card and the grid's OWN internal scroll
+     handles vertical scrolling - the page never scrolls. */
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* CSS fallback so the grid scrolls internally (rows only) even before
+   fitGridHeight() runs. The JS still fine-tunes the exact height. */
+.table-wrapper > #gridContainer {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: calc(100vh - 240px);
 }
 
 table {
@@ -427,10 +440,7 @@ tbody tr:hover {
    DEVEXTREME DARK THEME INTEGRATION
    ========================================================================== */
 
-.dx-datagrid {
-  background-color: #1e293b;
-  color: #e5e7eb;
-}
+
 
 .dx-datagrid .dx-row > td {
   padding: 14px 10px !important;
@@ -439,38 +449,22 @@ tbody tr:hover {
      scrolled content show through and breaks the fixed-column effect. */
 }
 
+
+
 .dx-datagrid-headers {
-  background-color: #272727 !important;
+
   color: #9ca3af !important;
   font-weight: 600;
 }
 
 .dx-datagrid-rowsview .dx-row {
-  background-color: #292929;
+
   color: #e5e7eb;
   border-bottom: 1px solid #334155 !important;
 }
 
-.dx-datagrid-rowsview .dx-row-alt {
-  background-color: #202020;
-}
 
-/* Fixed / sticky columns render other columns sliding underneath them,
-   so every cell must be OPAQUE (no transparent backgrounds anywhere). */
-.dx-datagrid-rowsview .dx-row > td {
-  background-color: #292929;
-}
 
-.dx-datagrid-rowsview .dx-row-alt > td {
-  background-color: #202020;
-}
-
-.dx-datagrid-rowsview .dx-row:hover,
-.dx-datagrid-rowsview .dx-row:hover > td,
-.dx-datagrid-rowsview .dx-row-alt:hover,
-.dx-datagrid-rowsview .dx-row-alt:hover > td {
-  background-color: #303030 !important;
-}
 
 /* Action column: keep the edit/delete buttons centered
    no matter what width the user drags it to */
@@ -478,6 +472,9 @@ tbody tr:hover {
   text-align: center !important;
   vertical-align: middle !important;
 }
+
+/* Action column header + cells: remove any dark fill, keep only the buttons */
+
 
 .actions-wrapper {
   display: inline-flex;
@@ -497,6 +494,7 @@ tbody tr:hover {
 .dx-link-edit {
   color: #38bdf8 !important;
   text-decoration: none;
+
 }
 
 .dx-link-edit:hover {
@@ -510,6 +508,23 @@ tbody tr:hover {
 
 .dx-link-delete:hover {
   color: #f87171 !important;
+}
+
+/* Action column: remove ALL backgrounds (cells, header, hover) - keep only buttons.
+   Broad catch-all so DevExtreme's command cells never paint a dark fill. */
+.dx-datagrid td.dx-command-edit,
+.dx-datagrid td.dx-command-cell,
+.dx-datagrid .dx-command-edit,
+.dx-datagrid .dx-command-cell,
+.dx-datagrid .dx-row > td[aria-colindex] .actions-cell,
+.dx-datagrid .actions-cell,
+.dx-datagrid-rowsview .dx-row:hover .dx-command-edit,
+.dx-datagrid-rowsview .dx-row:hover .dx-command-cell,
+.dx-datagrid-rowsview .dx-row:hover .actions-cell,
+.dx-header-row .dx-command-edit,
+.dx-header-row .dx-command-cell {
+
+  background-image: none !important;
 }
 
 /* Style the edit popup to match the app theme */
@@ -653,6 +668,41 @@ tbody tr:hover {
 #customExportBtn .dx-button:hover .dx-icon {
   color: #34d399 !important;
 }
+#customCsvExportBtn {
+  height: 30px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#customCsvExportBtn .dx-button {
+  background: transparent !important;
+  border: 1px solid #10b981 !important;
+  color: #10b981 !important;
+  height: 30px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  font-family: inherit !important;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+  padding: 0 10px !important;
+}
+
+#customCsvExportBtn .dx-button:hover {
+  background: rgba(16, 185, 129, 0.1) !important;
+  color: #34d399 !important;
+  border-color: #34d399 !important;
+}
+
+#customCsvExportBtn .dx-icon {
+  color: #10b981 !important;
+  margin-right: 5px !important;
+}
+
+#customCsvExportBtn .dx-button:hover .dx-icon {
+  color: #34d399 !important;
+}
 #customPdfExportBtn {
   height: 30px;
   display: inline-block;
@@ -736,11 +786,45 @@ tbody tr:hover {
 /* Pager + page-size selector text */
 .dx-pager {
   color: #94a3b8 !important;
+  background: transparent !important;
 }
 
 .dx-pager .dx-page,
 .dx-pager .dx-page-size {
   color: #e5e7eb !important;
+  background: transparent !important;
+}
+
+/* Page-size chips (5 / 10 / 20): plain text when NOT selected (no bg/border/
+   radius/shadow/margin). Only the active/clicked chip gets a solid fill. */
+.dx-pager .dx-page-sizes .dx-page-size {
+  background: transparent !important;
+  color: #94a3b8 !important;
+  border: none !important;
+  border-radius: 0 !important;
+  padding: 4px 10px !important;
+  margin: 0 4px !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  box-shadow: none !important;
+  transition: background 0.15s ease, color 0.15s ease;
+  cursor: pointer !important;
+}
+
+.dx-pager .dx-page-sizes .dx-page-size:hover {
+  color: #e2e8f0 !important;
+  background: rgba(148, 163, 184, 0.08) !important;
+}
+
+/* Active / selected page-size chip — solid fill, no radius/border/glow */
+.dx-pager .dx-page-sizes .dx-page-size.dx-selection,
+.dx-pager .dx-page-sizes .dx-page-size.dx-active,
+.dx-pager .dx-page-sizes .dx-page-size.dx-state-active {
+  background: #4f46e5 !important;
+  color: #fff !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
 }
 
 .dx-pager .dx-page-active {
@@ -771,7 +855,7 @@ tbody tr:hover {
 .dx-datagrid-rowsview .dx-row:hover .actions-cell,
 .dx-datagrid-rowsview .dx-row-alt:hover td,
 .dx-datagrid-rowsview .dx-row-alt:hover .actions-cell {
-  background-color: #303030 !important;
+  background-color: transparent !important;
 }
 
 .actions-cell .dx-link-edit {
@@ -782,8 +866,64 @@ tbody tr:hover {
   color: #f87171 !important;
 }
 
-.dx-datagrid-headers td[aria-label="Action"],
-.dx-datagrid-headers .dx-header-row td:last-child {
-  background-color: #272727 !important;
-  color: #9ca3af !important;
+
+/* ===== Sticky column headers: keep the header row pinned to the top
+   of the viewport while the page (or grid) scrolls vertically. ===== */
+.dx-datagrid .dx-datagrid-headers {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background-color: #1e293b !important;   /* opaque so rows don't show through */
+}
+
+/* Keep the header's bottom border visible above scrolling content */
+.dx-datagrid .dx-datagrid-headers .dx-row > td {
+  border-bottom: 1px solid #334155 !important;
+}
+
+
+/* Pagination: show pointer cursor on all interactive pager controls */
+.dx-datagrid .dx-pager,
+.dx-datagrid .dx-pager .dx-page,
+.dx-datagrid .dx-pager .dx-page-size,
+.dx-datagrid .dx-pager .dx-pager-prev,
+.dx-datagrid .dx-pager .dx-pager-next,
+.dx-datagrid .dx-pager .dx-pager-first,
+.dx-datagrid .dx-pager .dx-pager-last,
+.dx-datagrid .dx-pages .dx-page,
+.dx-datagrid .dx-page-indexes .dx-page {
+  cursor: pointer !important;
+}
+
+/* Page-size chips (5/10/20): guarantee pointer cursor (theme was removed,
+   so DevExtreme's default cursor is lost). Cover every possible class. */
+.dx-datagrid .dx-pager .dx-page-sizes,
+.dx-datagrid .dx-pager .dx-page-sizes .dx-page-size,
+.dx-datagrid .dx-pager .dx-page-size,
+.dx-datagrid .dx-page-sizes,
+.dx-datagrid .dx-page-sizes .dx-page-size,
+.dx-datagrid .dx-pager .dx-page-indexes,
+.dx-datagrid .dx-pager-navigation .dx-button {
+  cursor: pointer !important;
+}
+/* Also force pointer on anything inside the pager that's clickable */
+.dx-datagrid .dx-pager * {
+  cursor: pointer !important;
+}
+
+/* All three export buttons share identical icon sizing (16px) so PDF,
+   Excel and CSV icons line up and render at the same size. */
+#customPdfExportBtn .dx-icon,
+#customExportBtn .dx-icon,
+#customCsvExportBtn .dx-icon,
+#customCsvExportBtn .dx-icon.fa {
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  line-height: 16px !important;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 5px !important;
 }
