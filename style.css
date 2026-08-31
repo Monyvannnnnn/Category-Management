@@ -20,6 +20,7 @@ body {
   border: none;
   box-shadow: none;
   padding: 20px;
+  min-height: 82vh;
 }
 
 /* =========================
@@ -635,6 +636,7 @@ tbody tr:hover {
 
 #customExportBtn {
   height: 30px;
+  min-width: 140px;
   display: inline-block;
   vertical-align: middle;
 }
@@ -670,6 +672,7 @@ tbody tr:hover {
 }
 #customCsvExportBtn {
   height: 30px;
+  min-width: 140px;
   display: inline-block;
   vertical-align: middle;
 }
@@ -703,8 +706,54 @@ tbody tr:hover {
 #customCsvExportBtn .dx-button:hover .dx-icon {
   color: #34d399 !important;
 }
+
+#customFieldChooserBtn {
+  height: 30px;
+  min-width: 140px;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+#customFieldChooserBtn.dx-button {
+  background: transparent !important;
+  border: 1px solid #6366f1 !important;
+  color: #6366f1 !important;
+  height: 30px !important;
+  border-radius: 4px !important;
+  font-size: 13px !important;
+  font-family: inherit !important;
+  transition:
+    background 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+  padding: 0 10px !important;
+}
+
+#customFieldChooserBtn.dx-button .dx-button-text {
+  color: #6366f1 !important;
+}
+
+#customFieldChooserBtn.dx-button:hover {
+  background: rgba(99, 102, 241, 0.1) !important;
+  color: #818cf8 !important;
+  border-color: #818cf8 !important;
+}
+
+#customFieldChooserBtn.dx-button:hover .dx-button-text {
+  color: #818cf8 !important;
+}
+
+#customFieldChooserBtn .dx-icon {
+  color: #6366f1 !important;
+  margin-right: 5px !important;
+}
+
+#customFieldChooserBtn.dx-button:hover .dx-icon {
+  color: #818cf8 !important;
+}
 #customPdfExportBtn {
   height: 30px;
+  min-width: 140px;
   display: inline-block;
   vertical-align: middle;
 }
@@ -726,6 +775,7 @@ tbody tr:hover {
 
 #customPdfExportBtn {
   height: 30px;
+  min-width: 140px;
   display: inline-block;
   vertical-align: middle;
 }
@@ -793,6 +843,16 @@ tbody tr:hover {
 .dx-pager .dx-page-size {
   color: #e5e7eb !important;
   background: transparent !important;
+  margin: 0 !important;
+  padding: 4px 10px !important;
+  border-radius: 0 !important;
+  transition: background 0.18s ease, color 0.18s ease;
+  cursor: pointer !important;
+}
+
+.dx-pager .dx-page:hover {
+  background: rgba(79, 70, 229, 0.25) !important;
+  color: #fff !important;
 }
 
 /* Page-size chips (5 / 10 / 20): plain text when NOT selected (no bg/border/
@@ -802,21 +862,30 @@ tbody tr:hover {
   color: #94a3b8 !important;
   border: none !important;
   border-radius: 0 !important;
-  padding: 4px 10px !important;
-  margin: 0 4px !important;
+  
+  padding: 5px 12px !important;
+  margin: 0 !important;
   font-weight: 600 !important;
   font-size: 13px !important;
+  letter-spacing: 0.3px !important;
   box-shadow: none !important;
-  transition: background 0.15s ease, color 0.15s ease;
+  transition: background 0.22s ease, color 0.22s ease, transform 0.22s ease;
   cursor: pointer !important;
 }
 
-.dx-pager .dx-page-sizes .dx-page-size:hover {
-  color: #e2e8f0 !important;
-  background: rgba(148, 163, 184, 0.08) !important;
+/* First chip (5): left margin only, so the group has a gap from the
+   element to its left while chips stay flush together. */
+.dx-pager .dx-page-sizes .dx-page-size:first-child {
+  margin-left: 8px !important;
 }
 
-/* Active / selected page-size chip — solid fill, no radius/border/glow */
+.dx-pager .dx-page-sizes .dx-page-size:hover {
+  color: #fff !important;
+  background: rgba(79, 70, 229, 0.25) !important;
+}
+
+/* Active / selected page-size chip — solid flat fill, no radius/border/glow,
+   with a subtle pressed feel for a smoother UI. */
 .dx-pager .dx-page-sizes .dx-page-size.dx-selection,
 .dx-pager .dx-page-sizes .dx-page-size.dx-active,
 .dx-pager .dx-page-sizes .dx-page-size.dx-state-active {
@@ -825,11 +894,24 @@ tbody tr:hover {
   border: none !important;
   border-radius: 0 !important;
   box-shadow: none !important;
+  transform: translateY(0);
 }
 
-.dx-pager .dx-page-active {
+.dx-pager .dx-page-sizes .dx-page-size.dx-selection:hover,
+.dx-pager .dx-page-sizes .dx-page-size.dx-active:hover,
+.dx-pager .dx-page-sizes .dx-page-size.dx-state-active:hover {
+  background: #4338ca !important;
+}
+
+/* Active (current) page number in the pager - indigo solid, like the chips */
+.dx-pager .dx-page.dx-selection,
+.dx-pager .dx-page.dx-state-active,
+.dx-pager .dx-page.dx-active {
   color: #fff !important;
-  background: #6366f1 !important;
+  background: #4f46e5 !important;
+  border-radius: 0 !important;
+  padding: 4px 10px !important;
+  font-weight: 600 !important;
 }
 
 /* Links inside grid (edit/delete fallbacks) */
@@ -916,7 +998,8 @@ tbody tr:hover {
 #customPdfExportBtn .dx-icon,
 #customExportBtn .dx-icon,
 #customCsvExportBtn .dx-icon,
-#customCsvExportBtn .dx-icon.fa {
+#customCsvExportBtn .dx-icon.fa,
+#customFieldChooserBtn .dx-icon {
   font-size: 16px !important;
   width: 16px !important;
   height: 16px !important;
@@ -926,4 +1009,253 @@ tbody tr:hover {
   align-items: center;
   justify-content: center;
   margin-right: 5px !important;
+}
+
+/* ===== Custom Export PDF dropdown (red button + dark popup) ===== */
+.export-wrapper {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.export-btn {
+  background: transparent;
+  color: #ef4444;
+  border: 1px solid #ef4444;
+  padding: 0 10px;
+  height: 30px;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.export-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+  border-color: #f87171;
+}
+
+/* DevExtreme icons inside the export button: red, match the red theme */
+.export-btn .dx-icon {
+  color: #ef4444 !important;
+  font-size: 16px !important;
+  width: 16px !important;
+  height: 16px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.export-btn:hover .dx-icon { color: #f87171 !important; }
+.export-btn .dx-icon-chevrondown { font-size: 12px !important; width: 12px !important; height: 12px !important; }
+
+.export-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 220px;
+  background: #2b3444;
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+  padding: 6px;
+  display: none;
+  z-index: 200;
+}
+
+.export-menu.open { display: block; }
+
+/* Custom column chooser (Field Chooser) rows + search */
+.col-chooser .chooser-row { font-weight: 500; }
+.col-chooser .chooser-row .chk {
+  display: inline-block;
+  width: 16px;
+  color: #34d399;
+  font-weight: 700;
+}
+.col-chooser-search {
+  width: calc(100% - 12px);
+  margin: 4px 6px 8px;
+  padding: 6px 8px;
+  background: #111827;
+  border: 1px solid #475569;
+  border-radius: 4px;
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+.col-chooser-search:focus { border-color: #4f46e5; }
+.chooser-empty {
+  padding: 8px 10px;
+  color: #94a3b8;
+  font-size: 13px;
+}
+
+.export-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 4px;
+  color: #e8eaed;
+  font-size: 14px;
+  cursor: pointer;
+  background: none;
+  border: none;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+}
+
+.export-item:hover { background: rgba(255,255,255,0.06); }
+.export-item svg { flex-shrink: 0; opacity: 0.8; }
+
+.orientation-section {
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+.orientation-label {
+  font-size: 11px;
+  color: #9aa3b1;
+  padding: 0 10px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.orientation-toggle {
+  display: flex;
+  gap: 4px;
+  padding: 0 6px;
+}
+
+.orientation-toggle button {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-size: 13px;
+  padding: 7px 0;
+  border-radius: 4px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: transparent;
+  color: #c7cdd6;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.orientation-toggle button.active {
+  background: rgba(66, 133, 244, 0.18);
+  border-color: #4285f4;
+  color: #7fb0ff;
+}
+
+.orientation-toggle button:hover:not(.active) {
+  background: rgba(255,255,255,0.06);
+}
+
+/* ===== Modern Field Chooser (pill UI) ===== */
+.modern-chooser {
+  background: linear-gradient(135deg, #1a1f2b 0%, #000000 100%) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.5) !important;
+  border: 1px solid #3f4a5c;
+}
+.fc-modern {
+  color: #e5e7eb;
+  font-family: inherit;
+}
+.fc-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.fc-icon-wrapper {
+  color: #6366f1; 
+  font-size: 20px;
+}
+.fc-title-area h4 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #f1f5f9;
+  margin: 0 0 4px;
+}
+.fc-title-area p {
+  font-size: 13px;
+  color: #94a3b8;
+  margin: 0;
+}
+.fc-search-wrap {
+  position: relative;
+  margin-bottom: 24px;
+  max-width: 250px;
+}
+.fc-search-wrap i {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #64748b;
+}
+.fc-search-wrap input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #172033;
+  font-size: 14px;
+  color: #e2e8f0;
+  outline: none;
+}
+.fc-search-wrap input:focus {
+  border-color: #6366f1;
+  background: #1e293b;
+}
+.fc-pill-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.fc-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border: 1.5px solid #a652f6;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #caa3ef;
+  background: #302643;
+}
+.fc-pill:hover {
+  background: #3b2f51;
+  color: #ebd1ff;
+  border-color: #b976f7;
+}
+.fc-pill.active {
+  /* Default visible state is gray */
+  border-color: #6b7280;
+  color: #9ca3af;
+  background: #374151;
+}
+.fc-pill.active:hover {
+  background: #4b5563;
+  color: #ffffff;
+  border-color: #9ca3af;
+}
+.fc-empty {
+  color: #64748b;
+  font-size: 14px;
+  padding: 20px;
+  text-align: center;
+  width: 100%;
 }

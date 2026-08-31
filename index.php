@@ -111,9 +111,67 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     <div id="select-resizing"></div>
                 </div>
                 <div class="search-and-export">
-                    <div id="customPdfExportBtn"></div>
+                    <div class="export-wrapper" id="pdfExportWrapper">
+                        <button class="export-btn" id="pdfExportTrigger" type="button">
+                            <span class="dx-icon dx-icon-export"></span>
+                            Export PDF
+                            <span class="dx-icon dx-icon-chevrondown"></span>
+                        </button>
+                        <div class="export-menu" id="pdfExportMenu">
+                            <button class="export-item" data-action="all">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <line x1="8" y1="6" x2="21" y2="6" />
+                                    <line x1="8" y1="12" x2="21" y2="12" />
+                                    <line x1="8" y1="18" x2="21" y2="18" />
+                                    <line x1="3" y1="6" x2="3.01" y2="6" />
+                                    <line x1="3" y1="12" x2="3.01" y2="12" />
+                                    <line x1="3" y1="18" x2="3.01" y2="18" />
+                                </svg>
+                                Export all pages
+                            </button>
+                            <button class="export-item" data-action="current">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                                    stroke-width="2">
+                                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                                    <polyline points="14 2 14 8 20 8" />
+                                </svg>
+                                Export current page
+                            </button>
+                            <div class="orientation-section">
+                                <div class="orientation-label">Orientation</div>
+                                <div class="orientation-toggle">
+                                    <button type="button" data-orientation="portrait" class="active">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="6" y="2" width="12" height="20" rx="2" />
+                                        </svg>
+                                        Portrait
+                                    </button>
+                                    <button type="button" data-orientation="landscape">
+                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                            stroke="currentColor" stroke-width="2">
+                                            <rect x="2" y="6" width="20" height="12" rx="2" />
+                                        </svg>
+                                        Landscape
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="orientation-section">
+                                <div class="orientation-label">Paper</div>
+                                <div class="orientation-toggle">
+                                    <button type="button" data-paper="a4" class="active">A4</button>
+                                    <button type="button" data-paper="a3">A3</button>
+                                    <button type="button" data-paper="a2">A2</button>
+                                    <button type="button" data-paper="a1">A1</button>
+                                    <button type="button" data-paper="letter">Letter</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                     <div id="customExportBtn"></div>
                     <div id="customCsvExportBtn"></div>
+                    <div id="customFieldChooserBtn"></div>
                     <div class="search-wrapper">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchInput" placeholder="Search...">
@@ -167,6 +225,122 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     $(function() {
         const resizingModes = ['widget', 'nextColumn'];
 
+        // Modern column show/hide Field Chooser with icons and pills
+        function openColumnChooser() {
+            var grid = $("#gridContainer").dxDataGrid("instance");
+            if (!grid) {
+                alert("Grid not ready yet. Try again in a moment.");
+                return;
+            }
+            var cols = (grid.option("columns") || []).filter(function(c) {
+                return c && (c.name || c.dataField) &&
+                    c.type !== "buttons" && c.dataField !== "action" &&
+                    c.caption !== "Action";
+            });
+            var $menu = $("#colChooserMenu");
+            if (!$menu.length) {
+                $menu = $('<div class="export-menu col-chooser modern-chooser" id="colChooserMenu"></div>')
+                    .appendTo("body");
+            }
+            $menu.html(
+                '<div class="fc-modern">' +
+                '  <div class="fc-header">' +
+                '    <div class="fc-icon-wrapper"><i class="fa-solid fa-layer-group"></i></div>' +
+                '    <div class="fc-title-area">' +
+                '      <h4>Field Chooser</h4>' +
+
+                '    </div>' +
+                '  </div>' +
+                '  <div class="fc-search-wrap">' +
+                '    <i class="fa-solid fa-search"></i>' +
+                '    <input type="text" id="colChooserSearch" placeholder="Search">' +
+                '  </div>' +
+                '  <div id="colChooserList" class="fc-pill-container"></div>' +
+                '</div>'
+            );
+            var $list = $menu.find("#colChooserList");
+
+            function render() {
+                var q = ($menu.find("#colChooserSearch").val() || "").toLowerCase().trim();
+                var html = "";
+                cols.forEach(function(c) {
+                    var id = c.name || c.dataField;
+                    var label = c.caption || id;
+                    if (q && label.toLowerCase().indexOf(q) === -1) return;
+                    var vis = grid.columnOption(id, "visible");
+                    if (vis === undefined) vis = true;
+
+                    var icon = "fa-hashtag";
+                    var lowerId = id.toLowerCase();
+                    var lowerLabel = label.toLowerCase();
+
+                    if (lowerId.indexOf("code") !== -1) {
+                        icon = "fa-barcode";
+                    } else if (lowerId.indexOf("name") !== -1) {
+                        icon = "fa-layer-group";
+                    } else if (lowerId.indexOf("created") !== -1 || lowerLabel.indexOf("created") !== -
+                        1) {
+                        icon = (lowerId.indexOf("time") !== -1 || lowerLabel.indexOf("time") !== -1) ?
+                            "fa-clock" : "fa-calendar-plus";
+                    } else if (lowerId.indexOf("last") !== -1 || lowerId.indexOf("update") !== -1 ||
+                        lowerLabel.indexOf("last") !== -1) {
+                        icon = (lowerId.indexOf("time") !== -1 || lowerLabel.indexOf("time") !== -1) ?
+                            "fa-history" : "fa-calendar-check";
+                    } else if (lowerId.indexOf("date") !== -1 || lowerLabel.indexOf("date") !== -1) {
+                        icon = "fa-calendar-day";
+                    } else if (lowerId.indexOf("time") !== -1 || lowerLabel.indexOf("time") !== -1) {
+                        icon = "fa-clock-rotate-left";
+                    }
+
+                    var stateClass = vis ? "active" : "";
+
+                    html += '<div class="fc-pill ' + stateClass + '" data-id="' + id + '">' +
+                        '<i class="fa-solid ' + icon + '"></i>' +
+                        '<span>' + label + '</span>' +
+                        '</div>';
+                });
+                if (!html) html = '<div class="fc-empty">No columns match.</div>';
+                $list.html(html);
+            }
+
+            render();
+
+            $menu.addClass("open").css({
+                position: "fixed",
+                top: "100px",
+                left: "50%",
+                transform: "translateX(-50%)",
+                "max-height": "80vh",
+                "overflow-y": "auto",
+                display: "block",
+                width: "800px",
+                /* Wider for the pills to flow */
+                padding: "24px"
+            });
+
+            $menu.off("click").on("click", function(e) {
+                e.stopPropagation();
+            });
+            $menu.on("input", "#colChooserSearch", function() {
+                render();
+            });
+            $menu.on("click", ".fc-pill", function() {
+                var id = $(this).data("id");
+                var isVis = $(this).hasClass("active");
+                grid.columnOption(id, "visible", !isVis);
+                $(this).toggleClass("active", !isVis);
+            });
+
+            setTimeout(function() {
+                $(document).one("click", function() {
+                    $menu.removeClass("open").hide();
+                });
+                setTimeout(function() {
+                    $menu.find("#colChooserSearch").trigger("focus");
+                }, 50);
+            }, 0);
+        }
+
         // Clear any STALE saved grid state (old "all rows" view) from a previous
         // stateStoring session, so it can never re-apply after the data loads.
         try {
@@ -180,6 +354,11 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             columnResizingMode: localStorage.getItem("categoryGridResizeMode") || "widget",
             columnFixing: {
                 enabled: true
+            },
+            // headerFilter disabled so no funnel icons show on column headers
+            grouping: {
+                contextMenuEnabled: true,
+                autoExpandAll: false
             },
             // Fixed height so the GRID scrolls internally instead of the whole page.
             // Height is computed in JS (fitGridHeight) so the pager is always
@@ -264,8 +443,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     name: "category_code",
                     dataField: "category_code",
                     caption: "Category Code",
-                    fixed: true,
-                    fixedPosition: "left",
                     minWidth: 100,
                     width: 260,
                     maxWidth: 300,
@@ -546,6 +723,34 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     $("#searchInput").trigger("input");
                 });
             },
+            // ===== Field Chooser (show / hide columns) =====
+            columnChooser: {
+                enabled: true,
+                mode: "select", // clickable checkboxes to toggle column visibility
+                title: "Field Chooser",
+                height: 380,
+                width: 280,
+                emptyPanelText: "Drag a column here to hide it",
+                search: {
+                    enabled: true
+                }
+            },
+            onToolbarPreparing: function(e) {
+                // Add a "Columns" button to the grid toolbar that opens the chooser.
+                e.toolbarOptions.items.push({
+                    widget: "dxButton",
+                    location: "after",
+                    locateInMenu: "never",
+                    options: {
+                        icon: "columnchooser",
+                        text: "Columns",
+                        hint: "Show / hide columns",
+                        onClick: function() {
+                            openColumnChooser();
+                        }
+                    }
+                });
+            },
             onContentReady: function(e) {
                 // Force 5 rows ONLY on the very first load (so refresh defaults to 5).
                 // Do NOT re-force on later renders, or clicking 10/20 would snap back to 5.
@@ -681,26 +886,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             }
         });
 
-        // Compute the grid height so it fits the viewport with the pager visible,
-        // leaving the page itself non-scrolling. Called on load and on resize.
         function fitGridHeight() {
             var wrapper = document.querySelector('.table-wrapper');
             if (!wrapper) return;
             var rect = wrapper.getBoundingClientRect();
-            var available = window.innerHeight - rect.top - 24; // 24px bottom margin
-            if (available < 200) available = 200;
+            var available = window.innerHeight - rect.top - 12; // 12px bottom margin
+            if (available < 520) available = 520; // taller minimum (~15 rows)
             var grid = $("#gridContainer").dxDataGrid("instance");
             if (!grid) return;
-            // Measure the grid's natural (content) height, then decide:
-            // - if content fits the available space -> height "auto" (no empty gap)
-            // - if content is taller -> cap at available px (grid scrolls internally)
-            grid.option("height", "auto");
-            var natural = grid.$element().outerHeight();
-            if (natural <= available) {
-                grid.option("height", "auto"); // fits the 5 rows snugly
-            } else {
-                grid.option("height", available); // many rows -> internal scroll
-            }
+
+            grid.option("height", available);
         }
         $(window).on("resize", fitGridHeight);
         setTimeout(fitGridHeight, 300);
@@ -821,8 +1016,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             });
         });
 
+        // PDF page orientation: "p" = Portrait (default, highlighted in menu),
+        // "l" = Landscape. Set by the Orientation toggle in the PDF dropdown.
+        var pdfOrientation = "p";
+        // PDF paper size: "a4" (default), "a3", "letter".
+        var pdfPaper = "a4";
+
         async function exportPDF(pageOnly) {
-            const $btn = $("#customPdfExportBtn");
+            const $btn = $("#pdfExportTrigger");
             let overlay = null;
             try {
                 $btn.prop("disabled", true).css("opacity", "0.6");
@@ -928,7 +1129,15 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 const {
                     jsPDF
                 } = window.jspdf;
-                const pdf = new jsPDF("l", "pt", "a4");
+                // Read the ACTIVE paper + orientation straight from the menu so the
+                // latest selection is always used (not a stale closure value).
+                var $menu = document.getElementById("pdfExportMenu");
+                var $actPaper = $menu ? $menu.querySelector("[data-paper].active") : null;
+                var $actOrient = $menu ? $menu.querySelector("[data-orientation].active") : null;
+                pdfPaper = $actPaper ? $actPaper.dataset.paper : "a4";
+                pdfOrientation = $actOrient ? ($actOrient.dataset.orientation === "landscape" ? "l" : "p") :
+                    "p";
+                const pdf = new jsPDF(pdfOrientation, "pt", pdfPaper);
                 const pageW = pdf.internal.pageSize.getWidth();
                 const pageH = pdf.internal.pageSize.getHeight();
                 const margin = 20;
@@ -1047,8 +1256,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
                 if (pageOnly) {
                     rows = gridInstance.getVisibleRows()
-                        .filter(function(r) { return r.rowType === "data"; })
-                        .map(function(r) { return r.data; });
+                        .filter(function(r) {
+                            return r.rowType === "data";
+                        })
+                        .map(function(r) {
+                            return r.data;
+                        });
                 } else {
                     rows = gridInstance.getDataSource().store().load();
                 }
@@ -1077,29 +1290,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }).join(",");
                     var body = data.map(function(row) {
                         return cols.map(function(c) {
-                            var val = row[c.dataField];
-                            // Compact date/time for CSV so it fits Excel's default
-                            // column width AND shows the time (no #### overflow).
-                            if ((c.dataField === "created_at" || c.dataField === "lastupdate") && val) {
-                                var d = new Date(val);
-                                if (!isNaN(d.getTime())) {
-                                    var p = function(n) { return String(n).padStart(2, "0"); };
-                                    val = p(d.getDate()) + "/" + p(d.getMonth() + 1) + "/" + d.getFullYear() +
-                                        " " + p(d.getHours()) + ":" + p(d.getMinutes()) + ":" + p(d.getSeconds());
-                                }
-                            }
-                            // Force Excel to treat ONLY date/time columns as TEXT
-                            // (leading single-quote, hidden by Excel) so they show
-                            // fully with no ####. ID / code / name stay normal.
-                            var dateTimeFields = [
-                                "created_at", "lastupdate", "created_date", "created_time",
-                                "formatted_date", "formatted_time", "formatted_date_time",
-                                "last_date", "last_time", "date_created", "last_updated", "time_ago"
-                            ];
-                            if (dateTimeFields.indexOf(c.dataField) !== -1 && val !== "" && val != null) {
-                                return "'" + escape(val);
-                            }
-                            return escape(val);
+                            return escape(row[c.dataField]);
                         }).join(",");
                     }).join("\n");
                     var csv = "﻿" + header + "\n" + body;
@@ -1111,7 +1302,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     var fileName = "Categories_" + yyyy + "-" + mm + "-" + dd +
                         (pageOnly ? "_Page" : "") + ".csv";
 
-                    var blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                    var blob = new Blob([csv], {
+                        type: "text/csv;charset=utf-8;"
+                    });
                     if (navigator.msSaveOrOpenBlob) {
                         navigator.msSaveOrOpenBlob(blob, fileName);
                     } else {
@@ -1138,29 +1331,53 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             }
         }
         // Dedicated PDF Export DropDownButton (matches Export Excel style)
-        $("#customPdfExportBtn").dxDropDownButton({
-            text: "Export PDF",
-            icon: "export",
-            items: [{
-                    id: "all",
-                    text: "Export All Pages",
-                    icon: "bulletlist"
-                },
-                {
-                    id: "current",
-                    text: "Export Current Page",
-                    icon: "export"
-                }
-            ],
-            displayExpr: "text",
-            keyExpr: "id",
-            dropDownOptions: {
-                width: 200
-            },
-            onItemClick: function(e) {
-                exportPDF(e.itemData.id === "current");
-            }
-        });
+        // ===== Custom Export PDF dropdown (plain HTML + CSS, no DevExtreme) =====
+        (function() {
+            var trigger = document.getElementById("pdfExportTrigger");
+            var menu = document.getElementById("pdfExportMenu");
+            if (!trigger || !menu) return;
+
+            trigger.addEventListener("click", function(e) {
+                e.stopPropagation();
+                menu.classList.toggle("open");
+            });
+            document.addEventListener("click", function() {
+                menu.classList.remove("open");
+            });
+            menu.addEventListener("click", function(e) {
+                e.stopPropagation();
+            });
+
+            // Orientation toggle
+            menu.querySelectorAll("[data-orientation]").forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    pdfOrientation = (btn.dataset.orientation === "landscape") ? "l" : "p";
+                    menu.querySelectorAll("[data-orientation]").forEach(function(b) {
+                        b.classList.toggle("active", b === btn);
+                    });
+                });
+            });
+
+            // Paper size toggle (A4 / A3 / Letter)
+            menu.querySelectorAll("[data-paper]").forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    pdfPaper = btn.dataset.paper; // "a4" | "a3" | "letter"
+                    menu.querySelectorAll("[data-paper]").forEach(function(b) {
+                        b.classList.toggle("active", b === btn);
+                    });
+                });
+            });
+
+            // Export action
+            menu.querySelectorAll("[data-action]").forEach(function(btn) {
+                btn.addEventListener("click", function() {
+                    var scope = btn.dataset.action; // "all" | "current"
+                    menu.classList.remove("open");
+                    exportPDF(scope === "current");
+                });
+            });
+        })();
+        // Initialize custom Export Excel DropDownButton
         // Initialize custom Export Excel DropDownButton
         $("#customExportBtn").dxDropDownButton({
             text: "Export Excel",
@@ -1223,6 +1440,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 var grid = $("#gridContainer").dxDataGrid("instance");
                 grid.option('columnResizingMode', data.value);
             },
+        });
+        // Initialize custom Field Chooser Button
+        $("#customFieldChooserBtn").dxButton({
+            text: "Field Chooser",
+            icon: "columnchooser",
+            onClick: function() {
+                openColumnChooser();
+            }
         });
     });
     </script>
