@@ -13,35 +13,35 @@ if ($_SERVER["REQUEST_METHOD"] !== "POST") {
 
 if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
     http_response_code(400);
-    echo json_encode(["message" => "Invalid or missing Category ID."]);
+    echo json_encode(["message" => "Invalid or missing Product ID."]);
     exit;
 }
 
 $id = (int)$_GET["id"];
 
-// Fetch category info before deletion for notification
-$cat_info = null;
-$sel_stmt = mysqli_prepare($conn, "SELECT category_code, category_name FROM category WHERE id = ?");
+// Fetch product info before deletion for notification
+$prod_info = null;
+$sel_stmt = mysqli_prepare($conn, "SELECT product_code, product_name FROM product WHERE id = ?");
 if ($sel_stmt) {
     mysqli_stmt_bind_param($sel_stmt, "i", $id);
     mysqli_stmt_execute($sel_stmt);
     $res = mysqli_stmt_get_result($sel_stmt);
-    $cat_info = mysqli_fetch_assoc($res);
+    $prod_info = mysqli_fetch_assoc($res);
     mysqli_stmt_close($sel_stmt);
 }
 
-$stmt = mysqli_prepare($conn, "DELETE FROM category WHERE id = ?");
+$stmt = mysqli_prepare($conn, "DELETE FROM product WHERE id = ?");
 if ($stmt) {
     mysqli_stmt_bind_param($stmt, "i", $id);
     if (mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
 
-        $catCode = $cat_info['category_code'] ?? "N/A";
-        $catName = $cat_info['category_name'] ?? "N/A";
-        $msg = "<b>🗑️ Category Deleted</b>\n"
+        $prodCode = $prod_info['product_code'] ?? "N/A";
+        $prodName = $prod_info['product_name'] ?? "N/A";
+        $msg = "<b>🗑️ Product Deleted</b>\n"
              . "<b>ID:</b> #{$id}\n"
-             . "<b>Code:</b> " . htmlspecialchars($catCode) . "\n"
-             . "<b>Name:</b> " . htmlspecialchars($catName);
+             . "<b>Code:</b> " . htmlspecialchars($prodCode) . "\n"
+             . "<b>Name:</b> " . htmlspecialchars($prodName);
         if (isAutoTelegramEnabled($conn)) {
             sendTelegramNotification($msg);
         }

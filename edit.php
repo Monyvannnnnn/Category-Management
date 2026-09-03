@@ -1,6 +1,7 @@
 <?php
 
 require_once "database.php";
+require_once "notify_bot.php";
 
 header("Content-Type: application/json");
 
@@ -73,6 +74,14 @@ if ($stmt) {
     mysqli_stmt_bind_param($stmt, "ssi", $categoryCode, $categoryName, $id);
     if (mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
+
+        $msg = "<b>✏️ Category Updated</b> (ID: #{$id})\n"
+             . "<b>Code:</b> " . htmlspecialchars($categoryCode) . "\n"
+             . "<b>Name:</b> " . htmlspecialchars($categoryName);
+        if (isAutoTelegramEnabled($conn)) {
+            sendTelegramNotification($msg);
+        }
+
         echo json_encode(["success" => true]);
         exit;
     } else {

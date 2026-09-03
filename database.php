@@ -65,3 +65,15 @@ if ($index_check && mysqli_num_rows($index_check) == 0) {
     // 2. Enforce unique constraint
     mysqli_query($conn, "ALTER TABLE category ADD UNIQUE KEY `category_name` (`category_name`)");
 }
+
+// ----------------------------------------------------
+// AUTO-INITIALIZE SYSTEM SETTINGS TABLE
+// ----------------------------------------------------
+$create_settings_sql = "CREATE TABLE IF NOT EXISTS `system_settings` (
+  `setting_key` varchar(50) NOT NULL,
+  `setting_value` varchar(255) NOT NULL,
+  PRIMARY KEY (`setting_key`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+
+mysqli_query($conn, $create_settings_sql);
+mysqli_query($conn, "INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('auto_telegram_notify', '1')");

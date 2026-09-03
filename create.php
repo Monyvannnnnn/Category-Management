@@ -1,6 +1,7 @@
 <?php
 
 require_once "database.php";
+require_once "notify_bot.php";
 
 header("Content-Type: application/json");
 
@@ -48,6 +49,14 @@ if ($stmt) {
         $row = mysqli_stmt_get_result($sel);
         $data = mysqli_fetch_assoc($row);
         mysqli_stmt_close($sel);
+
+        $msg = "<b>🏷️ New Category Created</b>\n"
+             . "<b>Code:</b> " . htmlspecialchars($category_code) . "\n"
+             . "<b>Name:</b> " . htmlspecialchars($category_name);
+        if (isAutoTelegramEnabled($conn)) {
+            sendTelegramNotification($msg);
+        }
+
         echo json_encode($data);
         exit;
     } else {

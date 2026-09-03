@@ -9,14 +9,29 @@ header("Expires: 0");
 
 require_once "database.php";
 
-// API Endpoint to read category list
+// API Endpoint to read product list
 if (isset($_GET["action"]) && $_GET["action"] === "read") {
     header("Content-Type: application/json");
     // Prevent caching so newly added/edited/deleted rows always show up live
     header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
     header("Pragma: no-cache");
     header("Expires: 0");
-    $sql = "SELECT * FROM category ORDER BY id DESC";
+    $sql = "SELECT product.*, category.category_name FROM product LEFT JOIN category ON product.category_id = category.id ORDER BY product.id DESC";
+    $result = mysqli_query($conn, $sql);
+    $products = [];
+    if ($result) {
+        while ($row = mysqli_fetch_assoc($result)) {
+            $products[] = $row;
+        }
+    }
+    echo json_encode($products);
+    exit;
+}
+
+// API Endpoint to read categories for lookup
+if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
+    header("Content-Type: application/json");
+    $sql = "SELECT id, category_name FROM category ORDER BY category_name ASC";
     $result = mysqli_query($conn, $sql);
     $categories = [];
     if ($result) {
@@ -39,7 +54,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-    <title>Category Management</title>
+    <title>Product Management</title>
 
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
@@ -86,21 +101,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         <div class="category-card">
             <div class="header">
                 <h1>
-                    <i class="fa-solid fa-layer-group" style="font-size: 22px;"></i>
-                    Categories
+                    <i class="fa-solid fa-boxes-stacked" style="font-size: 22px;"></i>
+                    Products
                 </h1>
                 <div style="display: flex; gap: 10px;">
                     <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn">
                         <i class="fa-brands fa-telegram"></i>
                         Manual Push
                     </button>
-                    <button type="button" class="add-btn" onclick="window.location.href='products.php'">
-                        <i class="fa-solid fa-box"></i>
-                        Manage Products
+                    <button type="button" class="add-btn" onclick="window.location.href='index.php'">
+                        <i class="fa-solid fa-list"></i>
+                        Manage Categories
                     </button>
                     <button type="button" class="add-btn" id="openAddModalBtn">
                         <i class="fa-solid fa-plus"></i>
-                        Add Category
+                        Add Product
                     </button>
                 </div>
             </div>
@@ -196,15 +211,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     </div>
                 </div>
             </div>
+
+
             <!-- =========================
              TABLE (DevExtreme DataGrid Container)
         ========================== -->
+
             <div class="table-wrapper">
+
                 <div id="gridContainer"></div>
+
             </div>
+
         </div>
+
     </div>
-    
+
     <!-- Popup container for Advanced Search -->
     <div id="advancedSearchPopup"></div>
 
@@ -406,7 +428,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 load: function() {
                     return new Promise(function(resolve, reject) {
                         $.ajax({
-                                url: "index.php?action=read",
+                                url: "products.php?action=read",
                                 method: "GET",
                                 cache: false,
                                 dataType: "json"
@@ -415,18 +437,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 resolve(data);
                             })
                             .fail(function() {
-                                reject(new Error("Failed to load categories."));
+                                reject(new Error("Failed to load products."));
                             });
                     });
                 },
                 insert: function(values) {
                     return new Promise(function(resolve, reject) {
-                        $.post("create.php", values)
+                        $.post("create_product.php", values)
                             .done(function(data) {
                                 resolve(data);
                             })
                             .fail(function(xhr) {
-                                var msg = "Failed to add category.";
+                                var msg = "Failed to add product.";
                                 if (xhr.responseJSON && xhr.responseJSON
                                     .message) {
                                     msg = xhr.responseJSON.message;
@@ -437,12 +459,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 },
                 update: function(key, values) {
                     return new Promise(function(resolve, reject) {
-                        $.post("edit.php?id=" + key, values)
+                        $.post("edit_product.php?id=" + key, values)
                             .done(function(data) {
                                 resolve(data);
                             })
                             .fail(function(xhr) {
-                                var msg = "Failed to update category.";
+                                var msg = "Failed to update product.";
                                 if (xhr.responseJSON && xhr.responseJSON
                                     .message) {
                                     msg = xhr.responseJSON.message;
@@ -453,12 +475,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 },
                 remove: function(key) {
                     return new Promise(function(resolve, reject) {
-                        $.post("delete.php?id=" + key)
+                        $.post("delete_product.php?id=" + key)
                             .done(function(data) {
                                 resolve(data);
                             })
                             .fail(function(xhr) {
-                                var msg = "Failed to delete category.";
+                                var msg = "Failed to delete product.";
                                 if (xhr.responseJSON && xhr.responseJSON
                                     .message) {
                                     msg = xhr.responseJSON.message;
@@ -469,27 +491,85 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 }
             }),
             columns: [{
-                    name: "category_code",
-                    dataField: "category_code",
-                    caption: "Category Code",
+                    name: "product_code",
+                    dataField: "product_code",
+                    caption: "Product Code",
                     minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    width: 150,
                     validationRules: [{
                         type: "required",
-                        message: "Category Code is required"
+                        message: "Product Code is required"
+                    }],
+                    cellTemplate: function(container, options) {
+                        if (!options.value) return;
+                        const colors = ['badge-purple', 'badge-green', 'badge-orange', 'badge-pink', 'badge-blue'];
+                        let hash = 0;
+                        for (let i = 0; i < options.value.length; i++) {
+                            hash = options.value.charCodeAt(i) + ((hash << 5) - hash);
+                        }
+                        const colorClass = colors[Math.abs(hash) % colors.length];
+                        $("<span>")
+                            .addClass("category-badge " + colorClass)
+                            .text(options.value)
+                            .appendTo(container);
+                    }
+                },
+                {
+                    name: "product_name",
+                    dataField: "product_name",
+                    caption: "Product Name",
+                    minWidth: 150,
+                    width: 200,
+                    validationRules: [{
+                        type: "required",
+                        message: "Product Name is required"
                     }]
                 },
                 {
-                    name: "category_name",
-                    dataField: "category_name",
-                    caption: "Category Name",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    name: "category_id",
+                    dataField: "category_id",
+                    caption: "Category",
+                    minWidth: 150,
+                    width: 200,
+                    lookup: {
+                        dataSource: new DevExpress.data.CustomStore({
+                            key: "id",
+                            loadMode: "raw",
+                            load: function() {
+                                return $.getJSON("products.php?action=get_categories");
+                            }
+                        }),
+                        valueExpr: "id",
+                        displayExpr: "category_name"
+                    },
                     validationRules: [{
                         type: "required",
-                        message: "Category Name is required"
+                        message: "Category is required"
+                    }]
+                },
+                {
+                    name: "price",
+                    dataField: "price",
+                    caption: "Price",
+                    dataType: "number",
+                    format: "$ #,##0.00",
+                    minWidth: 100,
+                    width: 120,
+                    validationRules: [{
+                        type: "required",
+                        message: "Price is required"
+                    }]
+                },
+                {
+                    name: "quantity",
+                    dataField: "quantity",
+                    caption: "Quantity",
+                    dataType: "number",
+                    minWidth: 100,
+                    width: 120,
+                    validationRules: [{
+                        type: "required",
+                        message: "Quantity is required"
                     }]
                 },
                 {
@@ -656,10 +736,11 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     allowReordering: false,
                     cellTemplate: function(container, options) {
                         container.addClass("actions-cell");
+
                         var telegramSvg = '<i class="fa-brands fa-telegram" style="color: #0088cc; font-size: 16px; vertical-align: middle;"></i>';
                         var $telegramBtn = $("<a>")
                             .addClass("dx-link dx-link-telegram")
-                            .attr("title", "Push Category to Telegram")
+                            .attr("title", "Push Product to Telegram")
                             .attr("style", "margin: 0 5px; cursor: pointer; display: inline-flex; align-items: center;")
                             .append(telegramSvg)
                             .on("click", function(e) {
@@ -672,18 +753,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                     url: "manual_push.php",
                                     type: "POST",
                                     dataType: "json",
-                                    data: { action: "push_single_category", id: rowData.id },
+                                    data: { action: "push_single_product", id: rowData.id },
                                     success: function(res) {
                                         $btn.css("opacity", "1");
                                         if (res && res.ok) {
-                                            DevExpress.ui.notify("Category '" + (rowData.category_name || rowData.id) + "' pushed to Telegram!", "success", 3000);
+                                            DevExpress.ui.notify("Product '" + (rowData.product_name || rowData.id) + "' pushed to Telegram!", "success", 3000);
                                         } else {
-                                            DevExpress.ui.notify(res.description || "Failed to push category.", "error", 4000);
+                                            DevExpress.ui.notify(res.description || "Failed to push product.", "error", 4000);
                                         }
                                     },
                                     error: function() {
                                         $btn.css("opacity", "1");
-                                        DevExpress.ui.notify("Network error pushing category.", "error", 4000);
+                                        DevExpress.ui.notify("Network error pushing product.", "error", 4000);
                                     }
                                 });
                             });
@@ -698,6 +779,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 options.component.editRow(options.rowIndex);
                                 e.preventDefault();
                             });
+
                         var deleteSvg =
                             '<svg id="Capa_1" enable-background="new 0 0 440 440" height="18" viewBox="0 0 440 440" width="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><g><g id="delete_1_"><path d="m412 88h-384c-6.627 0-12-5.373-12-12s5.373-12 12-12h384c6.627 0 12 5.373 12 12s-5.373 12-12 12z" fill="currentColor" /><path d="m316 88h-192c-3.693-.012-7.175-1.723-9.44-4.64-2.234-2.91-3.055-6.663-2.24-10.24l9.92-39.84c4.969-19.547 22.551-33.244 42.72-33.28h110.08c20.169.036 37.751 13.733 42.72 33.28l9.92 39.84c.815 3.577-.006 7.33-2.24 10.24-2.265 2.917-5.747 4.628-9.44 4.64zm-176-24h160l-5.6-24.8c-1.882-9.226-9.945-15.889-19.36-16h-110.08c-9.415.111-17.478 6.774-19.36 16z" fill="currentColor" /><path d="m286.4 440h-132.8c-46.24 0-84.8-29.12-89.76-67.68l-16-231.52c-.442-6.627 4.573-12.358 11.2-12.8s12.358 4.573 12.8 11.2l16 230.72c3.36 25.92 32 46.08 65.92 46.08h132.8c34.24 0 62.56-20.16 65.92-46.88l16-229.92c.442-6.627 6.173-11.642 12.8-11.2s11.642 6.173 11.2 12.8l-16 230.72c-5.28 39.36-44.48 68.48-90.08 68.48z" fill="currentColor" /></g></g></svg>';
                         var $deleteBtn = $("<a>")
@@ -725,10 +807,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 allowDeleting: true,
                 useIcons: true,
                 popup: {
-                    title: "Category Details",
+                    title: "Product Details",
                     showTitle: true,
                     width: 500,
-                    height: 350,
+                    height: 450,
                     wrapperAttr: {
                         class: "dark-popup"
                     }
@@ -736,17 +818,39 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 form: {
                     colCount: 1,
                     items: [{
-                            dataField: "category_code",
+                            dataField: "product_code",
                             editorType: "dxTextBox",
                             editorOptions: {
-                                placeholder: "Enter category code"
+                                placeholder: "Enter product code"
                             }
                         },
                         {
-                            dataField: "category_name",
+                            dataField: "product_name",
                             editorType: "dxTextBox",
                             editorOptions: {
-                                placeholder: "Enter category name"
+                                placeholder: "Enter product name"
+                            }
+                        },
+                        {
+                            dataField: "category_id",
+                            editorType: "dxSelectBox",
+                            editorOptions: {
+                                placeholder: "Select category"
+                            }
+                        },
+                        {
+                            dataField: "price",
+                            editorType: "dxNumberBox",
+                            editorOptions: {
+                                placeholder: "Enter price"
+                            }
+                        },
+                        {
+                            dataField: "quantity",
+                            editorType: "dxNumberBox",
+                            editorOptions: {
+                                placeholder: "Enter quantity",
+                                format: "#"
                             }
                         }
                     ]
@@ -841,6 +945,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             },
             onPageSizeChanged: function(e) {
                 // Guaranteed handler for page-size selection (5/10/20).
+                // Apply the chosen size, reset to page 1 (so you don't land on an
+                // out-of-range page when coming from a later page), and refit height.
                 var grid = e.component;
                 grid.option("paging.pageSize", e.pageSize);
                 grid.option("paging.pageIndex", 0); // 0-based: go back to first page
@@ -849,6 +955,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             onContextMenuPreparing: function(e) {
                 if (e.target === "header") {
                     var column = e.column;
+
                     if (!e.items) e.items = [];
 
                     // Clear default context menu items to avoid duplicates
@@ -856,9 +963,11 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         return !item.text || (item.text !== "Fix" && item.text !==
                             "Unfix" && item.text !== "Sticky");
                     });
+
                     // Allow fixing options if column exists and allowFixing is not false
                     if (column && column.allowFixing !== false) {
                         var colIdentifier = column.index !== undefined ? column.index : column.name;
+
                         // Direct "Fix Left" option
                         e.items.push({
                             text: "Freeze Left",
@@ -871,6 +980,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 });
                             }
                         });
+
                         // Direct "Fix Right" option
                         e.items.push({
                             text: "Freeze Right",
@@ -1136,6 +1246,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         if ((col.dataField === "created_at" || col.dataField ===
                                 "lastupdate") && val) {
                             val = formatDateTime(new Date(val));
+                        }
+                        if (col.dataField === "price" && val !== "") {
+                            val = "$" + parseFloat(val).toFixed(2);
                         }
                         tbody += "<td>" + String(val)
                             .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g,
@@ -1477,12 +1590,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             }
         });
 
+        // Initialize custom Advanced Search Button
+        $("#customAdvancedSearchBtn").dxButton({
+            text: "Search All Records",
+            icon: "fa fa-sliders",
+            onClick: function() {
+                advancedSearchPopup.show();
+            }
+        });
+
         // ==========================================
         // Advanced Search (Search All Records) Logic
         // ==========================================
         var advancedSearchPopup = $("#advancedSearchPopup").dxPopup({
             title: "Search All Records",
-            width: 700,
+            width: 900,
             height: "auto",
             showTitle: true,
             visible: false,
@@ -1515,20 +1637,57 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 };
 
                 $formContainer.dxForm({
-                    colCount: 2,
+                    colCount: 4,
                     labelLocation: "top",
                     items: [
                         {
-                            dataField: "category_code",
+                            dataField: "product_code",
                             editorType: "dxTextBox",
-                            label: { template: createLabel("fa-solid fa-barcode", "Category Code") },
+                            label: { template: createLabel("fa-solid fa-barcode", "Product Code") },
                             editorOptions: { placeholder: "Enter code...", stylingMode: "outlined" }
                         },
                         {
-                            dataField: "category_name",
+                            dataField: "product_name",
                             editorType: "dxTextBox",
-                            label: { template: createLabel("fa-solid fa-layer-group", "Category Name") },
+                            label: { template: createLabel("fa-solid fa-box", "Product Name") },
                             editorOptions: { placeholder: "Enter name...", stylingMode: "outlined" }
+                        },
+                        {
+                            dataField: "category_id",
+                            editorType: "dxSelectBox",
+                            label: { template: createLabel("fa-solid fa-layer-group", "Category") },
+                            editorOptions: {
+                                dataSource: new DevExpress.data.CustomStore({
+                                    key: "id",
+                                    loadMode: "raw",
+                                    load: function() {
+                                        return $.getJSON("products.php?action=get_categories");
+                                    }
+                                }),
+                                valueExpr: "id",
+                                displayExpr: "category_name",
+                                placeholder: "Select category...",
+                                showClearButton: true,
+                                stylingMode: "outlined"
+                            }
+                        },
+                        {
+                            dataField: "price_min",
+                            editorType: "dxNumberBox",
+                            label: { template: createLabel("fa-solid fa-hand-holding-dollar", "Min Price") },
+                            editorOptions: { placeholder: "0.00", stylingMode: "outlined", format: "$ #,##0.00" }
+                        },
+                        {
+                            dataField: "price_max",
+                            editorType: "dxNumberBox",
+                            label: { template: createLabel("fa-solid fa-sack-dollar", "Max Price") },
+                            editorOptions: { placeholder: "0.00", stylingMode: "outlined", format: "$ #,##0.00" }
+                        },
+                        {
+                            dataField: "quantity_min",
+                            editorType: "dxNumberBox",
+                            label: { template: createLabel("fa-solid fa-cubes", "Min Qty") },
+                            editorOptions: { placeholder: "0", stylingMode: "outlined" }
                         },
                         {
                             dataField: "date_from",
@@ -1565,15 +1724,28 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     icon: "search",
                     type: "success",
                     stylingMode: "contained",
+                    stylingMode: "contained",
                     onClick: function() {
                         var formData = $("#advancedSearchForm").dxForm("instance").option("formData");
                         var filterExpr = [];
                         
-                        if (formData.category_code) {
-                            filterExpr.push(["category_code", "contains", formData.category_code]);
+                        if (formData.product_code) {
+                            filterExpr.push(["product_code", "contains", formData.product_code]);
                         }
-                        if (formData.category_name) {
-                            filterExpr.push(["category_name", "contains", formData.category_name]);
+                        if (formData.product_name) {
+                            filterExpr.push(["product_name", "contains", formData.product_name]);
+                        }
+                        if (formData.category_id) {
+                            filterExpr.push(["category_id", "=", formData.category_id]);
+                        }
+                        if (formData.price_min) {
+                            filterExpr.push(["price", ">=", formData.price_min]);
+                        }
+                        if (formData.price_max) {
+                            filterExpr.push(["price", "<=", formData.price_max]);
+                        }
+                        if (formData.quantity_min) {
+                            filterExpr.push(["quantity", ">=", formData.quantity_min]);
                         }
                         if (formData.date_from) {
                             filterExpr.push(["created_at", ">=", formData.date_from]);
@@ -1605,16 +1777,198 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 
                 contentElement.append($btnContainer);
             }
+        }).dxPopup({
+            onToolbarPreparing: function(e) {
+                var grid = e.component;
+                e.toolbarOptions.items.push({
+                    widget: "dxButton",
+                    location: "after",
+                    locateInMenu: "never",
+                    options: {
+                        icon: "bell",
+                        text: "Push Selected",
+                        hint: "Push selected products to Telegram",
+                        onClick: function() {
+                            var selectedKeys = grid.getSelectedRowKeys();
+                            if (!selectedKeys || selectedKeys.length === 0) {
+                                DevExpress.ui.notify("Please select one or more products using checkboxes first.", "warning", 3000);
+                                return;
+                            }
+                            $.ajax({
+                                url: "manual_push.php",
+                                type: "POST",
+                                dataType: "json",
+                                data: { action: "push_batch_products", ids: selectedKeys },
+                                success: function(res) {
+                                    if (res && res.ok) {
+                                        DevExpress.ui.notify(selectedKeys.length + " selected product(s) pushed to Telegram!", "success", 3000);
+                                    } else {
+                                        DevExpress.ui.notify(res.description || "Failed to push selected products.", "error", 4000);
+                                    }
+                                },
+                                error: function() {
+                                    DevExpress.ui.notify("Network error pushing selected products.", "error", 4000);
+                                }
+                            });
+                        }
+                    }
+                });
+                // Add a "Columns" button to the grid toolbar that opens the chooser.
+                e.toolbarOptions.items.push({
+                    widget: "dxButton",
+                    location: "after",
+                    locateInMenu: "never",
+                    options: {
+                        icon: "columnchooser",
+                        text: "Columns",
+                        hint: "Show / hide columns",
+                        onClick: function() {
+                            openColumnChooser();
+                        }
+                    }
+                });
+            },
+            onContentReady: function(e) {
+                // Force 5 rows ONLY on the very first load (so refresh defaults to 5).
+                // Do NOT re-force on later renders, or clicking 10/20 would snap back to 5.
+                var grid = e.component;
+                if (!grid._initDone && grid.option("paging.pageSize") !== 5) {
+                    grid.option("paging.pageSize", 5);
+                }
+                grid._initDone = true;
+            },
+            onOptionChanged: function(e) {
+                // Re-fit the grid height when page size changes so the pager
+                // (Next / page numbers) stays visible without scrolling.
+                if (e.name === "pageSize" || e.name === "paging.pageSize") {
+                    setTimeout(fitGridHeight, 0);
+                }
+            },
+            onPageSizeChanged: function(e) {
+                // Guaranteed handler for page-size selection (5/10/20).
+                var grid = e.component;
+                grid.option("paging.pageSize", e.pageSize);
+                grid.option("paging.pageIndex", 0); // 0-based: go back to first page
+                setTimeout(fitGridHeight, 0);
+            },
+            onContextMenuPreparing: function(e) {
+                if (e.target === "header") {
+                    var column = e.column;
+                    if (!e.items) e.items = [];
+
+                    // Clear default context menu items to avoid duplicates
+                    e.items = [];
+
+                    // 1. Rename Label Item
+                    e.items.push({
+                        text: "Rename Label",
+                        icon: "rename",
+                        onItemClick: function() {
+                            openRenameDialog(column);
+                        }
+                    });
+
+                    // 2. Hide / Show Column Toggle
+                    var isVisible = column.visible !== false;
+                    e.items.push({
+                        text: isVisible ? "Hide Column" : "Show Column",
+                        icon: isVisible ? "eyeclose" : "eyeopen",
+                        onItemClick: function() {
+                            e.component.columnOption(column.dataField || column.name, "visible", !isVisible);
+                        }
+                    });
+
+                    // 3. Freeze / Pin Column Submenu
+                    var isFixed = column.fixed === true;
+                    var currentPos = column.fixedPosition || "left";
+                    
+                    e.items.push({
+                        text: "Freeze Column",
+                        icon: "pin",
+                        items: [
+                            {
+                                text: "Left",
+                                icon: (isFixed && currentPos === "left") ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, {
+                                        fixed: true,
+                                        fixedPosition: "left"
+                                    });
+                                }
+                            },
+                            {
+                                text: "Right",
+                                icon: (isFixed && currentPos === "right") ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, {
+                                        fixed: true,
+                                        fixedPosition: "right"
+                                    });
+                                }
+                            },
+                            {
+                                text: "Sticky",
+                                icon: (isFixed && currentPos === "sticky") ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, {
+                                        fixed: true,
+                                        fixedPosition: "sticky"
+                                    });
+                                }
+                            },
+                            {
+                                text: "Unfreeze",
+                                icon: !isFixed ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, "fixed", false);
+                                }
+                            }
+                        ]
+                    });
+
+                    // 4. Alignment Submenu
+                    var currentAlign = column.alignment || "left";
+                    e.items.push({
+                        text: "Alignment",
+                        icon: "alignleft",
+                        items: [
+                            {
+                                text: "Left",
+                                icon: currentAlign === "left" ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, "alignment", "left");
+                                }
+                            },
+                            {
+                                text: "Center",
+                                icon: currentAlign === "center" ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, "alignment", "center");
+                                }
+                            },
+                            {
+                                text: "Right",
+                                icon: currentAlign === "right" ? "check" : "",
+                                onItemClick: function() {
+                                    e.component.columnOption(column.dataField || column.name, "alignment", "right");
+                                }
+                            }
+                        ]
+                    });
+
+                    // 5. Open Field Chooser
+                    e.items.push({
+                        text: "Column Chooser...",
+                        icon: "columnchooser",
+                        onItemClick: function() {
+                            openColumnChooser();
+                        }
+                    });
+                }
+            }
         }).dxPopup("instance");
 
-        // Initialize custom Advanced Search Button
-        $("#customAdvancedSearchBtn").dxButton({
-            text: "Search All Records",
-            icon: "fa fa-sliders",
-            onClick: function() {
-                advancedSearchPopup.show();
-            }
-        });
+        gridInstance = $("#gridContainer").dxDataGrid("instance");
 
         // Load Push Notification Settings on page load
         function loadPushSettings() {
@@ -1743,32 +2097,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             });
         });
 
-        // Push Summary Action
-        $("#btnPushSummary").on("click", function() {
-            var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Summary...');
-            
-            $.ajax({
-                url: "manual_push.php",
-                type: "POST",
-                dataType: "json",
-                data: { action: "summary" },
-                success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Summary Report');
-                    if (res && res.ok) {
-                        DevExpress.ui.notify("Summary report successfully pushed to Telegram!", "success", 3000);
-                        $("#pushModal").fadeOut(150);
-                    } else {
-                        DevExpress.ui.notify(res.description || "Failed to push summary to Telegram.", "error", 4000);
-                    }
-                },
-                error: function(xhr) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Summary Report');
-                    DevExpress.ui.notify("Network or server error sending push.", "error", 4000);
-                }
-            });
-        });
-
         // Push Low Stock Warning Action
         $("#btnPushLowStock").on("click", function() {
             var $btn = $(this);
@@ -1817,6 +2145,32 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 error: function() {
                     $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Valuation Report');
                     DevExpress.ui.notify("Network error sending push.", "error", 4000);
+                }
+            });
+        });
+
+        // Push Summary Action
+        $("#btnPushSummary").on("click", function() {
+            var $btn = $(this);
+            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Summary...');
+            
+            $.ajax({
+                url: "manual_push.php",
+                type: "POST",
+                dataType: "json",
+                data: { action: "summary" },
+                success: function(res) {
+                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Summary Report');
+                    if (res && res.ok) {
+                        DevExpress.ui.notify("Summary report successfully pushed to Telegram!", "success", 3000);
+                        $("#pushModal").fadeOut(150);
+                    } else {
+                        DevExpress.ui.notify(res.description || "Failed to push summary to Telegram.", "error", 4000);
+                    }
+                },
+                error: function(xhr) {
+                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Summary Report');
+                    DevExpress.ui.notify("Network or server error sending push.", "error", 4000);
                 }
             });
         });
