@@ -1,39 +1,11 @@
 services:
   # ----------------------------------------------------
-  # Web Application Service (Apache + PHP 8.2 Docker)
+  # Web Application & Telegram Bot Webhook Service
   # ----------------------------------------------------
   - type: web
     name: inventory-web
     env: docker
     dockerfilePath: ./Dockerfile
-    plan: free
-    region: singapore
-    envVars:
-      - key: DB_HOST
-        fromDatabase:
-          name: inventory-db
-          property: host
-      - key: DB_USER
-        fromDatabase:
-          name: inventory-db
-          property: user
-      - key: DB_PASS
-        fromDatabase:
-          name: inventory-db
-          property: password
-      - key: DB_NAME
-        fromDatabase:
-          name: inventory-db
-          property: database
-
-  # ----------------------------------------------------
-  # Telegram Bot Worker (Real-time Long Poller Daemon)
-  # ----------------------------------------------------
-  - type: worker
-    name: inventory-telegram-bot
-    env: docker
-    dockerfilePath: ./Dockerfile
-    dockerCommand: php bot_poller_daemon.php
     plan: free
     region: singapore
     envVars:
@@ -63,3 +35,4 @@ databases:
     user: inventory_user
     plan: free
     region: singapore
+
