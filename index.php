@@ -110,89 +110,91 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     <div id="select-resizing"></div>
                 </div>
                 <div class="search-and-export">
-                    <div class="export-wrapper" id="masterExportWrapper">
-                        <button class="export-btn" id="masterExportTrigger" type="button">
-                            <i class="fa-solid fa-download"></i>
-                            Export
-                            <i class="fa-solid fa-chevron-down" style="font-size: 11px; margin-left: 2px;"></i>
-                        </button>
-                        <div class="export-menu" id="masterExportMenu">
-                            <!-- Excel -->
-                            <div class="orientation-section" style="border-top: none; margin-top: 0; padding-top: 0;">
-                                <div class="orientation-label">Excel</div>
-                                <button class="export-item" data-format="excel" data-action="all">
-                                    <i class="fa-solid fa-file-excel" style="width:16px; text-align:center; color:#107c41;"></i>
-                                    Export all pages
-                                </button>
-                                <button class="export-item" data-format="excel" data-action="current">
-                                    <i class="fa-solid fa-file-excel" style="width:16px; text-align:center; color:#107c41;"></i>
-                                    Export current page
-                                </button>
-                            </div>
-                            
-                            <!-- CSV -->
-                            <div class="orientation-section">
-                                <div class="orientation-label">CSV</div>
-                                <button class="export-item" data-format="csv" data-action="all">
-                                    <i class="fa-solid fa-file-csv" style="width:16px; text-align:center; color:#217346;"></i>
-                                    Export all pages
-                                </button>
-                                <button class="export-item" data-format="csv" data-action="current">
-                                    <i class="fa-solid fa-file-csv" style="width:16px; text-align:center; color:#217346;"></i>
-                                    Export current page
-                                </button>
-                            </div>
-
-                            <!-- PDF -->
-                            <div class="orientation-section">
-                                <div class="orientation-label">PDF</div>
-                                <button class="export-item" data-format="pdf" data-action="all">
-                                    <i class="fa-solid fa-file-pdf" style="width:16px; text-align:center; color:#e3242b;"></i>
-                                    Export all pages
-                                </button>
-                                <button class="export-item" data-format="pdf" data-action="current">
-                                    <i class="fa-solid fa-file-pdf" style="width:16px; text-align:center; color:#e3242b;"></i>
-                                    Export current page
-                                </button>
-                            </div>
-                            
-                            <!-- PDF Settings -->
-                            <div class="orientation-section">
-                                <div class="orientation-label">PDF Orientation</div>
-                                <div class="orientation-toggle">
-                                    <button type="button" data-orientation="portrait" class="active">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <rect x="6" y="2" width="12" height="20" rx="2" />
-                                        </svg>
-                                        Portrait
-                                    </button>
-                                    <button type="button" data-orientation="landscape">
-                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
-                                            stroke="currentColor" stroke-width="2">
-                                            <rect x="2" y="6" width="20" height="12" rx="2" />
-                                        </svg>
-                                        Landscape
-                                    </button>
-                                </div>
-                            </div>
-                            <div class="orientation-section">
-                                <div class="orientation-label">PDF Paper</div>
-                                <div class="orientation-toggle">
-                                    <button type="button" data-paper="a4" class="active">A4</button>
-                                    <button type="button" data-paper="a3">A3</button>
-                                    <button type="button" data-paper="a2">A2</button>
-                                    <button type="button" data-paper="a1">A1</button>
-                                    <button type="button" data-paper="letter">Letter</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div id="customFieldChooserBtn"></div>
-                    <div id="customAdvancedSearchBtn"></div>
                     <div class="search-wrapper">
                         <i class="fa-solid fa-magnifying-glass"></i>
                         <input type="text" id="searchInput" placeholder="Search...">
+                    </div>
+                    <div class="action-buttons-group">
+                        <div class="export-wrapper" id="masterExportWrapper">
+                            <button class="export-btn" id="masterExportTrigger" type="button">
+                                <i class="fa-solid fa-download"></i>
+                                Export
+                                <i class="fa-solid fa-chevron-down" style="font-size: 11px; margin-left: 2px;"></i>
+                            </button>
+                            <div class="export-menu" id="masterExportMenu">
+                                <!-- Excel -->
+                                <div class="orientation-section" style="border-top: none; margin-top: 0; padding-top: 0;">
+                                    <div class="orientation-label">Excel</div>
+                                    <button class="export-item" data-format="excel" data-action="all">
+                                        <i class="fa-solid fa-file-excel" style="width:16px; text-align:center; color:#107c41;"></i>
+                                        Export all pages
+                                    </button>
+                                    <button class="export-item" data-format="excel" data-action="current">
+                                        <i class="fa-solid fa-file-excel" style="width:16px; text-align:center; color:#107c41;"></i>
+                                        Export current page
+                                    </button>
+                                </div>
+                                
+                                <!-- CSV -->
+                                <div class="orientation-section">
+                                    <div class="orientation-label">CSV</div>
+                                    <button class="export-item" data-format="csv" data-action="all">
+                                        <i class="fa-solid fa-file-csv" style="width:16px; text-align:center; color:#217346;"></i>
+                                        Export all pages
+                                    </button>
+                                    <button class="export-item" data-format="csv" data-action="current">
+                                        <i class="fa-solid fa-file-csv" style="width:16px; text-align:center; color:#217346;"></i>
+                                        Export current page
+                                    </button>
+                                </div>
+
+                                <!-- PDF -->
+                                <div class="orientation-section">
+                                    <div class="orientation-label">PDF</div>
+                                    <button class="export-item" data-format="pdf" data-action="all">
+                                        <i class="fa-solid fa-file-pdf" style="width:16px; text-align:center; color:#e3242b;"></i>
+                                        Export all pages
+                                    </button>
+                                    <button class="export-item" data-format="pdf" data-action="current">
+                                        <i class="fa-solid fa-file-pdf" style="width:16px; text-align:center; color:#e3242b;"></i>
+                                        Export current page
+                                    </button>
+                                </div>
+                                
+                                <!-- PDF Settings -->
+                                <div class="orientation-section">
+                                    <div class="orientation-label">PDF Orientation</div>
+                                    <div class="orientation-toggle">
+                                        <button type="button" data-orientation="portrait" class="active">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="6" y="2" width="12" height="20" rx="2" />
+                                            </svg>
+                                            Portrait
+                                        </button>
+                                        <button type="button" data-orientation="landscape">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
+                                                stroke="currentColor" stroke-width="2">
+                                                <rect x="2" y="6" width="20" height="12" rx="2" />
+                                            </svg>
+                                            Landscape
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="orientation-section">
+                                    <div class="orientation-label">PDF Paper</div>
+                                    <div class="orientation-toggle">
+                                        <button type="button" data-paper="a4" class="active">A4</button>
+                                        <button type="button" data-paper="a3">A3</button>
+                                        <button type="button" data-paper="a2">A2</button>
+                                        <button type="button" data-paper="a1">A1</button>
+                                        <button type="button" data-paper="letter">Letter</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="customFieldChooserBtn"></div>
+                        <div id="customAdvancedSearchBtn"></div>
                     </div>
                 </div>
             </div>
@@ -331,14 +333,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
             $menu.addClass("open").css({
                 position: "fixed",
-                top: "100px",
+                top: "50%",
                 left: "50%",
-                transform: "translateX(-50%)",
-                "max-height": "80vh",
+                transform: "translate(-50%, -50%)",
+                "max-height": "85vh",
                 "overflow-y": "auto",
                 display: "block",
-                width: "800px",
-                padding: "24px"
+                width: "min(800px, calc(100vw - 24px))",
+                padding: "20px"
             });
 
             $menu.off("click").on("click", function(e) {
@@ -727,8 +729,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 popup: {
                     title: "Category Details",
                     showTitle: true,
-                    width: 500,
-                    height: 350,
+                    width: function() {
+                        return Math.min(500, $(window).width() - 24);
+                    },
+                    height: "auto",
                     wrapperAttr: {
                         class: "dark-popup"
                     }
@@ -1470,7 +1474,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         });
         // Initialize custom Field Chooser Button
         $("#customFieldChooserBtn").dxButton({
-            text: "Field Chooser",
+            text: $(window).width() <= 768 ? "Fields" : "Field Chooser",
             icon: "columnchooser",
             onClick: function(e) {
                 openColumnChooser(e ? e.event : null);
@@ -1609,7 +1613,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
         // Initialize custom Advanced Search Button
         $("#customAdvancedSearchBtn").dxButton({
-            text: "Search All Records",
+            text: $(window).width() <= 768 ? "Search All" : "Search All Records",
             icon: "fa fa-sliders",
             onClick: function() {
                 advancedSearchPopup.show();
