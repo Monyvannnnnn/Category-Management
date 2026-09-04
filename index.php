@@ -658,11 +658,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     allowReordering: false,
                     cellTemplate: function(container, options) {
                         container.addClass("actions-cell");
-                        var telegramSvg = '<i class="fa-brands fa-telegram" style="color: #0088cc; font-size: 16px; vertical-align: middle;"></i>';
+                        var telegramSvg = '<i class="fa-brands fa-telegram" style="font-size: 15px;"></i>';
                         var $telegramBtn = $("<a>")
                             .addClass("dx-link dx-link-telegram")
                             .attr("title", "Push Category to Telegram")
-                            .attr("style", "margin: 0 5px; cursor: pointer; display: inline-flex; align-items: center;")
                             .append(telegramSvg)
                             .on("click", function(e) {
                                 e.preventDefault();
