@@ -646,8 +646,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 {
                     type: "buttons",
                     caption: "Action",
-                    width: 130,
-                    minWidth: 100,
+                    width: 150,
+                    minWidth: 140,
                     allowExporting: false,
                     allowColumnResizing: true,
                     allowFiltering: false,

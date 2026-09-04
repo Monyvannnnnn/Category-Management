@@ -629,17 +629,19 @@ label,
    ACTION BUTTONS & PILL ICONS
    ========================================================================== */
 
-.actions-column {
-  text-align: center;
-  width: 90px;
+.actions-column,
+.dx-datagrid .actions-cell {
+  text-align: center !important;
+  padding: 8px 6px !important;
 }
 
 .actions,
 .actions-wrapper {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  margin: 0 auto !important;
 }
 
 .edit-btn,
