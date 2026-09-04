@@ -4,7 +4,17 @@ if (function_exists('mysqli_report')) {
     mysqli_report(MYSQLI_REPORT_OFF);
 }
 
-$cfg = require __DIR__ . "/db_config.php";
+if (file_exists(__DIR__ . "/db_config.php")) {
+    $cfg = require __DIR__ . "/db_config.php";
+} else {
+    $cfg = [
+        "host" => getenv('DB_HOST') ?: "127.0.0.1",
+        "user" => getenv('DB_USER') ?: "root",
+        "pass" => getenv('DB_PASS') ?: "",
+        "name" => getenv('DB_NAME') ?: "inventory",
+        "port" => (int)(getenv('DB_PORT') ?: 3306)
+    ];
+}
 
 $conn = mysqli_connect($cfg["host"], $cfg["user"], $cfg["pass"], $cfg["name"], $cfg["port"]);
 

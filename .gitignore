@@ -1,2 +1,4 @@
-# Database secrets config file
-db_config.php
+# Ignore temporary log files & local scratch
+scratch/
+*.log
+telegram_offset.txt
