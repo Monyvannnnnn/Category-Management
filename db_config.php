@@ -1,18 +1,32 @@
 <?php
 // db_config.php - Multi-Environment Database Configuration
 
-// 1. Docker Environment Override
-if (getenv('DB_HOST')) {
+// 1. Check if running inside Docker container with local MariaDB or external MySQL host
+$db_host_env = getenv('DB_HOST');
+
+if (!empty($db_host_env) && strpos($db_host_env, 'postgres') === false && strpos($db_host_env, 'dpg-') === false) {
+    // External MySQL host specified (e.g. PlanetScale, Clever Cloud, docker-compose mysql container)
     return [
-        "host" => getenv('DB_HOST'),
-        "user" => getenv('DB_USER') ?: "inventory_user",
-        "pass" => getenv('DB_PASS') ?: "inventory_pass",
-        "name" => getenv('DB_NAME') ?: "inventory_db",
+        "host" => $db_host_env,
+        "user" => getenv('DB_USER') ?: "root",
+        "pass" => getenv('DB_PASS') ?: "",
+        "name" => getenv('DB_NAME') ?: "inventory",
         "port" => (int)(getenv('DB_PORT') ?: 3306)
     ];
 }
 
-// 2. Local Environment Check
+// 2. Check if inside Docker container (entrypoint.sh exists)
+if (file_exists('/usr/local/bin/entrypoint.sh') || file_exists('/var/www/html/entrypoint.sh')) {
+    return [
+        "host" => "127.0.0.1",
+        "user" => "root",
+        "pass" => "",
+        "name" => "inventory",
+        "port" => 3306
+    ];
+}
+
+// 3. Local Environment Check (XAMPP on Windows)
 $is_local = (php_sapi_name() === 'cli')
     || (isset($_SERVER['HTTP_HOST']) && in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1', 'localhost:8080']))
     || (isset($_SERVER['SERVER_ADDR']) && in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1']));
@@ -26,7 +40,7 @@ if ($is_local) {
         "port" => 3307
     ];
 } else {
-    // 3. Remote Production Hosting
+    // 4. Remote Production Hosting (InfinityFree / Web Host fallback)
     return [
         "host" => "sql310.infinityfree.com",
         "user" => "if0_42693065",
@@ -35,3 +49,4 @@ if ($is_local) {
         "port" => 3306
     ];
 }
+
