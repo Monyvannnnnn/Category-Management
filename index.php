@@ -646,8 +646,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 {
                     type: "buttons",
                     caption: "Action",
-                    width: $(window).width() <= 768 ? 68 : 115,
-                    minWidth: $(window).width() <= 768 ? 60 : 105,
+                    width: $(window).width() <= 768 ? 68 : 140,
+                    minWidth: $(window).width() <= 768 ? 60 : 130,
                     allowExporting: false,
                     allowColumnResizing: true,
                     allowFiltering: false,
@@ -716,11 +716,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             .append($editBtn)
                             .append($deleteBtn);
 
+                        var donerSvg = '<svg class="doner-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">' +
+                            '<line class="doner-line doner-line-1" x1="3" y1="6" x2="21" y2="6"></line>' +
+                            '<line class="doner-line doner-line-2" x1="6" y1="12" x2="18" y2="12"></line>' +
+                            '<line class="doner-line doner-line-3" x1="9" y1="18" x2="15" y2="18"></line>' +
+                            '</svg>';
+
                         var $kebabBtn = $("<button>")
                             .attr("type", "button")
-                            .addClass("kebab-trigger-btn")
+                            .addClass("kebab-trigger-btn doner-trigger-btn")
                             .attr("title", "More Actions")
-                            .html('<i class="fa-solid fa-ellipsis-vertical"></i>');
+                            .html(donerSvg);
 
                         var $kebabMenu = $("<div>")
                             .addClass("kebab-dropdown-menu")
@@ -734,26 +740,31 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             e.stopPropagation();
                             var wasShown = $kebabMenu.hasClass("show");
                             $(".kebab-dropdown-menu").removeClass("show");
+                            $(".kebab-trigger-btn").removeClass("open");
                             if (!wasShown) {
                                 $kebabMenu.addClass("show");
+                                $kebabBtn.addClass("open");
                             }
                         });
 
                         $kebabMenu.find(".kebab-push-item").on("click", function(e) {
                             e.stopPropagation();
                             $kebabMenu.removeClass("show");
+                            $kebabBtn.removeClass("open");
                             $telegramBtn.trigger("click");
                         });
 
                         $kebabMenu.find(".kebab-edit-item").on("click", function(e) {
                             e.stopPropagation();
                             $kebabMenu.removeClass("show");
+                            $kebabBtn.removeClass("open");
                             options.component.editRow(options.rowIndex);
                         });
 
                         $kebabMenu.find(".kebab-delete-item").on("click", function(e) {
                             e.stopPropagation();
                             $kebabMenu.removeClass("show");
+                            $kebabBtn.removeClass("open");
                             options.component.deleteRow(options.rowIndex);
                         });
 
@@ -1916,6 +1927,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         $(document).on("click", function(e) {
             if (!$(e.target).closest(".mobile-kebab-wrapper").length) {
                 $(".kebab-dropdown-menu").removeClass("show");
+                $(".kebab-trigger-btn").removeClass("open");
             }
         });
     });
