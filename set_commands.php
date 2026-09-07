@@ -756,7 +756,79 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 15. /toggle auto
+        // 15. /outofstock
+        // ----------------------------------------------------
+        case '/outofstock':
+            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity = 0 ORDER BY p.product_name ASC");
+            if ($res && mysqli_num_rows($res) > 0) {
+                $msg = "🚫 <b>OUT OF STOCK ALERTS</b>\n"
+                     . "<i>Items with <b>0 units</b> remaining</i>\n"
+                     . "═════════════════════════════\n\n";
+                while ($r = mysqli_fetch_assoc($res)) {
+                    $code = htmlspecialchars($r['product_code']);
+                    $name = htmlspecialchars($r['product_name']);
+                    $cat  = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                    $msg .= "❌ <b>{$name}</b>\n"
+                          . "├ 🆔 Code: <code>{$code}</code>\n"
+                          . "├ 🏷️ Category: <code>{$cat}</code>\n"
+                          . "└ 🔢 Stock: <b>0 units</b>\n\n";
+                }
+                $msg .= "─────────────────────────────\n"
+                      . "⚠️ <i>These items need immediate restocking!</i>";
+            } else {
+                $msg = "✅ <b>ALL ITEMS IN STOCK</b>\n"
+                     . "═════════════════════════════\n"
+                     . "No items are currently out of stock.";
+            }
+            sendTelegramMessage($chatId, $msg);
+            break;
+
+        // ----------------------------------------------------
+        // 16. /today
+        // ----------------------------------------------------
+        case '/today':
+            $today = date('Y-m-d');
+            
+            $prodNew = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM product WHERE DATE(created_at) = '{$today}'");
+            $prodNewCount = ($prodNew && $r = mysqli_fetch_assoc($prodNew)) ? (int)$r['cnt'] : 0;
+            
+            $prodUpd = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM product WHERE DATE(lastupdate) = '{$today}' AND DATE(created_at) != '{$today}'");
+            $prodUpdCount = ($prodUpd && $r = mysqli_fetch_assoc($prodUpd)) ? (int)$r['cnt'] : 0;
+            
+            $catNew = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM category WHERE DATE(created_at) = '{$today}'");
+            $catNewCount = ($catNew && $r = mysqli_fetch_assoc($catNew)) ? (int)$r['cnt'] : 0;
+            
+            $catUpd = mysqli_query($conn, "SELECT COUNT(*) AS cnt FROM category WHERE DATE(lastupdate) = '{$today}' AND DATE(created_at) != '{$today}'");
+            $catUpdCount = ($catUpd && $r = mysqli_fetch_assoc($catUpd)) ? (int)$r['cnt'] : 0;
+
+            $msg = "📅 <b>TODAY'S ACTIVITY</b>\n"
+                 . "<i>" . date('d/m/Y') . "</i>\n"
+                 . "═════════════════════════════\n\n"
+                 . "📦 <b>Products:</b>\n"
+                 . "├ 🆕 Added: <b>{$prodNewCount}</b>\n"
+                 . "└ ✏️ Updated: <b>{$prodUpdCount}</b>\n\n"
+                 . "🏷️ <b>Categories:</b>\n"
+                 . "├ 🆕 Added: <b>{$catNewCount}</b>\n"
+                 . "└ ✏️ Updated: <b>{$catUpdCount}</b>\n\n"
+                 . "─────────────────────────────\n"
+                 . "📊 Total changes: <b>" . ($prodNewCount + $prodUpdCount + $catNewCount + $catUpdCount) . "</b>";
+            sendTelegramMessage($chatId, $msg);
+            break;
+
+        // ----------------------------------------------------
+        // 17. /chatid
+        // ----------------------------------------------------
+        case '/chatid':
+            $msg = "💬 <b>CHAT INFORMATION</b>\n"
+                 . "═════════════════════════════\n"
+                 . "🆔 Your Chat ID: <code>{$chatId}</code>\n\n"
+                 . "─────────────────────────────\n"
+                 . "💡 <i>Use this ID for debugging or bot configuration.</i>";
+            sendTelegramMessage($chatId, $msg);
+            break;
+
+        // ----------------------------------------------------
+        // 18. /toggle auto
         // ----------------------------------------------------
         case '/toggle':
             if ($arg !== 'auto') {
@@ -819,6 +891,9 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                  . "📊 <code>/summary</code> — Executive dashboard\n"
                  . "💎 <code>/valuation</code> — Financial valuation report\n"
                  . "📜 <code>/history</code> — Combined activity log\n"
+                 . "🚫 <code>/outofstock</code> — Out of stock items (0 units)\n"
+                 . "📅 <code>/today</code> — Today's activity summary\n"
+                 . "💬 <code>/chatid</code> — Get your chat ID\n\n"
                  . "<b>🔔 NOTIFICATIONS</b>\n"
                  . "📤 <code>/push &lt;code&gt;</code> — Push item to Telegram\n"
                  . "🔔 <code>/toggle auto</code> — Toggle auto-notifications\n\n"
