@@ -2,25 +2,34 @@
 /**
  * Telegram Bot Command Poller & Processor
  * Premium Styled Inventory Management System
+ * Updated with 8 new commands
  */
 
 require_once __DIR__ . '/database.php';
 
 header("Content-Type: application/json; charset=utf-8");
 
-$botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8";
+$botToken = "8587070306:***";
 
 function registerBotCommands($botToken) {
     $url = "https://api.telegram.org/bot{$botToken}/setMyCommands";
     $commands = [
         ['command' => 'search',     'description' => '🔍 Search product by name or code (/search <keyword>)'],
+        ['command' => 'searchall',  'description' => '🔍 Search all records (/searchall <keyword>)'],
         ['command' => 'categories', 'description' => '🏷️ View all item categories'],
+        ['command' => 'category',   'description' => '🏷️ View category detail (/category <code>)'],
         ['command' => 'sort',       'description' => '↕️ View items sorted (/sort price | stock | date)'],
         ['command' => 'lowstock',   'description' => '⚠️ List critical items with stock <= 5'],
+        ['command' => 'topstock',   'description' => '📊 Top 10 highest stock items'],
+        ['command' => 'product',    'description' => '📦 View product detail (/product <code>)'],
         ['command' => 'summary',    'description' => '📊 Real-time total categories, products, & valuation'],
         ['command' => 'valuation',  'description' => '💎 Financial report and average pricing breakdown'],
         ['command' => 'added',      'description' => '🆕 List recently added products and categories'],
         ['command' => 'updated',    'description' => '✏️ List recently modified products and categories'],
+        ['command' => 'history',    'description' => '📜 Combined activity log'],
+        ['command' => 'push',       'description' => '📤 Push item to Telegram (/push <code>)'],
+        ['command' => 'export',     'description' => '📤 Export data (/export pdf|excel|csv)'],
+        ['command' => 'toggle',     'description' => '🔔 Toggle auto-notify (/toggle auto)'],
         ['command' => 'help',       'description' => '❓ Show all command usage and examples']
     ];
     
@@ -113,7 +122,62 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 2. /categories
+        // 2. /searchall <keyword>
+        // ----------------------------------------------------
+        case '/searchall':
+            if (empty($arg)) {
+                $msg = "⚠️ <b>INVALID SEARCH FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/searchall &lt;keyword&gt;</code>\n"
+                     . "Example: <code>/searchall Camera</code>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+            $stmt = mysqli_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.product_name LIKE ? OR p.product_code LIKE ? OR c.category_name LIKE ? ORDER BY p.product_name ASC");
+            $searchArg = "%" . $arg . "%";
+            mysqli_stmt_bind_param($stmt, "sss", $searchArg, $searchArg, $searchArg);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+
+            if ($result && mysqli_num_rows($result) > 0) {
+                $total = mysqli_num_rows($result);
+                $msg = "🔍 <b>COMPLETE SEARCH RESULTS</b>\n"
+                     . "<i>Found <b>{$total}</b> results for '<b>" . htmlspecialchars($arg) . "</b>'</i>\n"
+                     . "═════════════════════════════\n\n";
+                $count = 0;
+                while ($r = mysqli_fetch_assoc($result)) {
+                    $code  = htmlspecialchars($r['product_code']);
+                    $name  = htmlspecialchars($r['product_name']);
+                    $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                    $price = number_format((float)$r['price'], 2);
+                    $qty   = (int)$r['quantity'];
+                    $msg  .= "📦 <b>{$name}</b>\n"
+                          . "├ 🆔 Code: <code>{$code}</code>\n"
+                          . "├ 🏷️ Category: <code>{$cat}</code>\n"
+                          . "├ 💰 Price: <b>\${$price}</b>\n"
+                          . "└ 🔢 Stock: <b>{$qty} units</b>\n\n";
+                    $count++;
+                    if ($count >= 10) {
+                        $msg .= "─────────────────────────────\n"
+                              . "💡 <i>Showing 10 of {$total} results. Refine your query for more specific results.</i>";
+                        break;
+                    }
+                }
+                if ($count < 10) {
+                    $msg .= "─────────────────────────────\n"
+                          . "💡 <i>Showing all {$total} results</i>";
+                }
+            } else {
+                $msg = "❌ <b>NO MATCHES FOUND</b>\n"
+                     . "═════════════════════════════\n"
+                     . "No products matching '<b>" . htmlspecialchars($arg) . "</b>' were found in the database.";
+            }
+            mysqli_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 3. /categories
         // ----------------------------------------------------
         case '/categories':
             $res = mysqli_query($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id GROUP BY c.id ORDER BY c.category_name ASC");
@@ -143,7 +207,79 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 3. /sort [price | stock | date]
+        // 4. /category <code>
+        // ----------------------------------------------------
+        case '/category':
+            if (empty($arg)) {
+                $msg = "⚠️ <b>INVALID CATEGORY FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/category &lt;category_code&gt;</code>\n"
+                     . "Example: <code>/category CAT-10</code>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+            $stmt = mysqli_prepare($conn, "SELECT id, category_code, category_name, created_at FROM category WHERE category_code = ? LIMIT 1");
+            mysqli_stmt_bind_param($stmt, "s", $arg);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $catRow = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$catRow) {
+                $msg = "❌ <b>CATEGORY NOT FOUND</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Category with code '<b>" . htmlspecialchars($arg) . "</b>' was not found.";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $catId = (int)$catRow['id'];
+            $catCode = htmlspecialchars($catRow['category_code']);
+            $catName = htmlspecialchars($catRow['category_name']);
+            $catCreated = date('d/m/Y H:i', strtotime($catRow['created_at']));
+
+            $prodStmt = mysqli_prepare($conn, "SELECT product_code, product_name, price, quantity FROM product WHERE category_id = ? ORDER BY product_name ASC");
+            mysqli_stmt_bind_param($prodStmt, "i", $catId);
+            mysqli_stmt_execute($prodStmt);
+            $prodResult = mysqli_stmt_get_result($prodStmt);
+
+            $totalProds = mysqli_num_rows($prodResult);
+            $totalStock = 0;
+            $totalVal = 0.00;
+
+            $msg = "🏷️ <b>CATEGORY DETAIL</b>\n"
+                 . "═════════════════════════════\n"
+                 . "🆔 Code: <code>{$catCode}</code>\n"
+                 . "📛 Name: <b>{$catName}</b>\n"
+                 . "📦 Products: <b>{$totalProds} items</b>\n"
+                 . "📅 Created: <code>{$catCreated}</code>\n\n";
+
+            if ($prodResult && $totalProds > 0) {
+                $msg .= "── PRODUCTS IN THIS CATEGORY ──\n\n";
+                $i = 1;
+                while ($p = mysqli_fetch_assoc($prodResult)) {
+                    $pCode = htmlspecialchars($p['product_code']);
+                    $pName = htmlspecialchars($p['product_name']);
+                    $pPrice = number_format((float)$p['price'], 2);
+                    $pQty = (int)$p['quantity'];
+                    $totalStock += $pQty;
+                    $totalVal += (float)$p['price'] * $pQty;
+                    $msg .= "<b>{$i}. {$pName}</b>\n"
+                          . "   └ <code>{$pCode}</code> • 💰 <b>\${$pPrice}</b> • 🔢 Stock: <b>{$pQty}</b>\n\n";
+                    $i++;
+                }
+                $msg .= "─────────────────────────────\n"
+                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
+                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>";
+            } else {
+                $msg .= "└ <i>No products in this category</i>";
+            }
+            mysqli_stmt_close($prodStmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 5. /sort [price | stock | date]
         // ----------------------------------------------------
         case '/sort':
             $orderBy = "p.id DESC";
@@ -185,7 +321,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 4. /lowstock
+        // 6. /lowstock
         // ----------------------------------------------------
         case '/lowstock':
             $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 ORDER BY p.quantity ASC");
@@ -214,7 +350,101 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 5. /summary
+        // 7. /topstock
+        // ----------------------------------------------------
+        case '/topstock':
+            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, p.quantity, p.price, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.quantity DESC LIMIT 10");
+            if ($res && mysqli_num_rows($res) > 0) {
+                $msg = "📊 <b>TOP 10 HIGHEST STOCK ITEMS</b>\n"
+                     . "═════════════════════════════\n\n";
+                $i = 1;
+                $totalUnits = 0;
+                $totalValue = 0.00;
+                while ($r = mysqli_fetch_assoc($res)) {
+                    $code  = htmlspecialchars($r['product_code']);
+                    $name  = htmlspecialchars($r['product_name']);
+                    $qty   = (int)$r['quantity'];
+                    $price = number_format((float)$r['price'], 2);
+                    $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                    $totalUnits += $qty;
+                    $totalValue += (float)$r['price'] * $qty;
+                    $msg .= "<b>{$i}. 📦 {$name}</b>\n"
+                          . "   └ <code>{$code}</code> | 🔢 Stock: <b>{$qty} units</b> | 💰 <b>\${$price}</b>\n"
+                          . "   └ 🏷️ Category: <code>{$cat}</code>\n\n";
+                    $i++;
+                }
+                $msg .= "─────────────────────────────\n"
+                      . "📊 Total units in top 10: <b>{$totalUnits}</b>\n"
+                      . "💰 Combined value: <b>\$" . number_format($totalValue, 2) . "</b>";
+            } else {
+                $msg = "📦 <b>NO PRODUCTS FOUND</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Product catalog is empty.";
+            }
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 8. /product <code>
+        // ----------------------------------------------------
+        case '/product':
+            if (empty($arg)) {
+                $msg = "⚠️ <b>INVALID PRODUCT FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/product &lt;product_code&gt;</code>\n"
+                     . "Example: <code>/product PRD-101</code>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+            $stmt = mysqli_prepare($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.product_code = ? LIMIT 1");
+            mysqli_stmt_bind_param($stmt, "s", $arg);
+            mysqli_stmt_execute($stmt);
+            $result = mysqli_stmt_get_result($stmt);
+            $prod = mysqli_fetch_assoc($result);
+            mysqli_stmt_close($stmt);
+
+            if (!$prod) {
+                $msg = "❌ <b>PRODUCT NOT FOUND</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Product with code '<b>" . htmlspecialchars($arg) . "</b>' was not found.";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $pCode = htmlspecialchars($prod['product_code']);
+            $pName = htmlspecialchars($prod['product_name']);
+            $pCat = htmlspecialchars($prod['category_name'] ?? 'Unassigned');
+            $pPrice = number_format((float)$prod['price'], 2);
+            $pQty = (int)$prod['quantity'];
+            $pTotal = number_format((float)$prod['price'] * $pQty, 2);
+            $pCreated = date('d/m/Y H:i', strtotime($prod['created_at']));
+            $pUpdated = date('d/m/Y H:i', strtotime($prod['lastupdate']));
+
+            if ($pQty == 0) {
+                $pStatus = "❌ Out of Stock";
+            } elseif ($pQty <= 5) {
+                $pStatus = "⚠️ Low Stock";
+            } else {
+                $pStatus = "✅ In Stock";
+            }
+
+            $msg = "📦 <b>PRODUCT DETAIL</b>\n"
+                 . "═════════════════════════════\n"
+                 . "🆔 Code: <code>{$pCode}</code>\n"
+                 . "📛 Name: <b>{$pName}</b>\n"
+                 . "🏷️ Category: <code>{$pCat}</code>\n"
+                 . "💰 Price: <b>\${$pPrice}</b>\n"
+                 . "🔢 Stock: <b>{$pQty} units</b>\n"
+                 . "📊 Total Value: <b>\${$pTotal}</b>\n"
+                 . "📅 Created: <code>{$pCreated}</code>\n"
+                 . "✏️ Last Updated: <code>{$pUpdated}</code>\n"
+                 . "─────────────────────────────\n"
+                 . "Status: <b>{$pStatus}</b>";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 9. /summary
         // ----------------------------------------------------
         case '/summary':
             $catRes = mysqli_query($conn, "SELECT COUNT(*) AS total_cats FROM category");
@@ -249,7 +479,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 6. /valuation
+        // 10. /valuation
         // ----------------------------------------------------
         case '/valuation':
             $prodRes = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price, COALESCE(MAX(price), 0) as max_price, COALESCE(MIN(price), 0) as min_price FROM product");
@@ -272,7 +502,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 7. /added
+        // 11. /added
         // ----------------------------------------------------
         case '/added':
             $prodRes = mysqli_query($conn, "SELECT product_code, product_name, price, quantity FROM product ORDER BY id DESC LIMIT 5");
@@ -306,7 +536,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 8. /updated
+        // 12. /updated
         // ----------------------------------------------------
         case '/updated':
             $prodRes = mysqli_query($conn, "SELECT product_code, product_name, lastupdate FROM product ORDER BY lastupdate DESC LIMIT 5");
@@ -342,7 +572,286 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 9. /help or /start
+        // 13. /history
+        // ----------------------------------------------------
+        case '/history':
+            $prodNewRes = mysqli_query($conn, "SELECT product_code, product_name, price, quantity FROM product ORDER BY id DESC LIMIT 10");
+            $prodUpdRes = mysqli_query($conn, "SELECT product_code, product_name, lastupdate FROM product ORDER BY lastupdate DESC LIMIT 10");
+            $catNewRes  = mysqli_query($conn, "SELECT category_code, category_name FROM category ORDER BY id DESC LIMIT 5");
+
+            $msg = "📜 <b>INVENTORY ACTIVITY LOG</b>\n"
+                 . "═════════════════════════════\n\n"
+                 . "<b>🆕 RECENTLY ADDED (10)</b>\n";
+            if ($prodNewRes && mysqli_num_rows($prodNewRes) > 0) {
+                while ($r = mysqli_fetch_assoc($prodNewRes)) {
+                    $msg .= "├ <code>{$r['product_code']}</code> <b>{$r['product_name']}</b> (\${$r['price']} | Qty: {$r['quantity']})\n";
+                }
+            } else {
+                $msg .= "└ <i>No products added yet.</i>\n";
+            }
+
+            $msg .= "\n<b>✏️ RECENTLY UPDATED (10)</b>\n";
+            if ($prodUpdRes && mysqli_num_rows($prodUpdRes) > 0) {
+                while ($r = mysqli_fetch_assoc($prodUpdRes)) {
+                    $time = date("d/m/Y H:i", strtotime($r['lastupdate']));
+                    $msg .= "├ <code>{$r['product_code']}</code> <b>{$r['product_name']}</b> <i>({$time})</i>\n";
+                }
+            } else {
+                $msg .= "└ <i>No products modified.</i>\n";
+            }
+
+            $msg .= "\n<b>🏷️ NEW CATEGORIES (5)</b>\n";
+            if ($catNewRes && mysqli_num_rows($catNewRes) > 0) {
+                while ($r = mysqli_fetch_assoc($catNewRes)) {
+                    $msg .= "├ <code>{$r['category_code']}</code> <b>{$r['category_name']}</b>\n";
+                }
+            } else {
+                $msg .= "└ <i>No categories added yet.</i>\n";
+            }
+
+            $msg .= "\n─────────────────────────────\n"
+                  . "🕒 <i>Combined audit trail log</i>";
+
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 14. /push <code>
+        // ----------------------------------------------------
+        case '/push':
+            if (empty($arg)) {
+                $msg = "⚠️ <b>INVALID PUSH FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/push &lt;product_code&gt;</code> or <code>/push &lt;category_code&gt;</code>\n"
+                     . "Example: <code>/push PRD-101</code> or <code>/push CAT-10</code>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            // Search product first
+            $prodStmt = mysqli_prepare($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.product_code = ? LIMIT 1");
+            mysqli_stmt_bind_param($prodStmt, "s", $arg);
+            mysqli_stmt_execute($prodStmt);
+            $prodResult = mysqli_stmt_get_result($prodStmt);
+            $prod = mysqli_fetch_assoc($prodResult);
+            mysqli_stmt_close($prodStmt);
+
+            if ($prod) {
+                $pCode = htmlspecialchars($prod['product_code']);
+                $pName = htmlspecialchars($prod['product_name']);
+                $pCat = htmlspecialchars($prod['category_name'] ?? 'Unassigned');
+                $pPrice = number_format((float)$prod['price'], 2);
+                $pQty = (int)$prod['quantity'];
+                $pTotal = number_format((float)$prod['price'] * $pQty, 2);
+                if ($pQty == 0) {
+                    $pStatus = "❌ Out of Stock";
+                } elseif ($pQty <= 5) {
+                    $pStatus = "⚠️ Low Stock";
+                } else {
+                    $pStatus = "✅ In Stock";
+                }
+
+                $msg = "📦 <b>PRODUCT PUSH NOTIFICATION</b>\n"
+                     . "═════════════════════════════\n"
+                     . "🆔 Code: <code>{$pCode}</code>\n"
+                     . "📛 Name: <b>{$pName}</b>\n"
+                     . "🏷️ Category: <code>{$pCat}</code>\n"
+                     . "💰 Price: <b>\${$pPrice}</b>\n"
+                     . "🔢 Stock: <b>{$pQty} units</b>\n"
+                     . "📊 Total Value: <b>\${$pTotal}</b>\n"
+                     . "─────────────────────────────\n"
+                     . "Status: <b>{$pStatus}</b>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            // Search category
+            $catStmt = mysqli_prepare($conn, "SELECT id, category_code, category_name FROM category WHERE category_code = ? LIMIT 1");
+            mysqli_stmt_bind_param($catStmt, "s", $arg);
+            mysqli_stmt_execute($catStmt);
+            $catResult = mysqli_stmt_get_result($catStmt);
+            $cat = mysqli_fetch_assoc($catResult);
+            mysqli_stmt_close($catStmt);
+
+            if ($cat) {
+                $catId = (int)$cat['id'];
+                $catCode = htmlspecialchars($cat['category_code']);
+                $catName = htmlspecialchars($cat['category_name']);
+
+                $prodCountStmt = mysqli_prepare($conn, "SELECT COUNT(*) AS cnt, COALESCE(SUM(quantity), 0) AS total_qty, COALESCE(SUM(price * quantity), 0) AS total_val FROM product WHERE category_id = ?");
+                mysqli_stmt_bind_param($prodCountStmt, "i", $catId);
+                mysqli_stmt_execute($prodCountStmt);
+                $prodCountResult = mysqli_stmt_get_result($prodCountStmt);
+                $prodCount = mysqli_fetch_assoc($prodCountResult);
+                mysqli_stmt_close($prodCountStmt);
+
+                $cnt = (int)$prodCount['cnt'];
+                $totalQty = (int)$prodCount['total_qty'];
+                $totalVal = number_format((float)$prodCount['total_val'], 2);
+
+                $msg = "🏷️ <b>CATEGORY PUSH NOTIFICATION</b>\n"
+                     . "═════════════════════════════\n"
+                     . "🆔 Code: <code>{$catCode}</code>\n"
+                     . "📛 Name: <b>{$catName}</b>\n"
+                     . "📦 Products: <b>{$cnt} items</b>\n"
+                     . "🔢 Total Stock: <b>{$totalQty} units</b>\n"
+                     . "💰 Total Valuation: <b>\${$totalVal}</b>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $msg = "❌ <b>ITEM NOT FOUND</b>\n"
+                 . "═════════════════════════════\n"
+                 . "No product or category with code '<b>" . htmlspecialchars($arg) . "</b>' was found.";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 15. /export [pdf|excel|csv]
+        // ----------------------------------------------------
+        case '/export':
+            if (empty($arg)) {
+                $msg = "⚠️ <b>INVALID EXPORT FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/export [pdf|excel|csv]</code>\n"
+                     . "Example: <code>/export csv</code>\n\n"
+                     . "📤 <b>Available formats:</b>\n"
+                     . "├ <code>pdf</code> — Text-based report\n"
+                     . "├ <code>excel</code> — Monospace table\n"
+                     . "└ <code>csv</code> — Clean CSV format";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, c.category_name, p.price, p.quantity FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.product_name ASC");
+
+            $totalProds = 0;
+            $totalStock = 0;
+            $totalVal = 0.00;
+            $rows = [];
+            if ($res) {
+                while ($r = mysqli_fetch_assoc($res)) {
+                    $rows[] = $r;
+                    $totalProds++;
+                    $totalStock += (int)$r['quantity'];
+                    $totalVal += (float)$r['price'] * (int)$r['quantity'];
+                }
+            }
+
+            if ($arg === 'csv') {
+                $msg = "📊 <b>CSV EXPORT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "<pre>Code,Name,Category,Price,Qty,Total Value\n";
+                foreach ($rows as $r) {
+                    $line = htmlspecialchars($r['product_code']) . ","
+                          . htmlspecialchars($r['product_name']) . ","
+                          . htmlspecialchars($r['category_name'] ?? 'Unassigned') . ","
+                          . number_format((float)$r['price'], 2) . ","
+                          . (int)$r['quantity'] . ","
+                          . number_format((float)$r['price'] * (int)$r['quantity'], 2);
+                    $msg .= $line . "\n";
+                }
+                $msg .= "</pre>\n"
+                      . "─────────────────────────────\n"
+                      . "📦 Total Products: <b>{$totalProds}</b>\n"
+                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
+                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>";
+            } elseif ($arg === 'excel') {
+                $msg = "📊 <b>EXCEL EXPORT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "<pre>"
+                     . str_pad("Code", 12) . str_pad("Name", 25) . str_pad("Category", 18) . str_pad("Price", 10) . str_pad("Qty", 8) . "Total\n";
+                $msg .= str_repeat("─", 80) . "\n";
+                $displayRows = array_slice($rows, 0, 20);
+                foreach ($displayRows as $r) {
+                    $msg .= str_pad(htmlspecialchars($r['product_code']), 12)
+                          . str_pad(htmlspecialchars($r['product_name']), 25)
+                          . str_pad(htmlspecialchars($r['category_name'] ?? 'Unassigned'), 18)
+                          . str_pad("$" . number_format((float)$r['price'], 2), 10)
+                          . str_pad((string)(int)$r['quantity'], 8)
+                          . "$" . number_format((float)$r['price'] * (int)$r['quantity'], 2) . "\n";
+                }
+                $msg .= "</pre>\n";
+                if (count($rows) > 20) {
+                    $msg .= "💡 <i>Showing 20 of {$totalProds} products</i>\n";
+                }
+                $msg .= "─────────────────────────────\n"
+                      . "📦 Total Products: <b>{$totalProds}</b>\n"
+                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
+                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>";
+            } else {
+                // pdf format (text-based report)
+                $nowStr = date('d/m/Y H:i:s');
+                $msg = "📄 <b>PDF-STYLE INVENTORY REPORT</b>\n"
+                     . "<i>Generated: {$nowStr}</i>\n"
+                     . "═════════════════════════════\n\n";
+                $displayRows = array_slice($rows, 0, 20);
+                foreach ($displayRows as $i => $r) {
+                    $pCode = htmlspecialchars($r['product_code']);
+                    $pName = htmlspecialchars($r['product_name']);
+                    $pCat = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                    $pPrice = number_format((float)$r['price'], 2);
+                    $pQty = (int)$r['quantity'];
+                    $pTotal = number_format((float)$r['price'] * $pQty, 2);
+                    $msg .= "<b>" . ($i + 1) . ". {$pName}</b>\n"
+                          . "   └ Code: <code>{$pCode}</code> | Category: <code>{$pCat}</code>\n"
+                          . "   └ Price: <b>\${$pPrice}</b> | Qty: <b>{$pQty}</b> | Total: <b>\${$pTotal}</b>\n\n";
+                }
+                $msg .= "─────────────────────────────\n"
+                      . "📦 Total Products: <b>{$totalProds}</b>\n"
+                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
+                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>\n\n"
+                      . "<i>This report can be saved as PDF from Telegram</i>";
+            }
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 16. /toggle auto
+        // ----------------------------------------------------
+        case '/toggle':
+            if ($arg !== 'auto') {
+                $msg = "⚠️ <b>INVALID TOGGLE FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/toggle auto</code>\n\n"
+                     . "🔔 <b>Available toggles:</b>\n"
+                     . "└ <code>auto</code> — Toggle auto-notifications";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            // Ensure settings table exists
+            mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `system_settings` (`setting_key` varchar(50) NOT NULL, `setting_value` varchar(255) NOT NULL, PRIMARY KEY (`setting_key`)) DEFAULT CHARSET=utf8mb4");
+
+            // Get current value
+            $res = mysqli_query($conn, "SELECT setting_value FROM system_settings WHERE setting_key = 'auto_telegram_notify'");
+            $currentVal = '1'; // default enabled
+            if ($res && $row = mysqli_fetch_assoc($res)) {
+                $currentVal = trim($row['setting_value']);
+            }
+
+            // Toggle
+            $newVal = ($currentVal === '1') ? '0' : '1';
+            mysqli_query($conn, "REPLACE INTO system_settings (setting_key, setting_value) VALUES ('auto_telegram_notify', '{$newVal}')");
+
+            if ($newVal === '1') {
+                $msg = "🔔 <b>AUTO NOTIFICATIONS ENABLED</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Telegram auto-push is now <b>ON</b>.\n"
+                     . "New products/categories will be pushed automatically.\n\n"
+                     . "💡 Use <code>/push &lt;code&gt;</code> to manually push items anytime.";
+            } else {
+                $msg = "🔕 <b>AUTO NOTIFICATIONS DISABLED</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Telegram auto-push is now <b>OFF</b>.\n"
+                     . "Notifications will not be sent automatically.\n\n"
+                     . "💡 Use <code>/push &lt;code&gt;</code> to manually push items.";
+            }
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // 17. /help or /start
         // ----------------------------------------------------
         case '/start':
         case '/help':
@@ -350,15 +859,28 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             $msg = "🤖 <b>INVENTORY BOT COMMAND CENTER</b>\n"
                  . "<i>Quick Reference & Action Menu</i>\n"
                  . "═════════════════════════════\n\n"
-                 . "🔍 <code>/search &lt;keyword&gt;</code> — Search catalog by name or code\n"
-                 . "🏷️ <code>/categories</code> — View item categories & stock counts\n"
-                 . "↕️ <code>/sort [price|stock|date]</code> — View sorted product list\n"
+                 . "<b>📦 PRODUCT COMMANDS</b>\n"
+                 . "🔍 <code>/search &lt;keyword&gt;</code> — Search products (top 5)\n"
+                 . "🔍 <code>/searchall &lt;keyword&gt;</code> — Search all matching records\n"
+                 . "📦 <code>/product &lt;code&gt;</code> — View full product details\n"
+                 . "↕️ <code>/sort [price|stock|date]</code> — Sort product list\n"
                  . "⚠️ <code>/lowstock</code> — View critical items (qty ≤ 5)\n"
-                 . "📊 <code>/summary</code> — Executive inventory summary dashboard\n"
-                 . "💎 <code>/valuation</code> — Financial report & asset valuation\n"
-                 . "🆕 <code>/added</code> — List recently added products & categories\n"
-                 . "✏️ <code>/updated</code> — List recently modified inventory rows\n"
-                 . "❓ <code>/help</code> — Show this interactive command guide\n\n"
+                 . "📊 <code>/topstock</code> — Top 10 highest stock items\n\n"
+                 . "<b>🏷️ CATEGORY COMMANDS</b>\n"
+                 . "🏷️ <code>/categories</code> — View all categories\n"
+                 . "🏷️ <code>/category &lt;code&gt;</code> — View category + products\n\n"
+                 . "<b>📊 REPORTS & EXPORTS</b>\n"
+                 . "📊 <code>/summary</code> — Executive dashboard\n"
+                 . "💎 <code>/valuation</code> — Financial valuation report\n"
+                 . "📜 <code>/history</code> — Combined activity log\n"
+                 . "📤 <code>/export [pdf|excel|csv]</code> — Export data\n\n"
+                 . "<b>🔔 NOTIFICATIONS</b>\n"
+                 . "📤 <code>/push &lt;code&gt;</code> — Push item to Telegram\n"
+                 . "🔔 <code>/toggle auto</code> — Toggle auto-notifications\n\n"
+                 . "<b>📜 ACTIVITY LOGS</b>\n"
+                 . "🆕 <code>/added</code> — Recently added items\n"
+                 . "✏️ <code>/updated</code> — Recently modified items\n\n"
+                 . "❓ <code>/help</code> — Show this command guide\n\n"
                  . "─────────────────────────────\n"
                  . "<i>Tap any command above to execute instantly!</i>";
             
