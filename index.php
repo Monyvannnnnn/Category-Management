@@ -1707,7 +1707,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
         // Manual Push Modal Handlers
         $("#openPushModalBtn").on("click", function() {
-            $("#customPushMessage").val("");
+            $("#customPushMessageCustom").val("");
             loadPushSettings();
             $("#pushModal").fadeIn(200);
         });
@@ -1883,7 +1883,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
         // Push Custom Action
         $("#btnPushCustom").on("click", function() {
-            var msg = $.trim($("#customPushMessage").val());
+            var msg = $.trim($("#customPushMessageCustom").val());
             if (!msg) {
                 DevExpress.ui.notify("Please enter a custom message to push.", "warning", 3000);
                 return;
@@ -1901,7 +1901,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Send Custom Push');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Custom notification pushed to Telegram!", "success", 3000);
-                        $("#customPushMessage").val("");
+                        $("#customPushMessageCustom").val("");
                         $("#pushModal").fadeOut(150);
                     } else {
                         DevExpress.ui.notify(res.description || "Failed to push custom message.", "error", 4000);
@@ -1935,32 +1935,38 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
     <!-- Manual Telegram Push Modal -->
     <div id="pushModal" class="custom-modal-backdrop" style="display: none;">
-        <div class="custom-modal-content" style="max-width: 560px; max-height: 85vh; overflow-y: auto;">
+        <div class="custom-modal-content" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
             <div class="custom-modal-header">
-                <h3><i class="fa-brands fa-telegram" style="color: #0088cc;"></i> Telegram Notification Hub</h3>
+                <h3><i class="fa-brands fa-telegram telegram-icon"></i> Telegram Notification Hub</h3>
                 <button type="button" class="custom-modal-close" id="closePushModalBtn">&times;</button>
             </div>
             <div class="custom-modal-body">
                 <!-- 2-Tab Navigation Bar -->
                 <div class="push-modal-tabs">
                     <button type="button" class="push-tab-btn active" data-tab="tab-mode-setup">
-                        <i class="fa-solid fa-sliders"></i> Mode Setup (Auto/Manual)
+                        <i class="fa-solid fa-sliders"></i> Mode Setup
                     </button>
                     <button type="button" class="push-tab-btn" data-tab="tab-reports-data">
-                        <i class="fa-solid fa-chart-column"></i> Push Data Reports
+                        <i class="fa-solid fa-paper-plane"></i> Push Reports
                     </button>
                 </div>
 
                 <!-- TAB 1: Auto & Manual Setup -->
                 <div id="tab-mode-setup" class="push-tab-content active">
-                    <div class="push-mode-banner" style="margin-bottom: 0;">
-                        <div class="push-mode-info">
-                            <div class="push-mode-title">
-                                Auto Telegram Notifications
-                                <span id="pushModeBadge" class="mode-badge auto-on">Auto Active</span>
+                    <!-- Auto/Manual Toggle Card -->
+                    <div class="push-mode-card">
+                        <div class="push-mode-left">
+                            <div class="push-mode-icon auto-icon">
+                                <i class="fa-solid fa-bolt"></i>
                             </div>
-                            <div class="push-mode-subtitle" id="pushModeSubtitle">
-                                Automatically sends alert on Add, Update, & Delete operations.
+                            <div class="push-mode-info">
+                                <div class="push-mode-title">
+                                    Auto Telegram Notifications
+                                    <span id="pushModeBadge" class="mode-badge auto-on">Active</span>
+                                </div>
+                                <div class="push-mode-subtitle" id="pushModeSubtitle">
+                                    Real-time alerts on Add, Update & Delete
+                                </div>
                             </div>
                         </div>
                         <label class="toggle-switch-container">
@@ -1969,70 +1975,95 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         </label>
                     </div>
 
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-gear" style="color: #6366f1;"></i> Notification Triggers & Configuration</h4>
-                        <p style="margin-bottom: 8px;">
-                            • <b>Auto Mode (Active)</b>: Real-time instant alerts dispatched whenever a Category or Product is created, updated, or removed.<br>
-                            • <b>Manual Mode (Auto Closed)</b>: System operations remain quiet. Notifications are dispatched only when manually triggered from the Data Reports tab or row actions.
-                        </p>
+                    <!-- Mode Comparison -->
+                    <div class="mode-comparison">
+                        <div class="mode-card auto-mode active">
+                            <div class="mode-card-header">
+                                <i class="fa-solid fa-bolt"></i> Auto Mode
+                            </div>
+                            <ul class="mode-card-list">
+                                <li><i class="fa-solid fa-check"></i> Instant alerts on create</li>
+                                <li><i class="fa-solid fa-check"></i> Instant alerts on update</li>
+                                <li><i class="fa-solid fa-check"></i> Instant alerts on delete</li>
+                            </ul>
+                        </div>
+                        <div class="mode-card manual-mode">
+                            <div class="mode-card-header">
+                                <i class="fa-solid fa-hand-pointer"></i> Manual Mode
+                            </div>
+                            <ul class="mode-card-list">
+                                <li><i class="fa-solid fa-xmark"></i> No automatic alerts</li>
+                                <li><i class="fa-solid fa-check"></i> Push via Reports tab</li>
+                                <li><i class="fa-solid fa-check"></i> Push via row actions</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
                 <!-- TAB 2: Push Data Reports -->
                 <div id="tab-reports-data" class="push-tab-content">
-                    <!-- Action Card 1: Push Recently Added -->
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-plus-circle" style="color: #10b981;"></i> Push Recently Added Items</h4>
-                        <p>Manually trigger a Telegram update listing newly created products and categories.</p>
-                        <button type="button" class="add-btn" id="btnPushAdded" style="width: 100%; justify-content: center; background: #10b981;">
-                            <i class="fa-solid fa-paper-plane"></i> Push Added Items Report
+                    <div class="push-reports-grid">
+                        <!-- Report Button 1 -->
+                        <button type="button" class="push-report-card" id="btnPushAdded">
+                            <div class="report-icon bg-green"><i class="fa-solid fa-plus"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Recently Added</span>
+                                <span class="report-desc">New products & categories</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
-                    </div>
 
-                    <!-- Action Card 2: Push Recently Updated -->
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-pen-to-square" style="color: #f59e0b;"></i> Push Recently Updated Items</h4>
-                        <p>Manually trigger a Telegram update listing recently modified products and categories.</p>
-                        <button type="button" class="add-btn" id="btnPushUpdated" style="width: 100%; justify-content: center; background: #f59e0b; color: #1e293b;">
-                            <i class="fa-solid fa-paper-plane"></i> Push Updated Items Report
+                        <!-- Report Button 2 -->
+                        <button type="button" class="push-report-card" id="btnPushUpdated">
+                            <div class="report-icon bg-amber"><i class="fa-solid fa-pen"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Recently Updated</span>
+                                <span class="report-desc">Modified products & categories</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
-                    </div>
 
-                    <!-- Action Card 3: Low Stock Warning -->
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Push Low Stock Warning</h4>
-                        <p>Manually send a low stock alert listing items with quantity &le; 5.</p>
-                        <button type="button" class="add-btn" id="btnPushLowStock" style="width: 100%; justify-content: center; background: #ef4444;">
-                            <i class="fa-solid fa-paper-plane"></i> Push Low Stock Warning
+                        <!-- Report Button 3 -->
+                        <button type="button" class="push-report-card" id="btnPushLowStock">
+                            <div class="report-icon bg-red"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Low Stock Warning</span>
+                                <span class="report-desc">Items with quantity &le; 5</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
-                    </div>
 
-                    <!-- Action Card 4: Financial Valuation -->
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-sack-dollar" style="color: #8b5cf6;"></i> Push Financial & Valuation Report</h4>
-                        <p>Send asset valuation report, total stock count, and average pricing breakdown.</p>
-                        <button type="button" class="add-btn" id="btnPushValuation" style="width: 100%; justify-content: center; background: #8b5cf6;">
-                            <i class="fa-solid fa-paper-plane"></i> Push Valuation Report
+                        <!-- Report Button 4 -->
+                        <button type="button" class="push-report-card" id="btnPushValuation">
+                            <div class="report-icon bg-purple"><i class="fa-solid fa-sack-dollar"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Valuation Report</span>
+                                <span class="report-desc">Asset value & pricing</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
-                    </div>
 
-                    <!-- Action Card 5: Inventory Summary -->
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-chart-pie" style="color: #6366f1;"></i> Full Inventory Summary Report</h4>
-                        <p>Send real-time overall summary of total categories, products, stock quantity, and valuation.</p>
-                        <button type="button" class="add-btn" id="btnPushSummary" style="width: 100%; justify-content: center; background: #6366f1;">
-                            <i class="fa-solid fa-paper-plane"></i> Push Summary Report
+                        <!-- Report Button 5 -->
+                        <button type="button" class="push-report-card" id="btnPushSummary">
+                            <div class="report-icon bg-blue"><i class="fa-solid fa-chart-pie"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Full Summary</span>
+                                <span class="report-desc">Complete inventory overview</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
-                    </div>
-                    
-                    <!-- Action Card 6: Custom Message -->
-                    <div class="push-option-card">
-                        <h4><i class="fa-solid fa-comment-dots" style="color: #38bdf8;"></i> Custom Message Push</h4>
-                        <p>Type a custom alert or note to push directly to your Telegram chat.</p>
-                        <textarea id="customPushMessage" class="custom-modal-input" rows="2" placeholder="Enter custom notification message here..."></textarea>
-                        <button type="button" class="add-btn" id="btnPushCustom" style="width: 100%; justify-content: center; background: #0284c7; margin-top: 10px;">
-                            <i class="fa-solid fa-paper-plane"></i> Send Custom Push
-                        </button>
+
+                        <!-- Report Button 6: Custom -->
+                        <div class="push-report-card custom-report">
+                            <div class="report-icon bg-cyan"><i class="fa-solid fa-comment-dots"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Custom Message</span>
+                                <input type="text" id="customPushMessageCustom" class="custom-report-input" placeholder="Type message & click push...">
+                            </div>
+                            <button type="button" class="custom-push-btn" id="btnPushCustom">
+                                <i class="fa-solid fa-paper-plane"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
