@@ -633,15 +633,134 @@ label,
 .dx-datagrid .actions-cell {
   text-align: center !important;
   padding: 8px 6px !important;
+  position: relative !important;
+  overflow: visible !important;
+}
+
+.dx-datagrid-rowsview .dx-row > td.actions-cell {
+  overflow: visible !important;
 }
 
 .actions,
-.actions-wrapper {
+.actions-wrapper,
+.desktop-actions-wrapper {
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
   gap: 6px !important;
   margin: 0 auto !important;
+}
+
+/* Kebab Dropdown Menu Mobile Action Column */
+.mobile-kebab-wrapper {
+  display: none !important;
+  position: relative !important;
+  margin: 0 auto !important;
+}
+
+.kebab-trigger-btn {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 8px !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  color: #94a3b8 !important;
+  font-size: 15px !important;
+  cursor: pointer !important;
+  transition: all 0.15s ease !important;
+  padding: 0 !important;
+  outline: none !important;
+}
+
+.kebab-trigger-btn:hover,
+.kebab-trigger-btn:active {
+  background: #334155 !important;
+  color: #f8fafc !important;
+  border-color: #64748b !important;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.3) !important;
+}
+
+.kebab-dropdown-menu {
+  display: none;
+  position: absolute !important;
+  right: 0 !important;
+  top: calc(100% + 4px) !important;
+  min-width: 145px !important;
+  background: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.18) !important;
+  border-radius: 10px !important;
+  box-shadow: 0 14px 28px -4px rgba(0, 0, 0, 0.65), 0 4px 10px -2px rgba(0, 0, 0, 0.4) !important;
+  padding: 5px !important;
+  z-index: 999999 !important;
+  flex-direction: column !important;
+  gap: 2px !important;
+}
+
+.kebab-dropdown-menu.show {
+  display: flex !important;
+  animation: kebabFadeIn 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes kebabFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.kebab-menu-item {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  width: 100% !important;
+  padding: 8px 12px !important;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 6px !important;
+  color: #e2e8f0 !important;
+  font-size: 12.5px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  text-align: left !important;
+  transition: all 0.12s ease !important;
+  white-space: nowrap !important;
+}
+
+.kebab-menu-item i {
+  font-size: 14px !important;
+  width: 16px !important;
+  text-align: center !important;
+}
+
+.kebab-push-item:hover {
+  background: rgba(56, 189, 248, 0.15) !important;
+  color: #38bdf8 !important;
+}
+
+.kebab-edit-item:hover {
+  background: rgba(52, 211, 153, 0.15) !important;
+  color: #34d399 !important;
+}
+
+.kebab-delete-item:hover {
+  background: rgba(248, 113, 113, 0.15) !important;
+  color: #f87171 !important;
+}
+
+@media (max-width: 768px) {
+  .desktop-actions-wrapper {
+    display: none !important;
+  }
+  .mobile-kebab-wrapper {
+    display: inline-block !important;
+  }
 }
 
 .edit-btn,
@@ -1473,6 +1592,19 @@ label,
   /* DevExtreme Action Column Mobile Optimization */
   .dx-datagrid .actions-cell {
     padding: 4px 2px !important;
+    text-align: center !important;
+  }
+
+  .kebab-trigger-btn {
+    width: 30px !important;
+    height: 30px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+  }
+
+  .kebab-dropdown-menu {
+    right: 0 !important;
+    min-width: 145px !important;
   }
 
   .actions-cell .dx-link-telegram,

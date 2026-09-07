@@ -646,8 +646,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 {
                     type: "buttons",
                     caption: "Action",
-                    width: 115,
-                    minWidth: 105,
+                    width: $(window).width() <= 768 ? 68 : 115,
+                    minWidth: $(window).width() <= 768 ? 60 : 105,
                     allowExporting: false,
                     allowColumnResizing: true,
                     allowFiltering: false,
@@ -710,13 +710,59 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                 e.preventDefault();
                             });
 
-                        var $wrapper = $("<div>")
-                            .addClass("actions-wrapper")
+                        var $desktopWrapper = $("<div>")
+                            .addClass("actions-wrapper desktop-actions-wrapper")
                             .append($telegramBtn)
                             .append($editBtn)
                             .append($deleteBtn);
 
-                        container.append($wrapper);
+                        var $kebabBtn = $("<button>")
+                            .attr("type", "button")
+                            .addClass("kebab-trigger-btn")
+                            .attr("title", "More Actions")
+                            .html('<i class="fa-solid fa-ellipsis-vertical"></i>');
+
+                        var $kebabMenu = $("<div>")
+                            .addClass("kebab-dropdown-menu")
+                            .html(
+                                '<button type="button" class="kebab-menu-item kebab-push-item"><i class="fa-brands fa-telegram" style="color: #38bdf8;"></i> <span>Manual Push</span></button>' +
+                                '<button type="button" class="kebab-menu-item kebab-edit-item"><i class="fa-solid fa-pen-to-square" style="color: #34d399;"></i> <span>Edit</span></button>' +
+                                '<button type="button" class="kebab-menu-item kebab-delete-item"><i class="fa-solid fa-trash-can" style="color: #f87171;"></i> <span>Delete</span></button>'
+                            );
+
+                        $kebabBtn.on("click", function(e) {
+                            e.stopPropagation();
+                            var wasShown = $kebabMenu.hasClass("show");
+                            $(".kebab-dropdown-menu").removeClass("show");
+                            if (!wasShown) {
+                                $kebabMenu.addClass("show");
+                            }
+                        });
+
+                        $kebabMenu.find(".kebab-push-item").on("click", function(e) {
+                            e.stopPropagation();
+                            $kebabMenu.removeClass("show");
+                            $telegramBtn.trigger("click");
+                        });
+
+                        $kebabMenu.find(".kebab-edit-item").on("click", function(e) {
+                            e.stopPropagation();
+                            $kebabMenu.removeClass("show");
+                            options.component.editRow(options.rowIndex);
+                        });
+
+                        $kebabMenu.find(".kebab-delete-item").on("click", function(e) {
+                            e.stopPropagation();
+                            $kebabMenu.removeClass("show");
+                            options.component.deleteRow(options.rowIndex);
+                        });
+
+                        var $mobileKebabWrapper = $("<div>")
+                            .addClass("mobile-kebab-wrapper")
+                            .append($kebabBtn)
+                            .append($kebabMenu);
+
+                        container.append($desktopWrapper).append($mobileKebabWrapper);
                     }
                 }
             ],
@@ -1705,7 +1751,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 dataType: "json",
                 data: { action: "push_added" },
                 success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Added Items Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Added Items Report');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Recently added items pushed to Telegram!", "success", 3000);
                         $("#pushModal").fadeOut(150);
@@ -1714,7 +1760,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 error: function() {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Added Items Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Added Items Report');
                     DevExpress.ui.notify("Network error sending push.", "error", 4000);
                 }
             });
@@ -1731,7 +1777,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 dataType: "json",
                 data: { action: "push_updated" },
                 success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Updated Items Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Updated Items Report');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Recently updated items pushed to Telegram!", "success", 3000);
                         $("#pushModal").fadeOut(150);
@@ -1740,7 +1786,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 error: function() {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Updated Items Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Updated Items Report');
                     DevExpress.ui.notify("Network error sending push.", "error", 4000);
                 }
             });
@@ -1757,7 +1803,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 dataType: "json",
                 data: { action: "summary" },
                 success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Summary Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Summary Report');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Summary report successfully pushed to Telegram!", "success", 3000);
                         $("#pushModal").fadeOut(150);
@@ -1766,7 +1812,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 error: function(xhr) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Summary Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Summary Report');
                     DevExpress.ui.notify("Network or server error sending push.", "error", 4000);
                 }
             });
@@ -1783,7 +1829,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 dataType: "json",
                 data: { action: "push_low_stock" },
                 success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Low Stock Warning');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Low Stock Warning');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Low stock warning report pushed to Telegram!", "success", 3000);
                         $("#pushModal").fadeOut(150);
@@ -1792,7 +1838,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 error: function() {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Low Stock Warning');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Low Stock Warning');
                     DevExpress.ui.notify("Network error sending push.", "error", 4000);
                 }
             });
@@ -1809,7 +1855,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 dataType: "json",
                 data: { action: "push_valuation" },
                 success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Valuation Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Valuation Report');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Valuation report pushed to Telegram!", "success", 3000);
                         $("#pushModal").fadeOut(150);
@@ -1818,7 +1864,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 error: function() {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Push Valuation Report');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Valuation Report');
                     DevExpress.ui.notify("Network error sending push.", "error", 4000);
                 }
             });
@@ -1841,7 +1887,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 dataType: "json",
                 data: { action: "custom", message: msg },
                 success: function(res) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Send Custom Push');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Send Custom Push');
                     if (res && res.ok) {
                         DevExpress.ui.notify("Custom notification pushed to Telegram!", "success", 3000);
                         $("#customPushMessage").val("");
@@ -1851,7 +1897,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     }
                 },
                 error: function(xhr) {
-                    $btn.prop("disabled", false).html('<i class="fa-paper-plane"></i> Send Custom Push');
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Send Custom Push');
                     DevExpress.ui.notify("Network or server error sending push.", "error", 4000);
                 }
             });
@@ -1864,6 +1910,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             $(this).addClass("active");
             $(".push-tab-content").removeClass("active");
             $("#" + targetTab).addClass("active");
+        });
+
+        // Close Kebab Dropdown Menu on Outside Click
+        $(document).on("click", function(e) {
+            if (!$(e.target).closest(".mobile-kebab-wrapper").length) {
+                $(".kebab-dropdown-menu").removeClass("show");
+            }
         });
     });
     </script>
@@ -1920,7 +1973,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <h4><i class="fa-solid fa-plus-circle" style="color: #10b981;"></i> Push Recently Added Items</h4>
                         <p>Manually trigger a Telegram update listing newly created products and categories.</p>
                         <button type="button" class="add-btn" id="btnPushAdded" style="width: 100%; justify-content: center; background: #10b981;">
-                            <i class="fa-paper-plane"></i> Push Added Items Report
+                            <i class="fa-solid fa-paper-plane"></i> Push Added Items Report
                         </button>
                     </div>
 
@@ -1929,7 +1982,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <h4><i class="fa-solid fa-pen-to-square" style="color: #f59e0b;"></i> Push Recently Updated Items</h4>
                         <p>Manually trigger a Telegram update listing recently modified products and categories.</p>
                         <button type="button" class="add-btn" id="btnPushUpdated" style="width: 100%; justify-content: center; background: #f59e0b; color: #1e293b;">
-                            <i class="fa-paper-plane"></i> Push Updated Items Report
+                            <i class="fa-solid fa-paper-plane"></i> Push Updated Items Report
                         </button>
                     </div>
 
@@ -1938,7 +1991,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <h4><i class="fa-solid fa-triangle-exclamation" style="color: #ef4444;"></i> Push Low Stock Warning</h4>
                         <p>Manually send a low stock alert listing items with quantity &le; 5.</p>
                         <button type="button" class="add-btn" id="btnPushLowStock" style="width: 100%; justify-content: center; background: #ef4444;">
-                            <i class="fa-paper-plane"></i> Push Low Stock Warning
+                            <i class="fa-solid fa-paper-plane"></i> Push Low Stock Warning
                         </button>
                     </div>
 
@@ -1947,7 +2000,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <h4><i class="fa-solid fa-sack-dollar" style="color: #8b5cf6;"></i> Push Financial & Valuation Report</h4>
                         <p>Send asset valuation report, total stock count, and average pricing breakdown.</p>
                         <button type="button" class="add-btn" id="btnPushValuation" style="width: 100%; justify-content: center; background: #8b5cf6;">
-                            <i class="fa-paper-plane"></i> Push Valuation Report
+                            <i class="fa-solid fa-paper-plane"></i> Push Valuation Report
                         </button>
                     </div>
 
@@ -1956,7 +2009,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <h4><i class="fa-solid fa-chart-pie" style="color: #6366f1;"></i> Full Inventory Summary Report</h4>
                         <p>Send real-time overall summary of total categories, products, stock quantity, and valuation.</p>
                         <button type="button" class="add-btn" id="btnPushSummary" style="width: 100%; justify-content: center; background: #6366f1;">
-                            <i class="fa-paper-plane"></i> Push Summary Report
+                            <i class="fa-solid fa-paper-plane"></i> Push Summary Report
                         </button>
                     </div>
                     
@@ -1966,7 +2019,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <p>Type a custom alert or note to push directly to your Telegram chat.</p>
                         <textarea id="customPushMessage" class="custom-modal-input" rows="2" placeholder="Enter custom notification message here..."></textarea>
                         <button type="button" class="add-btn" id="btnPushCustom" style="width: 100%; justify-content: center; background: #0284c7; margin-top: 10px;">
-                            <i class="fa-paper-plane"></i> Send Custom Push
+                            <i class="fa-solid fa-paper-plane"></i> Send Custom Push
                         </button>
                     </div>
                 </div>
