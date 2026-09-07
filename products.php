@@ -572,6 +572,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     validationRules: [{
                         type: "required",
                         message: "Quantity is required"
+                    }, {
+                        type: "range",
+                        min: 0,
+                        message: "Quantity must be 0 or greater"
                     }]
                 },
                 {
@@ -910,7 +914,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             editorType: "dxNumberBox",
                             editorOptions: {
                                 placeholder: "Enter quantity",
-                                format: "#"
+                                format: "#",
+                                min: 0,
+                                showSpinButtons: true
                             }
                         }
                     ]
