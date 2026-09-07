@@ -7,7 +7,7 @@
 
 require_once 'database.php';
 
-$botToken = "8587070306:***";
+$botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8";
 
 // Read incoming Telegram update
 $content = file_get_contents("php://input");
@@ -25,7 +25,7 @@ processTelegramCommand($conn, $chatId, $text, $botToken);
 function sendTelegramMessage($chatId, $text) {
     global $botToken;
     if (empty($botToken)) {
-        $botToken = "8587070306:***";
+        $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8";
     }
     $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
     $data = [

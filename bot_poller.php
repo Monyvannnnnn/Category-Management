@@ -9,7 +9,7 @@ require_once __DIR__ . '/database.php';
 
 header("Content-Type: application/json; charset=utf-8");
 
-$botToken = "8587070306:***";
+$botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8";
 
 function registerBotCommands($botToken) {
     $url = "https://api.telegram.org/bot{$botToken}/setMyCommands";
