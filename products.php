@@ -2183,6 +2183,32 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             });
         });
 
+        // Push Out of Stock Action
+        $("#btnPushOutOfStock").on("click", function() {
+            var $btn = $(this);
+            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Out of Stock...');
+            
+            $.ajax({
+                url: "manual_push.php",
+                type: "POST",
+                dataType: "json",
+                data: { action: "push_out_of_stock" },
+                success: function(res) {
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Out of Stock');
+                    if (res && res.ok) {
+                        DevExpress.ui.notify("Out of stock report pushed to Telegram!", "success", 3000);
+                        $("#pushModal").fadeOut(150);
+                    } else {
+                        DevExpress.ui.notify(res.description || "Failed to push out of stock report.", "error", 4000);
+                    }
+                },
+                error: function() {
+                    $btn.prop("disabled", false).html('<i class="fa-solid fa-paper-plane"></i> Push Out of Stock');
+                    DevExpress.ui.notify("Network error sending push.", "error", 4000);
+                }
+            });
+        });
+
         // Push Valuation Report Action
         $("#btnPushValuation").on("click", function() {
             var $btn = $(this);
@@ -2383,6 +2409,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             <div class="report-info">
                                 <span class="report-title">Low Stock Warning</span>
                                 <span class="report-desc">Items with quantity &le; 5</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
+                        </button>
+
+                        <!-- Report Button 3b: Out of Stock -->
+                        <button type="button" class="push-report-card" id="btnPushOutOfStock">
+                            <div class="report-icon bg-black"><i class="fa-solid fa-circle-xmark"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Out of Stock</span>
+                                <span class="report-desc">Items with 0 units</span>
                             </div>
                             <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>

@@ -2056,6 +2056,10 @@ label,
   background: linear-gradient(135deg, #06b6d4, #0891b2);
 }
 
+.bg-black {
+  background: linear-gradient(135deg, #1f2937, #111827);
+}
+
 .report-info {
   flex: 1;
   display: flex;

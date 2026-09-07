@@ -220,6 +220,32 @@ if ($action === 'get_settings') {
     exit;
 
 // --------------------------------------------------------------------------
+// 7b. Push Out of Stock Report
+// --------------------------------------------------------------------------
+} elseif ($action === 'push_out_of_stock') {
+    $outOfStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity = 0 ORDER BY p.product_name ASC");
+    $items = [];
+    if ($outOfStockRes) {
+        while ($row = mysqli_fetch_assoc($outOfStockRes)) {
+            $items[] = "❌ <b>" . htmlspecialchars($row['product_code']) . "</b> - " . htmlspecialchars($row['product_name']) . "\n   Category: " . htmlspecialchars($row['category_name'] ?? 'N/A') . " | <code>Stock: 0 units</code>";
+        }
+    }
+
+    $nowStr = date('Y-m-d H:i:s');
+    $msg = "<b>🚫 OUT OF STOCK REPORT</b>\n"
+         . "<i>Generated: {$nowStr}</i>\n"
+         . "───────────────────────\n";
+    if (!empty($items)) {
+        $msg .= implode("\n", $items) . "\n";
+    } else {
+        $msg .= "✅ All products are currently in stock.\n";
+    }
+    $msg .= "───────────────────────\n<i>Pushed manually from Inventory Dashboard</i>";
+
+    echo sendTelegramNotification($msg);
+    exit;
+
+// --------------------------------------------------------------------------
 // 8. Push Financial Valuation Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_valuation') {
