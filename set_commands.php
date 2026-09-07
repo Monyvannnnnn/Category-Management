@@ -756,106 +756,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 15. /export [pdf|excel|csv]
-        // ----------------------------------------------------
-        case '/export':
-            if (empty($arg)) {
-                $msg = "⚠️ <b>INVALID EXPORT FORMAT</b>\n"
-                     . "═════════════════════════════\n"
-                     . "Usage: <code>/export [pdf|excel|csv]</code>\n"
-                     . "Example: <code>/export csv</code>\n\n"
-                     . "📤 <b>Available formats:</b>\n"
-                     . "├ <code>pdf</code> — Text-based report\n"
-                     . "├ <code>excel</code> — Monospace table\n"
-                     . "└ <code>csv</code> — Clean CSV format";
-                sendTelegramMessage($chatId, $msg);
-                break;
-            }
-
-            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, c.category_name, p.price, p.quantity FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.product_name ASC");
-
-            $totalProds = 0;
-            $totalStock = 0;
-            $totalVal = 0.00;
-            $rows = [];
-            if ($res) {
-                while ($r = mysqli_fetch_assoc($res)) {
-                    $rows[] = $r;
-                    $totalProds++;
-                    $totalStock += (int)$r['quantity'];
-                    $totalVal += (float)$r['price'] * (int)$r['quantity'];
-                }
-            }
-
-            if ($arg === 'csv') {
-                $msg = "📊 <b>CSV EXPORT</b>\n"
-                     . "═════════════════════════════\n"
-                     . "<pre>Code,Name,Category,Price,Qty,Total Value\n";
-                foreach ($rows as $r) {
-                    $line = htmlspecialchars($r['product_code']) . ","
-                          . htmlspecialchars($r['product_name']) . ","
-                          . htmlspecialchars($r['category_name'] ?? 'Unassigned') . ","
-                          . number_format((float)$r['price'], 2) . ","
-                          . (int)$r['quantity'] . ","
-                          . number_format((float)$r['price'] * (int)$r['quantity'], 2);
-                    $msg .= $line . "\n";
-                }
-                $msg .= "</pre>\n"
-                      . "─────────────────────────────\n"
-                      . "📦 Total Products: <b>{$totalProds}</b>\n"
-                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
-                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>";
-            } elseif ($arg === 'excel') {
-                $msg = "📊 <b>EXCEL EXPORT</b>\n"
-                     . "═════════════════════════════\n"
-                     . "<pre>"
-                     . str_pad("Code", 12) . str_pad("Name", 25) . str_pad("Category", 18) . str_pad("Price", 10) . str_pad("Qty", 8) . "Total\n";
-                $msg .= str_repeat("─", 80) . "\n";
-                $displayRows = array_slice($rows, 0, 20);
-                foreach ($displayRows as $r) {
-                    $msg .= str_pad(htmlspecialchars($r['product_code']), 12)
-                          . str_pad(htmlspecialchars($r['product_name']), 25)
-                          . str_pad(htmlspecialchars($r['category_name'] ?? 'Unassigned'), 18)
-                          . str_pad("$" . number_format((float)$r['price'], 2), 10)
-                          . str_pad((string)(int)$r['quantity'], 8)
-                          . "$" . number_format((float)$r['price'] * (int)$r['quantity'], 2) . "\n";
-                }
-                $msg .= "</pre>\n";
-                if (count($rows) > 20) {
-                    $msg .= "💡 <i>Showing 20 of {$totalProds} products</i>\n";
-                }
-                $msg .= "─────────────────────────────\n"
-                      . "📦 Total Products: <b>{$totalProds}</b>\n"
-                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
-                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>";
-            } else {
-                $nowStr = date('d/m/Y H:i:s');
-                $msg = "📄 <b>PDF-STYLE INVENTORY REPORT</b>\n"
-                     . "<i>Generated: {$nowStr}</i>\n"
-                     . "═════════════════════════════\n\n";
-                $displayRows = array_slice($rows, 0, 20);
-                foreach ($displayRows as $i => $r) {
-                    $pCode = htmlspecialchars($r['product_code']);
-                    $pName = htmlspecialchars($r['product_name']);
-                    $pCat = htmlspecialchars($r['category_name'] ?? 'Unassigned');
-                    $pPrice = number_format((float)$r['price'], 2);
-                    $pQty = (int)$r['quantity'];
-                    $pTotal = number_format((float)$r['price'] * $pQty, 2);
-                    $msg .= "<b>" . ($i + 1) . ". {$pName}</b>\n"
-                          . "   └ Code: <code>{$pCode}</code> | Category: <code>{$pCat}</code>\n"
-                          . "   └ Price: <b>\${$pPrice}</b> | Qty: <b>{$pQty}</b> | Total: <b>\${$pTotal}</b>\n\n";
-                }
-                $msg .= "─────────────────────────────\n"
-                      . "📦 Total Products: <b>{$totalProds}</b>\n"
-                      . "🔢 Total Stock: <b>{$totalStock} units</b>\n"
-                      . "💰 Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>\n\n"
-                      . "<i>This report can be saved as PDF from Telegram</i>";
-            }
-            sendTelegramMessage($chatId, $msg);
-            break;
-
-        // ----------------------------------------------------
-        // 16. /toggle auto
+        // 15. /toggle auto
         // ----------------------------------------------------
         case '/toggle':
             if ($arg !== 'auto') {
@@ -918,7 +819,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                  . "📊 <code>/summary</code> — Executive dashboard\n"
                  . "💎 <code>/valuation</code> — Financial valuation report\n"
                  . "📜 <code>/history</code> — Combined activity log\n"
-                 . "📤 <code>/export [pdf|excel|csv]</code> — Export data\n\n"
                  . "<b>🔔 NOTIFICATIONS</b>\n"
                  . "📤 <code>/push &lt;code&gt;</code> — Push item to Telegram\n"
                  . "🔔 <code>/toggle auto</code> — Toggle auto-notifications\n\n"
