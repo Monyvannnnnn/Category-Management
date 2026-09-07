@@ -637,7 +637,7 @@ label,
   overflow: visible !important;
 }
 
-.dx-datagrid-rowsview .dx-row > td.actions-cell {
+.dx-datagrid-rowsview .dx-row>td.actions-cell {
   overflow: visible !important;
   padding: 4px 6px !important;
   text-align: center !important;
@@ -743,10 +743,12 @@ label,
     transform: translateY(-10px) scale(0.85);
     filter: blur(4px);
   }
+
   70% {
     transform: translateY(2px) scale(1.02);
     filter: blur(0px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -770,6 +772,7 @@ label,
     opacity: 0;
     transform: translateX(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -833,6 +836,7 @@ label,
   .desktop-actions-wrapper {
     display: none !important;
   }
+
   .mobile-kebab-wrapper {
     display: inline-block !important;
   }
@@ -1550,7 +1554,7 @@ label,
   }
 
   /* Header Action Group: Prominent Primary Button on Top + 2-Column Row Below */
-  .header > div {
+  .header>div {
     display: flex !important;
     flex-wrap: wrap !important;
     gap: 8px !important;
@@ -1778,6 +1782,7 @@ label,
 }
 
 @media (max-width: 480px) {
+
   .header #openPushModalBtn,
   .header .add-btn[onclick*="location"] {
     font-size: 11px !important;
@@ -1997,11 +2002,11 @@ label,
   transition: transform 0.25s ease;
 }
 
-.toggle-switch-checkbox:checked + .toggle-switch-slider {
+.toggle-switch-checkbox:checked+.toggle-switch-slider {
   background-color: #10b981;
 }
 
-.toggle-switch-checkbox:checked + .toggle-switch-slider::before {
+.toggle-switch-checkbox:checked+.toggle-switch-slider::before {
   transform: translateX(20px);
 }
 
