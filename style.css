@@ -2002,13 +2002,83 @@ label,
     font-size: 11px !important;
   }
 
-  /* DevExtreme Popup for Add Category / Add Product on mobile */
+  /* DevExtreme Popup & Advanced Search Form Optimization on Mobile */
+  .dark-popup.dx-popup-wrapper .dx-overlay-content,
   .dx-popup-wrapper .dx-overlay-content {
-    width: calc(100vw - 20px) !important;
-    max-width: 100% !important;
-    left: 10px !important;
-    right: 10px !important;
+    width: min(340px, calc(100vw - 24px)) !important;
+    max-width: 340px !important;
+    max-height: calc(100vh - 40px) !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
     margin: auto !important;
+    border-radius: 14px !important;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 0 0 100vw rgba(15, 20, 28, 0.65) !important;
+  }
+
+  .dark-popup .dx-popup-title {
+    padding: 10px 14px !important;
+  }
+
+  .dark-popup .dx-popup-title .dx-toolbar-label {
+    font-size: 15px !important;
+    font-weight: 700 !important;
+  }
+
+  .dark-popup .dx-popup-content {
+    padding: 10px 12px !important;
+    max-height: calc(100vh - 95px) !important;
+    overflow-y: auto !important;
+  }
+
+  #advancedSearchForm .dx-item,
+  #advancedSearchForm .dx-field-item {
+    padding-bottom: 2px !important;
+  }
+
+  #advancedSearchForm .dx-field-item-label {
+    padding: 0 0 2px 0 !important;
+  }
+
+  #advancedSearchForm .dx-field-item-label-text,
+  #advancedSearchForm .dx-field-item-label span {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+
+  #advancedSearchForm .dx-field-item-label i {
+    font-size: 11px !important;
+    width: 13px !important;
+  }
+
+  #advancedSearchForm .dx-texteditor {
+    height: 32px !important;
+    border-radius: 6px !important;
+  }
+
+  #advancedSearchForm .dx-texteditor-input {
+    font-size: 11.5px !important;
+    padding: 3px 8px !important;
+  }
+
+  #advancedSearchForm .dx-dropdowneditor-icon,
+  #advancedSearchForm .dx-datebox-calendar-icon {
+    font-size: 12px !important;
+  }
+
+  .dark-popup .primary-modal-btn.dx-button,
+  .dark-popup .secondary-modal-btn.dx-button,
+  .dx-popup-bottom .dx-button {
+    height: 32px !important;
+    min-width: 72px !important;
+    font-size: 12px !important;
+    border-radius: 6px !important;
+  }
+
+  .dark-popup .primary-modal-btn.dx-button .dx-button-content,
+  .dark-popup .secondary-modal-btn.dx-button .dx-button-content,
+  .dx-popup-bottom .dx-button .dx-button-content {
+    padding: 0 12px !important;
   }
 }
 

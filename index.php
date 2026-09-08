@@ -1556,7 +1556,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         // ==========================================
         var advancedSearchPopup = $("#advancedSearchPopup").dxPopup({
             title: "Search All Records",
-            width: 700,
+            width: function() {
+                return Math.min(650, $(window).width() - 20);
+            },
+            maxHeight: function() {
+                return Math.min(650, $(window).height() - 30);
+            },
             height: "auto",
             showTitle: true,
             visible: false,
@@ -1569,13 +1574,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             titleTemplate: function (titleElement) {
                 titleElement.append(
                     $("<div style='display: flex; align-items: center; justify-content: space-between; width: 100%;'>")
-                        .append("<div style='display: flex; align-items: center; gap: 10px; font-size: 17px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 18px;'></i> <b>Search All Records</b></div>")
+                        .append("<div style='display: flex; align-items: center; gap: 10px; font-size: 16px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 16px;'></i> <b>Search All Records</b></div>")
                 );
             },
             contentTemplate: function (contentElement) {
                 var formHtml = $("<div>").append(
-                    $("<div style='margin-bottom: 25px;'>")
-                        .append("<p style='margin: 0 0 0 5px; color: #71717a; font-size: 13px;'>Full database search.</p>")
+                    $("<div style='margin-bottom: 12px;'>")
+                        .append("<p style='margin: 0 0 0 4px; color: #71717a; font-size: 12px;'>Full database search.</p>")
                 );
 
                 var $formContainer = $("<div id='advancedSearchForm'>").appendTo(formHtml);
@@ -1584,7 +1589,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
                 var createLabel = function(iconClass, text) {
                     return function(data, $element) {
-                        $element.append("<div style='display:flex; align-items:center; gap:8px;'><i class='" + iconClass + "' style='color:#71717a; width:16px; text-align:center;'></i> <span style='color:#e4e4e7; font-family:\"Poppins\", sans-serif;'>" + text + "</span></div>");
+                        $element.append("<div style='display:flex; align-items:center; gap:6px;'><i class='" + iconClass + "' style='color:#71717a; width:14px; text-align:center;'></i> <span style='color:#e4e4e7; font-family:\"Poppins\", sans-serif;'>" + text + "</span></div>");
                     };
                 };
 
@@ -1619,7 +1624,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     ]
                 });
                 
-                var $btnContainer = $("<div style='margin-top: 35px; display: flex; justify-content: flex-end; gap: 10px;'>");
+                var $btnContainer = $("<div style='margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;'>");
                 
                 var $clearBtn = $("<div>").dxButton({
                     text: "Clear",
