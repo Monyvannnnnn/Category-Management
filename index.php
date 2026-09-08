@@ -641,33 +641,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         var telegramSvg = '<i class="fa-brands fa-telegram" style="font-size: 15px;"></i>';
                         var $telegramBtn = $("<a>")
                             .addClass("dx-link dx-link-telegram")
-                            .attr("title", "Push Category to Telegram")
-                            .append(telegramSvg)
-                            .on("click", function(e) {
-                                e.preventDefault();
-                                var rowData = options.data;
-                                if (!rowData || !rowData.id) return;
-                                var $btn = $(this);
-                                $btn.css("opacity", "0.4");
-                                $.ajax({
-                                    url: "manual_push.php",
-                                    type: "POST",
-                                    dataType: "json",
-                                    data: { action: "push_single_category", id: rowData.id },
-                                    success: function(res) {
-                                        $btn.css("opacity", "1");
-                                        if (res && res.ok) {
-                                            DevExpress.ui.notify("Category '" + (rowData.category_name || rowData.id) + "' pushed to Telegram!", "success", 3000);
-                                        } else {
-                                            DevExpress.ui.notify(res.description || "Failed to push category.", "error", 4000);
-                                        }
-                                    },
-                                    error: function() {
-                                        $btn.css("opacity", "1");
-                                        DevExpress.ui.notify("Network error pushing category.", "error", 4000);
-                                    }
-                                });
-                            });
+                            .attr("title", "Contact @hangsamrang on Telegram")
+                            .attr("href", "https://t.me/hangsamrang")
+                            .attr("target", "_blank")
+                            .append(telegramSvg);
 
                         var editSvg =
                             '<svg fill="none" height="18" viewBox="0 0 24 24" width="18" xmlns="http://www.w3.org/2000/svg" style="vertical-align: middle;"><g fill-rule="evenodd"><path d="m20.6 2c-.3639 0-.7001.11429-.9929.40712l-9.3188 9.31888-.81771 2.8034 2.80351-.8177 9.3188-9.3188c.2146-.2146.4071-.66113.4071-.99291 0-.74771-.6523-1.39999-1.4-1.39999zm-2.4071-1.007095c.7072-.707166 1.571-.992905 2.4071-.992905 1.8523 0 3.4 1.54771 3.4 3.39999 0 .86822-.4075 1.82172-.9929 2.40712l-9.5 9.49999c-.1188.1189-.2657.2058-.4271.2529l-4.8 1.4c-.35053.1022-.72892.0053-.98711-.2529s-.35513-.6366-.25289-.9871l1.39999-4.8c.04707-.1613.13404-.3082.2529-.4271z" fill="currentColor" /><path d="m0 7c0-2.75228 2.24772-5 5-5h6c.5523 0 1 .44772 1 1s-.4477 1-1 1h-6c-1.64772 0-3 1.35228-3 3v12c0 1.6477 1.35228 3 3 3h12c1.6477 0 3-1.3523 3-3v-6c0-.5523.4477-1 1-1s1 .4477 1 1v6c0 2.7523-2.2477 5-5 5h-12c-2.75228 0-5-2.2477-5-5z" fill="currentColor" /></g></svg>';
@@ -1786,7 +1763,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <div id="pushModal" class="custom-modal-backdrop" style="display: none;">
         <div class="custom-modal-content" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
             <div class="custom-modal-header">
-                <h3><i class="fa-brands fa-telegram telegram-icon"></i> Telegram Notification Hub</h3>
+                <h3><i class="fa-brands fa-telegram telegram-icon"></i> Telegram Hub <a href="https://t.me/hangsamrang" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 14px; margin-left: 6px;">@hangsamrang <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i></a></h3>
                 <button type="button" class="custom-modal-close" id="closePushModalBtn">&times;</button>
             </div>
             <div class="custom-modal-body">
