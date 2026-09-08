@@ -2005,9 +2005,9 @@ label,
   /* DevExtreme Popup & Advanced Search Form Optimization on Mobile */
   .dark-popup.dx-popup-wrapper .dx-overlay-content,
   .dx-popup-wrapper .dx-overlay-content {
-    width: min(340px, calc(100vw - 24px)) !important;
-    max-width: 340px !important;
-    max-height: calc(100vh - 40px) !important;
+    width: calc(100vw - 20px) !important;
+    max-width: 480px !important;
+    max-height: calc(100vh - 30px) !important;
     left: 50% !important;
     top: 50% !important;
     transform: translate(-50%, -50%) !important;
@@ -2031,9 +2031,26 @@ label,
     overflow-y: auto !important;
   }
 
-  #advancedSearchForm .dx-item,
+  /* 2-Column Side-by-Side Flex Layout for Search Fields on Mobile */
+  #advancedSearchForm .dx-form-group-content,
+  #advancedSearchForm .dx-layout-manager,
+  #advancedSearchForm .dx-form-layout-row,
+  #advancedSearchForm .dx-flex-layout {
+    display: flex !important;
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+  }
+
+  #advancedSearchForm .dx-field-item-wrapper,
+  #advancedSearchForm .dx-box-item,
   #advancedSearchForm .dx-field-item {
-    padding-bottom: 2px !important;
+    width: 50% !important;
+    max-width: 50% !important;
+    flex: 0 0 50% !important;
+    box-sizing: border-box !important;
+    padding-left: 3px !important;
+    padding-right: 3px !important;
+    padding-bottom: 4px !important;
   }
 
   #advancedSearchForm .dx-field-item-label {
@@ -2044,6 +2061,7 @@ label,
   #advancedSearchForm .dx-field-item-label span {
     font-size: 11px !important;
     line-height: 1.2 !important;
+    white-space: nowrap !important;
   }
 
   #advancedSearchForm .dx-field-item-label i {
@@ -2058,7 +2076,7 @@ label,
 
   #advancedSearchForm .dx-texteditor-input {
     font-size: 11.5px !important;
-    padding: 3px 8px !important;
+    padding: 3px 6px !important;
   }
 
   #advancedSearchForm .dx-dropdowneditor-icon,

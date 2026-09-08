@@ -1602,6 +1602,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 };
 
                 $formContainer.dxForm({
+                    colCountByScreen: {
+                        lg: 2,
+                        md: 2,
+                        sm: 2,
+                        xs: 2
+                    },
                     colCount: 2,
                     labelLocation: "top",
                     items: [
@@ -1632,7 +1638,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     ]
                 });
                 
-                var $btnContainer = $("<div style='margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px;'>");
+                var $btnContainer = $("<div style='margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;'>");
                 
                 var $closeModalBtn = $("<div>").dxButton({
                     text: "Close",

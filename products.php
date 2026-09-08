@@ -1740,6 +1740,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 };
 
                 $formContainer.dxForm({
+                    colCountByScreen: {
+                        lg: 4,
+                        md: 4,
+                        sm: 2,
+                        xs: 2
+                    },
                     colCount: $(window).width() < 768 ? 2 : 4,
                     labelLocation: "top",
                     items: [
@@ -1807,7 +1813,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     ]
                 });
                 
-                var $btnContainer = $("<div style='margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px;'>");
+                var $btnContainer = $("<div style='margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;'>");
                 
                 var $closeModalBtn = $("<div>").dxButton({
                     text: "Close",
