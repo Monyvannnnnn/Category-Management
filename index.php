@@ -1524,10 +1524,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         var advancedSearchPopup = $("#advancedSearchPopup").dxPopup({
             title: "Search All Records",
             width: function() {
-                return Math.min(320, $(window).width() - 24);
+                return Math.min(460, $(window).width() - 20);
             },
             maxHeight: function() {
-                return Math.min(650, $(window).height() - 30);
+                return Math.min(620, $(window).height() - 30);
             },
             height: "auto",
             showTitle: true,
@@ -1554,8 +1554,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             },
             contentTemplate: function (contentElement) {
                 var formHtml = $("<div>").append(
-                    $("<div style='margin-bottom: 12px;'>")
-                        .append("<p style='margin: 0 0 0 4px; color: #71717a; font-size: 12px;'>Full database search.</p>")
+                    $("<div style='margin-bottom: 10px;'>")
+                        .append("<p style='margin: 0 0 0 2px; color: #94a3b8; font-size: 12px;'>Filter all records across database.</p>")
                 );
 
                 var $formContainer = $("<div id='advancedSearchForm'>").appendTo(formHtml);
@@ -1564,18 +1564,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
                 var createLabel = function(iconClass, text) {
                     return function(data, $element) {
-                        $element.append("<div style='display:flex; align-items:center; gap:8px; font-size:14px; white-space:nowrap;'><i class='" + iconClass + "' style='color:#94a3b8; font-size:14px; width:16px; text-align:center;'></i> <span style='color:#e2e8f0; font-family:\"Poppins\", sans-serif; font-size:14px; font-weight:600;'>" + text + "</span></div>");
+                        $element.append("<div style='display:flex; align-items:center; gap:6px; font-size:12px; white-space:nowrap;'><i class='" + iconClass + "' style='color:#94a3b8; font-size:12px; width:14px; text-align:center;'></i> <span style='color:#e2e8f0; font-family:\"Poppins\", sans-serif; font-size:12px; font-weight:600;'>" + text + "</span></div>");
                     };
                 };
 
                 $formContainer.dxForm({
                     colCountByScreen: {
-                        lg: 1,
-                        md: 1,
-                        sm: 1,
-                        xs: 1
+                        lg: 2,
+                        md: 2,
+                        sm: 2,
+                        xs: 2
                     },
-                    colCount: 1,
+                    colCount: 2,
                     labelLocation: "top",
                     items: [
                         {
@@ -1605,7 +1605,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     ]
                 });
                 
-                var $btnContainer = $("<div style='margin-top: 16px; display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: nowrap; width: 100%;'>");
+                var $btnContainer = $("<div style='margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; width: 100%; border-top: 1px solid #27354a; padding-top: 12px;'>");
                 
                 var $closeModalBtn = $("<div>").dxButton({
                     text: "Close",
