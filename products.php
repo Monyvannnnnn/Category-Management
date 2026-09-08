@@ -1710,10 +1710,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 class: "dark-popup"
             },
             titleTemplate: function (titleElement) {
-                titleElement.append(
-                    $("<div style='display: flex; align-items: center; justify-content: space-between; width: 100%;'>")
-                        .append("<div style='display: flex; align-items: center; gap: 10px; font-size: 16px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 16px;'></i> <b>Search All Records</b></div>")
-                );
+                var $titleWrapper = $("<div style='display: flex; align-items: center; justify-content: space-between; width: 100%;'>");
+                var $titleContent = $("<div style='display: flex; align-items: center; gap: 10px; font-size: 16px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 16px;'></i> <b>Search All Records</b></div>");
+                var $closeX = $("<button type='button' style='background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s ease;' title='Close'>")
+                    .html("<i class='fa-solid fa-xmark'></i>")
+                    .on("click", function() {
+                        advancedSearchPopup.hide();
+                    })
+                    .on("mouseenter", function() { $(this).css("color", "#ffffff"); })
+                    .on("mouseleave", function() { $(this).css("color", "#94a3b8"); });
+
+                $titleWrapper.append($titleContent).append($closeX);
+                titleElement.append($titleWrapper);
             },
             contentTemplate: function (contentElement) {
                 var formHtml = $("<div>").append(
@@ -1799,8 +1807,20 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     ]
                 });
                 
-                var $btnContainer = $("<div style='margin-top: 18px; display: flex; justify-content: flex-end; gap: 10px;'>");
+                var $btnContainer = $("<div style='margin-top: 18px; display: flex; justify-content: flex-end; gap: 8px;'>");
                 
+                var $closeModalBtn = $("<div>").dxButton({
+                    text: "Close",
+                    icon: "close",
+                    stylingMode: "outlined",
+                    type: "normal",
+                    onClick: function() {
+                        advancedSearchPopup.hide();
+                    }
+                });
+                $closeModalBtn.addClass("secondary-modal-btn");
+                $btnContainer.append($closeModalBtn);
+
                 var $clearBtn = $("<div>").dxButton({
                     text: "Clear",
                     icon: "clear",
