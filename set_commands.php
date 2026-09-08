@@ -857,13 +857,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                      . "═════════════════════════════\n"
                      . "Telegram auto-push is now <b>ON</b>.\n"
                      . "New products/categories will be pushed automatically.\n\n"
-                     . "💡 Use <code>/push &lt;code&gt;</code> to manually push items anytime.";
+                     . "💡 Use <code>/get &lt;code&gt;</code> to get item details anytime.";
             } else {
                 $msg = "🔕 <b>AUTO NOTIFICATIONS DISABLED</b>\n"
                      . "═════════════════════════════\n"
                      . "Telegram auto-push is now <b>OFF</b>.\n"
                      . "Notifications will not be sent automatically.\n\n"
-                     . "💡 Use <code>/push &lt;code&gt;</code> to manually push items.";
+                     . "💡 Use <code>/get &lt;code&gt;</code> to get item details.";
             }
             sendTelegramMessage($chatId, $msg);
             break;
@@ -895,7 +895,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                  . "📅 <code>/today</code> — Today's activity summary\n"
                  . "💬 <code>/chatid</code> — Get your chat ID\n\n"
                  . "<b>🔔 NOTIFICATIONS</b>\n"
-                 . "📥 <code>/get &lt;code&gt;</code> — Get item details (/get <code>)\n"
+                 . "📥 <code>/get &lt;code&gt;</code> — Get item details\n"
                  . "🔔 <code>/toggle auto</code> — Toggle auto-notifications\n\n"
                  . "<b>📜 ACTIVITY LOGS</b>\n"
                  . "🆕 <code>/added</code> — Recently added items\n"
