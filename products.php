@@ -1735,18 +1735,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
                 var createLabel = function(iconClass, text) {
                     return function(data, $element) {
-                        $element.append("<div style='display:flex; align-items:center; gap:6px;'><i class='" + iconClass + "' style='color:#71717a; width:14px; text-align:center;'></i> <span style='color:#e4e4e7; font-family:\"Poppins\", sans-serif;'>" + text + "</span></div>");
+                        $element.append("<div style='display:flex; align-items:center; gap:8px; font-size:14px; white-space:nowrap;'><i class='" + iconClass + "' style='color:#94a3b8; font-size:14px; width:16px; text-align:center;'></i> <span style='color:#e2e8f0; font-family:\"Poppins\", sans-serif; font-size:14px; font-weight:600;'>" + text + "</span></div>");
                     };
                 };
 
                 $formContainer.dxForm({
                     colCountByScreen: {
-                        lg: 4,
-                        md: 4,
+                        lg: 2,
+                        md: 2,
                         sm: 2,
-                        xs: 2
+                        xs: 1
                     },
-                    colCount: $(window).width() < 768 ? 2 : 4,
+                    colCount: $(window).width() < 640 ? 1 : 2,
                     labelLocation: "top",
                     items: [
                         {
