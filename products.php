@@ -117,10 +117,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 </div>
             </div>
             <div class="options-container">
-                <div class="option-item">
-                    <span class="option-label">Resize Mode:</span>
-                    <div id="select-resizing"></div>
-                </div>
                 <div class="search-and-export">
                     <div class="search-wrapper">
                         <i class="fa-solid fa-magnifying-glass"></i>
@@ -256,11 +252,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     }
 
     $(function() {
-        const resizingModes = [
-            { text: "Widget", value: "widget" },
-            { text: "Next Column", value: "nextColumn" }
-        ];
-
         // Modern column show/hide Field Chooser with icons and pills
         function openColumnChooser(e) {
             if (e && e.stopPropagation) {
@@ -1637,30 +1628,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             });
         })();
 
-        // Initialize Column Resizing Mode dxSelectBox
-        $('#select-resizing').dxSelectBox({
-            items: resizingModes,
-            valueExpr: 'value',
-            displayExpr: 'text',
-            value: localStorage.getItem("categoryGridResizeMode") || 'widget',
-            searchEnabled: false,
-            acceptCustomValue: false,
-            focusStateEnabled: false,
-            inputAttr: {
-                'aria-label': 'Resize Mode',
-                'readonly': 'readonly',
-                'inputmode': 'none'
-            },
-            width: 160,
-            onFocusIn: function(e) {
-                $(e.element).find('input').attr('readonly', 'readonly').attr('inputmode', 'none');
-            },
-            onValueChanged(data) {
-                localStorage.setItem("categoryGridResizeMode", data.value);
-                var grid = $("#gridContainer").dxDataGrid("instance");
-                grid.option('columnResizingMode', data.value);
-            },
-        });
+
         // Initialize custom Field Chooser Button
         $("#customFieldChooserBtn").dxButton({
             text: "",

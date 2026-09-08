@@ -1141,6 +1141,92 @@ label,
    MODAL DIALOGS & FORM INPUTS (FLAT COZY)
    ========================================================================== */
 
+/* All modals smaller on mobile */
+@media (max-width: 600px) {
+  .dx-popup-wrapper .dx-overlay-content {
+    width: calc(100vw - 20px) !important;
+    max-width: 320px !important;
+    border-radius: 8px !important;
+  }
+
+  .dx-popup-title {
+    padding: 8px 12px !important;
+  }
+
+  .dx-popup-title .dx-toolbar-label {
+    font-size: 13px !important;
+  }
+
+  .dx-popup-content {
+    padding: 10px !important;
+  }
+
+  .dx-field-item-label-text,
+  .dx-field-item-label {
+    font-size: 11px !important;
+  }
+
+  .dx-texteditor-input {
+    font-size: 13px !important;
+    padding: 6px 8px !important;
+    height: 34px !important;
+  }
+
+  .dx-popup-bottom {
+    padding: 8px 12px !important;
+    gap: 4px !important;
+  }
+
+  .dx-popup-bottom .dx-button {
+    min-width: 60px !important;
+    height: 32px !important;
+    font-size: 12px !important;
+  }
+}
+
+/* Extra small screens (phones) */
+@media (max-width: 400px) {
+  .dx-popup-wrapper .dx-overlay-content {
+    width: calc(100vw - 16px) !important;
+    max-width: 280px !important;
+    border-radius: 6px !important;
+  }
+
+  .dx-popup-title {
+    padding: 6px 10px !important;
+  }
+
+  .dx-popup-title .dx-toolbar-label {
+    font-size: 12px !important;
+  }
+
+  .dx-popup-content {
+    padding: 8px !important;
+  }
+
+  .dx-field-item-label-text,
+  .dx-field-item-label {
+    font-size: 10px !important;
+  }
+
+  .dx-texteditor-input {
+    font-size: 12px !important;
+    padding: 5px 6px !important;
+    height: 30px !important;
+  }
+
+  .dx-popup-bottom {
+    padding: 6px 10px !important;
+    gap: 3px !important;
+  }
+
+  .dx-popup-bottom .dx-button {
+    min-width: 50px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -2561,6 +2647,110 @@ label,
   gap: 16px;
 }
 
+/* Mobile: Auto Notification Card */
+@media (max-width: 600px) {
+  .push-mode-card {
+    padding: 12px 14px !important;
+    margin-bottom: 10px !important;
+    gap: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .push-mode-left {
+    gap: 8px !important;
+  }
+
+  .push-mode-icon {
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 6px !important;
+    font-size: 14px !important;
+  }
+
+  .push-mode-title {
+    font-size: 12px !important;
+    gap: 4px !important;
+  }
+
+  .push-mode-subtitle {
+    font-size: 10px !important;
+  }
+
+  .mode-badge {
+    font-size: 9px !important;
+    padding: 3px 6px !important;
+  }
+
+  .toggle-switch-slider {
+    width: 36px !important;
+    height: 20px !important;
+  }
+
+  .toggle-switch-slider::before {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .toggle-switch-checkbox:checked + .toggle-switch-slider::before {
+    transform: translateX(16px) !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .push-mode-card {
+    padding: 10px 12px !important;
+    margin-bottom: 8px !important;
+    gap: 8px !important;
+  }
+
+  .push-mode-icon {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 12px !important;
+  }
+
+  .push-mode-title {
+    font-size: 11px !important;
+  }
+
+/* Mobile: Resize Mode Dropdown Popup */
+@media (max-width: 600px) {
+  .dx-dropdowneditor-overlay .dx-overlay-content {
+    max-width: calc(100vw - 20px) !important;
+    min-width: 100px !important;
+    max-height: 40vh !important;
+    border-radius: 6px !important;
+    padding: 4px !important;
+    left: 50% !important;
+    transform: translateX(-50%) !important;
+  }
+
+  .dx-dropdowneditor-overlay .dx-list-item {
+    margin: 1px 2px !important;
+    border-radius: 4px !important;
+  }
+
+  .dx-dropdowneditor-overlay .dx-list-item-content {
+    padding: 6px 8px !important;
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .dx-dropdowneditor-overlay .dx-overlay-content {
+    max-width: calc(100vw - 12px) !important;
+    min-width: 80px !important;
+    max-height: 35vh !important;
+    border-radius: 4px !important;
+    padding: 2px !important;
+  }
+
+  .dx-dropdowneditor-overlay .dx-list-item-content {
+    padding: 5px 6px !important;
+    font-size: 10px !important;
+  }
+}
+
 .push-mode-left {
   display: flex;
   align-items: center;
@@ -2676,6 +2866,74 @@ label,
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
+}
+
+/* Mobile: Push Reports Grid */
+@media (max-width: 600px) {
+  .push-reports-grid {
+    gap: 6px !important;
+  }
+
+  .push-report-card {
+    padding: 8px 10px !important;
+    gap: 8px !important;
+    border-radius: 6px !important;
+  }
+
+  .report-icon {
+    width: 28px !important;
+    height: 28px !important;
+    border-radius: 4px !important;
+    font-size: 11px !important;
+  }
+
+  .report-title {
+    font-size: 11px !important;
+  }
+
+  .report-desc {
+    font-size: 9px !important;
+  }
+
+  .report-arrow {
+    font-size: 10px !important;
+  }
+
+  .custom-report-input {
+    font-size: 11px !important;
+    padding: 5px 8px !important;
+  }
+
+  .custom-push-btn {
+    width: 28px !important;
+    height: 28px !important;
+    font-size: 11px !important;
+  }
+}
+
+@media (max-width: 400px) {
+  .push-reports-grid {
+    gap: 4px !important;
+  }
+
+  .push-report-card {
+    padding: 6px 8px !important;
+    gap: 6px !important;
+  }
+
+  .report-icon {
+    width: 24px !important;
+    height: 24px !important;
+    font-size: 10px !important;
+  }
+
+  .report-title {
+    font-size: 10px !important;
+  }
+
+  .report-desc {
+    font-size: 8px !important;
+  }
 }
 
 .push-report-card {
