@@ -447,6 +447,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                  . "⚠️ <code>/lowstock</code> — Critical stock (≤ 5)\n"
                  . "📊 <code>/summary</code> — Overview dashboard\n"
                  . "💎 <code>/valuation</code> — Asset report\n"
+                 . "📥 <code>/get &lt;code&gt;</code> — Get item details\n"
                  . "⏱️ <code>/added</code> | <code>/updated</code> — Recent changes";
             
             sendTelegramMessage($chatId, $msg, $botToken);
