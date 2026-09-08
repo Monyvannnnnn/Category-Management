@@ -89,17 +89,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     <i class="fa-solid fa-layer-group" style="font-size: 22px;"></i>
                     Categories
                 </h1>
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push" aria-label="Report Push">
-                        <i class="fa-brands fa-telegram"></i>
-                    </button>
-                    <button type="button" class="add-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
-                        <i class="fa-solid fa-box"></i>
-                    </button>
-                    <button type="button" class="add-btn" id="openAddModalBtn" data-tooltip="Add Category" aria-label="Add Category">
-                        <i class="fa-solid fa-plus"></i>
-                    </button>
-                </div>
             </div>
             <div class="options-container">
                 <div class="search-and-export">
@@ -108,6 +97,15 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
+                        <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push" aria-label="Report Push">
+                            <i class="fa-brands fa-telegram"></i>
+                        </button>
+                        <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
+                            <i class="fa-solid fa-box"></i>
+                        </button>
+                        <button type="button" class="add-btn" id="openAddModalBtn" data-tooltip="Add Category" aria-label="Add Category">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
                         <div class="export-wrapper" id="masterExportWrapper" data-tooltip="Export">
                             <button class="export-btn" id="masterExportTrigger" type="button" aria-label="Export">
                                 <i class="fa-solid fa-download"></i>
@@ -185,7 +183,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             </div>
                         </div>
                         <div id="customFieldChooserBtn"></div>
-                        <div id="customAdvancedSearchBtn"></div>
                     </div>
                 </div>
             </div>
@@ -198,9 +195,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         </div>
     </div>
     
-    <!-- Popup container for Advanced Search -->
-    <div id="advancedSearchPopup"></div>
-
     <script>
     function timeAgo(date) {
         const seconds = Math.floor((new Date() - date) / 1000);
@@ -1521,178 +1515,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         // ==========================================
         // Advanced Search (Search All Records) Logic
         // ==========================================
-        var advancedSearchPopup = $("#advancedSearchPopup").dxPopup({
-            title: "Search All Records",
-            width: function() {
-                return Math.min(460, $(window).width() - 20);
-            },
-            maxHeight: function() {
-                return Math.min(620, $(window).height() - 30);
-            },
-            height: "auto",
-            showTitle: true,
-            visible: false,
-            dragEnabled: false,
-            hideOnOutsideClick: true,
-            showCloseButton: true,
-            wrapperAttr: {
-                class: "dark-popup"
-            },
-            titleTemplate: function (titleElement) {
-                var $titleWrapper = $("<div style='display: flex; align-items: center; justify-content: space-between; width: 100%;'>");
-                var $titleContent = $("<div style='display: flex; align-items: center; gap: 10px; font-size: 15px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 15px;'></i> <b>Search All Records</b></div>");
-                var $closeX = $("<button type='button' style='background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s ease;' title='Close'>")
-                    .html("<i class='fa-solid fa-xmark'></i>")
-                    .on("click", function() {
-                        advancedSearchPopup.hide();
-                    })
-                    .on("mouseenter", function() { $(this).css("color", "#ffffff"); })
-                    .on("mouseleave", function() { $(this).css("color", "#94a3b8"); });
-
-                $titleWrapper.append($titleContent).append($closeX);
-                titleElement.append($titleWrapper);
-            },
-            contentTemplate: function (contentElement) {
-                var formHtml = $("<div>").append(
-                    $("<div style='margin-bottom: 10px;'>")
-                        .append("<p style='margin: 0 0 0 2px; color: #94a3b8; font-size: 12px;'>Filter all records across database.</p>")
-                );
-
-                var $formContainer = $("<div id='advancedSearchForm'>").appendTo(formHtml);
-                
-                contentElement.append(formHtml);
-
-                var createLabel = function(iconClass, text) {
-                    return function(data, $element) {
-                        $element.append("<div style='display:flex; align-items:center; gap:6px; font-size:12px; white-space:nowrap;'><i class='" + iconClass + "' style='color:#94a3b8; font-size:12px; width:14px; text-align:center;'></i> <span style='color:#e2e8f0; font-family:\"Poppins\", sans-serif; font-size:12px; font-weight:600;'>" + text + "</span></div>");
-                    };
-                };
-
-                $formContainer.dxForm({
-                    colCountByScreen: {
-                        lg: 2,
-                        md: 2,
-                        sm: 2,
-                        xs: 2
-                    },
-                    colCount: 2,
-                    labelLocation: "top",
-                    items: [
-                        {
-                            dataField: "category_code",
-                            editorType: "dxTextBox",
-                            label: { template: createLabel("fa-solid fa-barcode", "Category Code") },
-                            editorOptions: { placeholder: "Enter code...", stylingMode: "outlined" }
-                        },
-                        {
-                            dataField: "category_name",
-                            editorType: "dxTextBox",
-                            label: { template: createLabel("fa-solid fa-layer-group", "Category Name") },
-                            editorOptions: { placeholder: "Enter name...", stylingMode: "outlined" }
-                        },
-                        {
-                            dataField: "date_from",
-                            editorType: "dxDateBox",
-                            label: { template: createLabel("fa-regular fa-calendar", "Date From") },
-                            editorOptions: { type: "date", showClearButton: true, placeholder: "Select date...", stylingMode: "outlined" }
-                        },
-                        {
-                            dataField: "date_to",
-                            editorType: "dxDateBox",
-                            label: { template: createLabel("fa-regular fa-calendar-check", "Date To") },
-                            editorOptions: { type: "date", showClearButton: true, placeholder: "Select date...", stylingMode: "outlined" }
-                        }
-                    ]
-                });
-                
-                var $btnContainer = $("<div style='margin-top: 14px; display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: nowrap; width: 100%; border-top: 1px solid #27354a; padding-top: 12px;'>");
-                
-                var $closeModalBtn = $("<div>").dxButton({
-                    text: "Close",
-                    icon: "close",
-                    stylingMode: "outlined",
-                    type: "normal",
-                    onClick: function() {
-                        advancedSearchPopup.hide();
-                    }
-                });
-                $closeModalBtn.addClass("secondary-modal-btn");
-                $btnContainer.append($closeModalBtn);
-
-                var $clearBtn = $("<div>").dxButton({
-                    text: "Clear",
-                    icon: "clear",
-                    stylingMode: "outlined",
-                    type: "normal",
-                    onClick: function() {
-                        $("#advancedSearchForm").dxForm("instance").resetValues();
-                        $("#gridContainer").dxDataGrid("instance").clearFilter();
-                    }
-                });
-                $clearBtn.addClass("secondary-modal-btn");
-                $btnContainer.append($clearBtn);
-                
-                var $searchBtn = $("<div>").dxButton({
-                    text: "Search",
-                    icon: "search",
-                    type: "success",
-                    stylingMode: "contained",
-                    onClick: function() {
-                        var formData = $("#advancedSearchForm").dxForm("instance").option("formData");
-                        var filterExpr = [];
-                        
-                        if (formData.category_code) {
-                            filterExpr.push(["category_code", "contains", formData.category_code]);
-                        }
-                        if (formData.category_name) {
-                            filterExpr.push(["category_name", "contains", formData.category_name]);
-                        }
-                        if (formData.date_from) {
-                            filterExpr.push(["created_at", ">=", formData.date_from]);
-                        }
-                        if (formData.date_to) {
-                            var toDate = new Date(formData.date_to);
-                            toDate.setDate(toDate.getDate() + 1);
-                            filterExpr.push(["created_at", "<", toDate]);
-                        }
-                        
-                        var finalFilter = [];
-                        for(var i = 0; i < filterExpr.length; i++) {
-                            if(i > 0) finalFilter.push("and");
-                            finalFilter.push(filterExpr[i]);
-                        }
-                        
-                        var grid = $("#gridContainer").dxDataGrid("instance");
-                        if(finalFilter.length > 0) {
-                            grid.filter(finalFilter);
-                        } else {
-                            grid.clearFilter();
-                        }
-                        
-                        advancedSearchPopup.hide();
-                    }
-                });
-                $searchBtn.addClass("primary-modal-btn");
-                $btnContainer.append($searchBtn);
-                
-                contentElement.append($btnContainer);
-            }
-        }).dxPopup("instance");
-
-        // Initialize custom Advanced Search Button
-        $("#customAdvancedSearchBtn").dxButton({
-            text: "",
-            icon: "fa fa-sliders",
-            hint: "Search All Records",
-            elementAttr: {
-                'data-tooltip': 'Search All Records',
-                'aria-label': 'Search All Records'
-            },
-            onClick: function() {
-                advancedSearchPopup.show();
-            }
-        });
-
         // Load Push Notification Settings on page load
         function loadPushSettings() {
             $.ajax({
@@ -1722,14 +1544,15 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
         loadPushSettings();
 
-        // Manual Push Modal Handlers
-        $("#openPushModalBtn").on("click", function() {
+        // Manual Push Modal Handlers & Tab Switching
+        $(document).on("click", "#openPushModalBtn", function(e) {
+            e.preventDefault();
             $("#customPushMessageCustom").val("");
             loadPushSettings();
-            $("#pushModal").fadeIn(200);
+            $("#pushModal").css("display", "flex").hide().fadeIn(200);
         });
 
-        $("#closePushModalBtn").on("click", function() {
+        $(document).on("click", "#closePushModalBtn", function() {
             $("#pushModal").fadeOut(150);
         });
 
@@ -1737,6 +1560,15 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             if ($(e.target).is("#pushModal")) {
                 $("#pushModal").fadeOut(150);
             }
+        });
+
+        // 2-Tab Navigation Switcher
+        $(document).on("click", ".push-tab-btn", function() {
+            var targetTab = $(this).data("tab");
+            $(".push-tab-btn").removeClass("active");
+            $(this).addClass("active");
+            $(".push-tab-content").removeClass("active").hide();
+            $("#" + targetTab).addClass("active").css("display", "flex");
         });
 
         // Toggle Auto / Manual Push Setting
