@@ -27,7 +27,7 @@ function registerBotCommands($botToken) {
         ['command' => 'added',      'description' => '🆕 List recently added products and categories'],
         ['command' => 'updated',    'description' => '✏️ List recently modified products and categories'],
         ['command' => 'history',    'description' => '📜 Combined activity log'],
-        ['command' => 'push',       'description' => '📤 Push item to Telegram (/push <code>)'],
+        ['command' => 'get',        'description' => '📥 Get item details (/get <code>)'],
         ['command' => 'outofstock', 'description' => '🚫 View out of stock items (0 units)'],
         ['command' => 'today',      'description' => '📅 Today\'s activity summary'],
         ['command' => 'chatid',     'description' => '💬 Get your chat ID'],
@@ -618,14 +618,14 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 14. /push <code>
+        // 14. /get <code>
         // ----------------------------------------------------
-        case '/push':
+        case '/get':
             if (empty($arg)) {
-                $msg = "⚠️ <b>INVALID PUSH FORMAT</b>\n"
+                $msg = "⚠️ <b>INVALID GET FORMAT</b>\n"
                      . "═════════════════════════════\n"
-                     . "Usage: <code>/push &lt;product_code&gt;</code> or <code>/push &lt;category_code&gt;</code>\n"
-                     . "Example: <code>/push PRD-101</code> or <code>/push CAT-10</code>";
+                     . "Usage: <code>/get &lt;product_code&gt;</code> or <code>/get &lt;category_code&gt;</code>\n"
+                     . "Example: <code>/get PRD-101</code> or <code>/get CAT-10</code>";
                 sendTelegramMessage($chatId, $msg, $botToken);
                 break;
             }

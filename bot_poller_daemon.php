@@ -22,6 +22,7 @@ function registerBotCommands($botToken) {
         ['command' => 'valuation',  'description' => '💎 Financial report and average pricing breakdown'],
         ['command' => 'added',      'description' => '🆕 List recently added products and categories'],
         ['command' => 'updated',    'description' => '✏️ List recently modified products and categories'],
+        ['command' => 'get',        'description' => '📥 Get item details (/get <code>)'],
         ['command' => 'help',       'description' => '❓ Show all command usage and examples']
     ];
     
@@ -339,6 +340,97 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             $msg .= "\n─────────────────────────────\n"
                   . "🕒 <i>Shows recent audit timestamps</i>";
 
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // ----------------------------------------------------
+        // /get <code>
+        // ----------------------------------------------------
+        case '/get':
+            if (empty($arg)) {
+                $msg = "⚠️ <b>INVALID GET FORMAT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/get &lt;product_code&gt;</code> or <code>/get &lt;category_code&gt;</code>\n"
+                     . "Example: <code>/get PRD-101</code> or <code>/get CAT-10</code>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            // Search product first
+            $prodStmt = mysqli_prepare($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.product_code = ? LIMIT 1");
+            mysqli_stmt_bind_param($prodStmt, "s", $arg);
+            mysqli_stmt_execute($prodStmt);
+            $prodResult = mysqli_stmt_get_result($prodStmt);
+            $prod = mysqli_fetch_assoc($prodResult);
+            mysqli_stmt_close($prodStmt);
+
+            if ($prod) {
+                $pCode = htmlspecialchars($prod['product_code']);
+                $pName = htmlspecialchars($prod['product_name']);
+                $pCat = htmlspecialchars($prod['category_name'] ?? 'Unassigned');
+                $pPrice = number_format((float)$prod['price'], 2);
+                $pQty = (int)$prod['quantity'];
+                $pTotal = number_format((float)$prod['price'] * $pQty, 2);
+                if ($pQty == 0) {
+                    $pStatus = "❌ Out of Stock";
+                } elseif ($pQty <= 5) {
+                    $pStatus = "⚠️ Low Stock";
+                } else {
+                    $pStatus = "✅ In Stock";
+                }
+
+                $msg = "📦 <b>PRODUCT DETAILS</b>\n"
+                     . "═════════════════════════════\n"
+                     . "🆔 Code: <code>{$pCode}</code>\n"
+                     . "📛 Name: <b>{$pName}</b>\n"
+                     . "🏷️ Category: <code>{$pCat}</code>\n"
+                     . "💰 Price: <b>\${$pPrice}</b>\n"
+                     . "🔢 Stock: <b>{$pQty} units</b>\n"
+                     . "📊 Total Value: <b>\${$pTotal}</b>\n"
+                     . "─────────────────────────────\n"
+                     . "Status: <b>{$pStatus}</b>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            // Search category
+            $catStmt = mysqli_prepare($conn, "SELECT id, category_code, category_name FROM category WHERE category_code = ? LIMIT 1");
+            mysqli_stmt_bind_param($catStmt, "s", $arg);
+            mysqli_stmt_execute($catStmt);
+            $catResult = mysqli_stmt_get_result($catStmt);
+            $cat = mysqli_fetch_assoc($catResult);
+            mysqli_stmt_close($catStmt);
+
+            if ($cat) {
+                $catId = (int)$cat['id'];
+                $catCode = htmlspecialchars($cat['category_code']);
+                $catName = htmlspecialchars($cat['category_name']);
+
+                $prodCountStmt = mysqli_prepare($conn, "SELECT COUNT(*) AS cnt, COALESCE(SUM(quantity), 0) AS total_qty, COALESCE(SUM(price * quantity), 0) AS total_val FROM product WHERE category_id = ?");
+                mysqli_stmt_bind_param($prodCountStmt, "i", $catId);
+                mysqli_stmt_execute($prodCountStmt);
+                $prodCountResult = mysqli_stmt_get_result($prodCountStmt);
+                $prodCount = mysqli_fetch_assoc($prodCountResult);
+                mysqli_stmt_close($prodCountStmt);
+
+                $cnt = (int)$prodCount['cnt'];
+                $totalQty = (int)$prodCount['total_qty'];
+                $totalVal = number_format((float)$prodCount['total_val'], 2);
+
+                $msg = "🏷️ <b>CATEGORY DETAILS</b>\n"
+                     . "═════════════════════════════\n"
+                     . "🆔 Code: <code>{$catCode}</code>\n"
+                     . "📛 Name: <b>{$catName}</b>\n"
+                     . "📦 Products: <b>{$cnt} items</b>\n"
+                     . "🔢 Total Stock: <b>{$totalQty} units</b>\n"
+                     . "💰 Total Valuation: <b>\${$totalVal}</b>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $msg = "❌ <b>ITEM NOT FOUND</b>\n"
+                 . "═════════════════════════════\n"
+                 . "No product or category with code '<b>" . htmlspecialchars($arg) . "</b>' was found.";
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
