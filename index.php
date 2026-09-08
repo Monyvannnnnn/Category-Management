@@ -90,17 +90,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     Categories
                 </h1>
                 <div style="display: flex; gap: 10px;">
-                    <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn">
+                    <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push" aria-label="Report Push">
                         <i class="fa-brands fa-telegram"></i>
-                        Manual Push
                     </button>
-                    <button type="button" class="add-btn" onclick="window.location.href='products.php'">
+                    <button type="button" class="add-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
                         <i class="fa-solid fa-box"></i>
-                        Manage Products
                     </button>
-                    <button type="button" class="add-btn" id="openAddModalBtn">
+                    <button type="button" class="add-btn" id="openAddModalBtn" data-tooltip="Add Category" aria-label="Add Category">
                         <i class="fa-solid fa-plus"></i>
-                        Add Category
                     </button>
                 </div>
             </div>
@@ -115,11 +112,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
-                        <div class="export-wrapper" id="masterExportWrapper">
-                            <button class="export-btn" id="masterExportTrigger" type="button">
+                        <div class="export-wrapper" id="masterExportWrapper" data-tooltip="Export">
+                            <button class="export-btn" id="masterExportTrigger" type="button" aria-label="Export">
                                 <i class="fa-solid fa-download"></i>
-                                Export
-                                <i class="fa-solid fa-chevron-down" style="font-size: 11px; margin-left: 2px;"></i>
                             </button>
                             <div class="export-menu" id="masterExportMenu">
                                 <!-- Excel -->
@@ -378,6 +373,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             localStorage.removeItem("categoryGridStateV13");
         } catch (e) {}
 
+        var isMobile = $(window).width() <= 768;
         $("#gridContainer").dxDataGrid({
             allowColumnReordering: true,
             allowColumnResizing: true,
@@ -474,9 +470,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     name: "category_code",
                     dataField: "category_code",
                     caption: "Category Code",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: $(window).width() <= 768 ? 80 : 100,
+                    width: $(window).width() <= 768 ? 105 : 260,
+                    maxWidth: $(window).width() <= 768 ? 130 : 300,
                     validationRules: [{
                         type: "required",
                         message: "Category Code is required"
@@ -486,9 +482,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     name: "category_name",
                     dataField: "category_name",
                     caption: "Category Name",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 90 : 100,
+                    width: isMobile ? 125 : 260,
+                    maxWidth: isMobile ? 160 : 300,
                     validationRules: [{
                         type: "required",
                         message: "Category Name is required"
@@ -500,9 +496,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Created Date",
                     dataType: "date",
                     format: "dd/MM/yyyy",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 80 : 100,
+                    width: isMobile ? 95 : 260,
+                    maxWidth: isMobile ? 130 : 300,
                     allowEditing: false
                 },
                 {
@@ -513,17 +509,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     calculateCellValue: function(rowData) {
                         if (!rowData.created_at) return "";
                         const d = new Date(rowData.created_at);
-                        return d.toLocaleTimeString('en-GB'); // "13:45:00"
+                        return d.toLocaleTimeString('en-GB');
                     },
                     calculateSortValue: function(rowData) {
                         if (!rowData.created_at) return 0;
                         const d = new Date(rowData.created_at);
-                        // Convert to total seconds from midnight to sort properly
                         return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
                     },
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 75 : 100,
+                    width: isMobile ? 85 : 260,
+                    maxWidth: isMobile ? 120 : 300,
                     allowEditing: false
                 },
                 {
@@ -532,9 +527,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Date Created",
                     dataType: "datetime",
                     format: "dd/MM/yyyy HH:mm:ss",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 90 : 100,
+                    width: isMobile ? 120 : 260,
+                    maxWidth: isMobile ? 160 : 300,
                     allowEditing: false
                 },
                 {
@@ -543,9 +538,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Formatted Date",
                     dataType: "date",
                     format: "dd-MMMM-yyyy",
-                    width: 100,
-                    minWidth: 100,
-                    maxWidth: 250,
+                    minWidth: isMobile ? 80 : 100,
+                    width: isMobile ? 100 : 100,
+                    maxWidth: isMobile ? 140 : 250,
                     allowEditing: false
                 },
                 {
@@ -554,9 +549,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Formatted Time",
                     dataType: "datetime",
                     format: "hh:mm:ss a",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 75 : 100,
+                    width: isMobile ? 85 : 260,
+                    maxWidth: isMobile ? 120 : 300,
                     allowEditing: false
                 },
                 {
@@ -565,9 +560,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Formatted Date & Time",
                     dataType: "datetime",
                     format: "dd-MMMM-yyyy hh:mm:ss a",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 100 : 100,
+                    width: isMobile ? 130 : 260,
+                    maxWidth: isMobile ? 170 : 300,
                     allowEditing: false
                 },
                 {
@@ -575,9 +570,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     dataField: "lastupdate",
                     caption: "Last Updated",
                     dataType: "datetime",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 95 : 100,
+                    width: isMobile ? 120 : 260,
+                    maxWidth: isMobile ? 160 : 300,
                     allowEditing: false,
                     cellTemplate: function(container, options) {
                         if (!options.value) {
@@ -598,9 +593,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     caption: "Last Date",
                     dataType: "date",
                     format: "dd/MM/yyyy",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 80 : 100,
+                    width: isMobile ? 95 : 260,
+                    maxWidth: isMobile ? 130 : 300,
                     allowEditing: false
                 },
                 {
@@ -611,16 +606,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     calculateCellValue: function(rowData) {
                         if (!rowData.lastupdate) return "";
                         const d = new Date(rowData.lastupdate);
-                        return d.toLocaleTimeString('en-GB'); // "13:45:00"
+                        return d.toLocaleTimeString('en-GB');
                     },
                     calculateSortValue: function(rowData) {
                         if (!rowData.lastupdate) return 0;
                         const d = new Date(rowData.lastupdate);
                         return d.getHours() * 3600 + d.getMinutes() * 60 + d.getSeconds();
                     },
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 75 : 100,
+                    width: isMobile ? 85 : 260,
+                    maxWidth: isMobile ? 120 : 300,
                     allowEditing: false
                 },
                 {
@@ -628,9 +623,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     dataField: "lastupdate",
                     caption: "Time Ago",
                     dataType: "datetime",
-                    minWidth: 100,
-                    width: 260,
-                    maxWidth: 300,
+                    minWidth: isMobile ? 70 : 100,
+                    width: isMobile ? 80 : 260,
+                    maxWidth: isMobile ? 120 : 300,
                     allowEditing: false,
                     cellTemplate: function(container, options) {
                         if (!options.value) {
@@ -646,8 +641,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 {
                     type: "buttons",
                     caption: "Action",
-                    width: $(window).width() <= 768 ? 68 : 140,
-                    minWidth: $(window).width() <= 768 ? 60 : 130,
+                    width: isMobile ? 52 : 140,
+                    minWidth: isMobile ? 48 : 130,
                     allowExporting: false,
                     allowColumnResizing: true,
                     allowFiltering: false,
@@ -731,7 +726,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         var $kebabMenu = $("<div>")
                             .addClass("kebab-dropdown-menu")
                             .html(
-                                '<button type="button" class="kebab-menu-item kebab-push-item"><i class="fa-brands fa-telegram" style="color: #38bdf8;"></i> <span>Manual Push</span></button>' +
+                                '<button type="button" class="kebab-menu-item kebab-push-item"><i class="fa-brands fa-telegram" style="color: #38bdf8;"></i> <span>Report Push</span></button>' +
                                 '<button type="button" class="kebab-menu-item kebab-edit-item"><i class="fa-solid fa-pen-to-square" style="color: #34d399;"></i> <span>Edit</span></button>' +
                                 '<button type="button" class="kebab-menu-item kebab-delete-item"><i class="fa-solid fa-trash-can" style="color: #f87171;"></i> <span>Delete</span></button>'
                             );
@@ -818,14 +813,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             pager: {
                 visible: true,
                 showPageSizeSelector: true,
-                allowedPageSizes: [5, 10, 20],
+                allowedPageSizes: [5, 10, 20, 50],
                 showInfo: true,
                 showNavigationButtons: true,
                 displayMode: 'full'
             },
             paging: {
                 enabled: true,
-                pageSize: 5
+                pageSize: 10
             },
             searchPanel: {
                 visible: false
@@ -884,11 +879,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 });
             },
             onContentReady: function(e) {
-                // Force 5 rows ONLY on the very first load (so refresh defaults to 5).
-                // Do NOT re-force on later renders, or clicking 10/20 would snap back to 5.
+                // Default to 10 rows on initial load so grid fills nicely.
                 var grid = e.component;
-                if (!grid._initDone && grid.option("paging.pageSize") !== 5) {
-                    grid.option("paging.pageSize", 5);
+                if (!grid._initDone && grid.option("paging.pageSize") !== 10) {
+                    grid.option("paging.pageSize", 10);
                 }
                 grid._initDone = true;
             },
@@ -1016,14 +1010,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             var wrapper = document.querySelector('.table-wrapper');
             if (!wrapper) return;
             var rect = wrapper.getBoundingClientRect();
-            var available = window.innerHeight - rect.top - 12; // 12px bottom margin
-            if (available < 520) available = 520; // taller minimum (~15 rows)
+            var vh = window.innerHeight;
+            if (window.visualViewport && window.visualViewport.height) {
+                vh = window.visualViewport.height;
+            }
+            var available = vh - rect.top - 16; // Extend container almost to bottom edge / Safari bar
+            if (available < 350) available = 350;
             var grid = $("#gridContainer").dxDataGrid("instance");
             if (!grid) return;
 
             grid.option("height", available);
         }
-        $(window).on("resize", fitGridHeight);
+        $(window).on("resize orientationchange", fitGridHeight);
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener("resize", fitGridHeight);
+        }
         setTimeout(fitGridHeight, 300);
         $(window).on("load", fitGridHeight);
 
@@ -1518,10 +1519,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             valueExpr: 'value',
             displayExpr: 'text',
             value: localStorage.getItem("categoryGridResizeMode") || 'widget',
+            searchEnabled: false,
+            acceptCustomValue: false,
+            focusStateEnabled: false,
             inputAttr: {
-                'aria-label': 'Resize Mode'
+                'aria-label': 'Resize Mode',
+                'readonly': 'readonly',
+                'inputmode': 'none'
             },
             width: 160,
+            onFocusIn: function(e) {
+                $(e.element).find('input').attr('readonly', 'readonly').attr('inputmode', 'none');
+            },
             onValueChanged(data) {
                 localStorage.setItem("categoryGridResizeMode", data.value);
                 var grid = $("#gridContainer").dxDataGrid("instance");
@@ -1530,8 +1539,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         });
         // Initialize custom Field Chooser Button
         $("#customFieldChooserBtn").dxButton({
-            text: $(window).width() <= 768 ? "Fields" : "Field Chooser",
+            text: "",
             icon: "columnchooser",
+            hint: "Field Chooser",
+            elementAttr: {
+                'data-tooltip': 'Field Chooser',
+                'aria-label': 'Field Chooser'
+            },
             onClick: function(e) {
                 openColumnChooser(e ? e.event : null);
             }
@@ -1669,8 +1683,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
         // Initialize custom Advanced Search Button
         $("#customAdvancedSearchBtn").dxButton({
-            text: $(window).width() <= 768 ? "Search All" : "Search All Records",
+            text: "",
             icon: "fa fa-sliders",
+            hint: "Search All Records",
+            elementAttr: {
+                'data-tooltip': 'Search All Records',
+                'aria-label': 'Search All Records'
+            },
             onClick: function() {
                 advancedSearchPopup.show();
             }

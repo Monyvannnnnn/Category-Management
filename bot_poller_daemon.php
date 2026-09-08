@@ -345,23 +345,17 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // ----------------------------------------------------
         // 9. /help or /start
         // ----------------------------------------------------
-        case '/start':
+     case '/start':
         case '/help':
         default:
-            $msg = "🤖 <b>INVENTORY BOT COMMAND CENTER</b>\n"
-                 . "<i>Quick Reference & Action Menu</i>\n"
-                 . "═════════════════════════════\n\n"
-                 . "🔍 <code>/search &lt;keyword&gt;</code> — Search catalog by name or code\n"
-                 . "🏷️ <code>/categories</code> — View item categories & stock counts\n"
-                 . "↕️ <code>/sort [price|stock|date]</code> — View sorted product list\n"
-                 . "⚠️ <code>/lowstock</code> — View critical items (qty ≤ 5)\n"
-                 . "📊 <code>/summary</code> — Executive inventory summary dashboard\n"
-                 . "💎 <code>/valuation</code> — Financial report & asset valuation\n"
-                 . "🆕 <code>/added</code> — List recently added products & categories\n"
-                 . "✏️ <code>/updated</code> — List recently modified inventory rows\n"
-                 . "❓ <code>/help</code> — Show this interactive command guide\n\n"
-                 . "─────────────────────────────\n"
-                 . "<i>Tap any command above to execute instantly!</i>";
+            $msg = "🤖 <b>Inventory Bot Commands</b>\n\n"
+                 . "🔍 <code>/search &lt;kw&gt;</code> — Find items\n"
+                 . "🏷️ <code>/categories</code> — Browse categories\n"
+                 . "↕️ <code>/sort</code> — Sort (price|stock|date)\n"
+                 . "⚠️ <code>/lowstock</code> — Critical stock (≤ 5)\n"
+                 . "📊 <code>/summary</code> — Overview dashboard\n"
+                 . "💎 <code>/valuation</code> — Asset report\n"
+                 . "⏱️ <code>/added</code> | <code>/updated</code> — Recent changes";
             
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
