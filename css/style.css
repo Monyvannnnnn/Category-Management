@@ -270,16 +270,21 @@ label,
 .search-and-export {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 16px;
   margin-left: auto;
   flex-wrap: wrap;
 }
 
 .search-wrapper {
   position: relative;
-  width: 220px;
+  width: 160px;
   margin-left: 0;
   margin-bottom: 0;
+  transition: width 0.2s ease, border-color 0.15s ease;
+}
+
+.search-wrapper:focus-within {
+  width: 190px;
 }
 
 .search-wrapper i {
@@ -1709,7 +1714,7 @@ label,
 .action-buttons-group {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
 }
 
 @media (max-width: 992px) {
@@ -1803,22 +1808,28 @@ label,
     flex-direction: row !important;
     align-items: center !important;
     justify-content: space-between !important;
-    gap: 8px !important;
+    gap: 12px !important;
     width: 100% !important;
     margin-left: 0 !important;
   }
 
   .search-wrapper {
-    flex: 1 1 auto !important;
-    min-width: 0 !important;
-    width: auto !important;
+    flex: 0 0 130px !important;
+    width: 130px !important;
+    min-width: 110px !important;
+    max-width: 140px !important;
   }
 
   .search-wrapper input {
     height: 36px !important;
     font-size: 12px !important;
-    padding-left: 32px !important;
+    padding: 8px 8px 8px 30px !important;
     border-radius: 8px !important;
+  }
+
+  .search-wrapper i {
+    left: 10px !important;
+    font-size: 12px !important;
   }
 
   /* Action Buttons Group (Export, Fields, Search All): Compact 36x36 Icon Buttons */
@@ -1827,7 +1838,7 @@ label,
     flex-direction: row !important;
     flex-wrap: nowrap !important;
     align-items: center !important;
-    gap: 6px !important;
+    gap: 8px !important;
     flex: 0 0 auto !important;
     width: auto !important;
   }
