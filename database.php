@@ -16,10 +16,35 @@ if (file_exists(__DIR__ . "/db_config.php")) {
     ];
 }
 
-$conn = mysqli_connect($cfg["host"], $cfg["user"], $cfg["pass"], $cfg["name"], $cfg["port"]);
+$hosts_to_try = [
+    $cfg,
+    ["host" => "127.0.0.1", "user" => "root", "pass" => "", "name" => "inventory", "port" => 3306],
+    ["host" => "127.0.0.1", "user" => "root", "pass" => "", "name" => "inventory", "port" => 3307],
+    ["host" => "sql310.infinityfree.com", "user" => "if0_42693065", "pass" => "Munyvann3103094", "name" => "if0_42693065_inventory", "port" => 3306]
+];
+
+$conn = false;
+foreach ($hosts_to_try as $h) {
+    if (empty($h['host']) || strpos($h['host'], 'postgres') !== false || strpos($h['host'], 'dpg-') !== false) {
+        continue;
+    }
+    $c = @mysqli_connect($h['host'], $h['user'], $h['pass'], "", (int)$h['port']);
+    if ($c) {
+        $conn = $c;
+        $db_name = !empty($h['name']) ? $h['name'] : 'inventory';
+        @mysqli_query($conn, "CREATE DATABASE IF NOT EXISTS `" . mysqli_real_escape_string($conn, $db_name) . "`");
+        @mysqli_select_db($conn, $db_name);
+        break;
+    }
+}
 
 if (!$conn) {
-    die("Database connection failed: " . mysqli_connect_error());
+    if (isset($_GET["action"]) || (isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], 'application/json') !== false)) {
+        header("Content-Type: application/json");
+        echo json_encode([]);
+        exit;
+    }
+    die("Database connection failed. Please verify MySQL server is running.");
 }
 
 // ----------------------------------------------------
