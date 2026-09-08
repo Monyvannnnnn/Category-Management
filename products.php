@@ -52,7 +52,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
     <meta charset="UTF-8">
 
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
     <title>Product Management</title>
 
@@ -1663,10 +1663,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         var advancedSearchPopup = $("#advancedSearchPopup").dxPopup({
             title: "Search All Records",
             width: function() {
-                return Math.min(850, $(window).width() - 20);
+                return Math.min(320, $(window).width() - 24);
             },
             maxHeight: function() {
-                return Math.min(750, $(window).height() - 30);
+                return Math.min(650, $(window).height() - 30);
             },
             height: "auto",
             showTitle: true,
@@ -1679,7 +1679,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             },
             titleTemplate: function (titleElement) {
                 var $titleWrapper = $("<div style='display: flex; align-items: center; justify-content: space-between; width: 100%;'>");
-                var $titleContent = $("<div style='display: flex; align-items: center; gap: 10px; font-size: 16px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 16px;'></i> <b>Search All Records</b></div>");
+                var $titleContent = $("<div style='display: flex; align-items: center; gap: 10px; font-size: 15px; color: #ffffff;'><i class='fa-solid fa-magnifying-glass' style='color: #ffffff; font-size: 15px;'></i> <b>Search All Records</b></div>");
                 var $closeX = $("<button type='button' style='background: transparent; border: none; color: #94a3b8; font-size: 16px; cursor: pointer; padding: 4px; display: inline-flex; align-items: center; justify-content: center; transition: color 0.15s ease;' title='Close'>")
                     .html("<i class='fa-solid fa-xmark'></i>")
                     .on("click", function() {
@@ -1709,12 +1709,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
                 $formContainer.dxForm({
                     colCountByScreen: {
-                        lg: 2,
-                        md: 2,
-                        sm: 2,
+                        lg: 1,
+                        md: 1,
+                        sm: 1,
                         xs: 1
                     },
-                    colCount: $(window).width() < 640 ? 1 : 2,
+                    colCount: 1,
                     labelLocation: "top",
                     items: [
                         {
@@ -1781,7 +1781,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     ]
                 });
                 
-                var $btnContainer = $("<div style='margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap;'>");
+                var $btnContainer = $("<div style='margin-top: 16px; display: flex; align-items: center; justify-content: flex-end; gap: 6px; flex-wrap: nowrap; width: 100%;'>");
                 
                 var $closeModalBtn = $("<div>").dxButton({
                     text: "Close",
