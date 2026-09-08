@@ -665,14 +665,14 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 14. /push <code>
+        // 14. /get <code>
         // ----------------------------------------------------
-        case '/push':
+        case '/get':
             if (empty($arg)) {
-                $msg = "⚠️ <b>INVALID PUSH FORMAT</b>\n"
+                $msg = "⚠️ <b>INVALID GET FORMAT</b>\n"
                      . "═════════════════════════════\n"
-                     . "Usage: <code>/push &lt;product_code&gt;</code> or <code>/push &lt;category_code&gt;</code>\n"
-                     . "Example: <code>/push PRD-101</code> or <code>/push CAT-10</code>";
+                     . "Usage: <code>/get &lt;product_code&gt;</code> or <code>/get &lt;category_code&gt;</code>\n"
+                     . "Example: <code>/get PRD-101</code> or <code>/get CAT-10</code>";
                 sendTelegramMessage($chatId, $msg);
                 break;
             }
