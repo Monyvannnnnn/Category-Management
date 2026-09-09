@@ -4,9 +4,7 @@
  * Optimized for InfinityFree & Local Hosting (with DNS Resolution Bypass)
  */
 
-function sendTelegramNotification($message) {
-    $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8"; 
-    $chatId = "7892238736"; 
+function sendSingleTelegramNotification($botToken, $chatId, $message) {
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
         'chat_id' => $chatId,
@@ -104,6 +102,72 @@ function sendTelegramNotification($message) {
     }
 
     return $result;
+}
+
+/**
+ * Register a user Chat ID in system_settings table when they tap START on Telegram bot
+ */
+function registerSubscriberChatId($conn, $chatId) {
+    if (!$conn || empty($chatId)) return false;
+    ensureSettingsTableExists($conn);
+    
+    $existing = [];
+    $res = @mysqli_query($conn, "SELECT setting_value FROM system_settings WHERE setting_key = 'subscriber_chat_ids'");
+    if ($res && $row = mysqli_fetch_assoc($res)) {
+        $existing = array_filter(array_map('trim', explode(',', $row['setting_value'])));
+    }
+    
+    $chatIdStr = (string)$chatId;
+    if (!in_array($chatIdStr, $existing)) {
+        $existing[] = $chatIdStr;
+        $newVal = implode(',', $existing);
+        $valEsc = mysqli_real_escape_string($conn, $newVal);
+        @mysqli_query($conn, "REPLACE INTO system_settings (setting_key, setting_value) VALUES ('subscriber_chat_ids', '$valEsc')");
+    }
+    return true;
+}
+
+/**
+ * Get all registered subscriber Chat IDs
+ */
+function getSubscriberChatIds($conn = null) {
+    if ($conn) {
+        ensureSettingsTableExists($conn);
+        $res = @mysqli_query($conn, "SELECT setting_value FROM system_settings WHERE setting_key = 'subscriber_chat_ids'");
+        if ($res && $row = mysqli_fetch_assoc($res)) {
+            $ids = array_filter(array_map('trim', explode(',', $row['setting_value'])));
+            if (!empty($ids)) {
+                return array_unique($ids);
+            }
+        }
+    }
+    // Fallback default chat IDs
+    return ["905493982", "7892238736"];
+}
+
+function sendTelegramNotification($message) {
+    global $conn;
+    $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8"; 
+    $chatIds = getSubscriberChatIds($conn ?? null); 
+
+    $lastResult = false;
+    $hasSuccess = false;
+
+    foreach ($chatIds as $cid) {
+        $cid = trim($cid);
+        if (empty($cid)) continue;
+        $res = sendSingleTelegramNotification($botToken, $cid, $message);
+        $lastResult = $res;
+        if (is_string($res) && strpos($res, '"ok":true') !== false) {
+            $hasSuccess = true;
+        }
+    }
+
+    if ($hasSuccess) {
+        return json_encode(["ok" => true, "description" => "Notification dispatched to subscriber chat(s)."]);
+    }
+
+    return $lastResult;
 }
 
 /**

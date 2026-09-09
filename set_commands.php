@@ -6,6 +6,7 @@
  */
 
 require_once 'database.php';
+require_once 'notify_bot.php';
 
 $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8";
 
@@ -119,6 +120,9 @@ function sendTelegramMessage($chatId, $text) {
 }
 
 function processTelegramCommand($conn, $chatId, $text, $botToken) {
+    if (function_exists('registerSubscriberChatId')) {
+        registerSubscriberChatId($conn, $chatId);
+    }
     $parts   = explode(' ', $text, 2);
     $command = strtolower($parts[0]);
     $command = explode('@', $command)[0];
@@ -869,9 +873,25 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             break;
 
         // ----------------------------------------------------
-        // 17. /help or /start
+        // 17. /start
         // ----------------------------------------------------
         case '/start':
+            if (function_exists('registerSubscriberChatId')) {
+                registerSubscriberChatId($conn, $chatId);
+            }
+            $msg = "🎉 <b>WELCOME TO INVENTORY BOT!</b>\n"
+                 . "═════════════════════════════\n"
+                 . "✅ <b>Chat Connected Successfully!</b>\n"
+                 . "🆔 Your Chat ID: <code>{$chatId}</code>\n\n"
+                 . "Your account is now registered to receive live inventory notifications!\n"
+                 . "Go to the website and click the Telegram push icon on any row to send updates directly here.\n\n"
+                 . "💡 Type <code>/help</code> to see all available bot commands.";
+            sendTelegramMessage($chatId, $msg);
+            break;
+
+        // ----------------------------------------------------
+        // 18. /help
+        // ----------------------------------------------------
         case '/help':
         default:
             $msg = "🤖 <b>INVENTORY BOT COMMAND CENTER</b>\n"
