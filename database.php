@@ -103,7 +103,7 @@ if ($index_check && mysqli_num_rows($index_check) == 0) {
 }
 
 // ----------------------------------------------------
-// AUTO-INITIALIZE SYSTEM SETTINGS TABLE
+// AUTO-INITIALIZE SYSTEM SETTINGS & SUBSCRIBERS TABLE
 // ----------------------------------------------------
 $create_settings_sql = "CREATE TABLE IF NOT EXISTS `system_settings` (
   `setting_key` varchar(50) NOT NULL,
@@ -113,3 +113,19 @@ $create_settings_sql = "CREATE TABLE IF NOT EXISTS `system_settings` (
 
 mysqli_query($conn, $create_settings_sql);
 mysqli_query($conn, "INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('auto_telegram_notify', '1')");
+
+$create_subscribers_sql = "CREATE TABLE IF NOT EXISTS `telegram_subscribers` (
+  `chat_id` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+
+mysqli_query($conn, $create_subscribers_sql);
+
+// Seed default initial subscriber chat IDs if empty
+$sub_count = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM telegram_subscribers");
+if ($sub_count && ($r = mysqli_fetch_assoc($sub_count)) && (int)$r['cnt'] === 0) {
+    mysqli_query($conn, "INSERT IGNORE INTO `telegram_subscribers` (`chat_id`) VALUES ('7892238736'), ('97314319')");
+}
+
+

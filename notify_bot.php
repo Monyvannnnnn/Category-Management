@@ -105,8 +105,79 @@ function sendSingleTelegramNotification($chatId, $message) {
     return $result;
 }
 
-function sendTelegramNotification($message) {
-    $targetChatIds = ["7892238736", "97314319"];
+/**
+ * Ensure telegram_subscribers table exists
+ */
+function ensureSubscribersTableExists($conn = null) {
+    if (!$conn) {
+        global $conn;
+    }
+    if (!$conn) return;
+    $sql = "CREATE TABLE IF NOT EXISTS `telegram_subscribers` (
+      `chat_id` varchar(100) NOT NULL,
+      `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+      PRIMARY KEY (`chat_id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+    @mysqli_query($conn, $sql);
+
+    // Seed default initial subscriber chat IDs if empty
+    $sub_count = @mysqli_query($conn, "SELECT COUNT(*) as cnt FROM telegram_subscribers");
+    if ($sub_count && ($r = mysqli_fetch_assoc($sub_count)) && (int)$r['cnt'] === 0) {
+        @mysqli_query($conn, "INSERT IGNORE INTO `telegram_subscribers` (`chat_id`) VALUES ('7892238736'), ('97314319')");
+    }
+}
+
+/**
+ * Register a Telegram user chat ID into subscriber list so ALL users can receive notifications
+ */
+function registerSubscriberChatId($conn, $chatId) {
+    if (empty($chatId)) return;
+    ensureSubscribersTableExists($conn);
+    if ($conn) {
+        $chatIdEsc = mysqli_real_escape_string($conn, $chatId);
+        @mysqli_query($conn, "INSERT IGNORE INTO `telegram_subscribers` (`chat_id`) VALUES ('$chatIdEsc')");
+    }
+}
+
+/**
+ * Get all registered subscriber Chat IDs from DB
+ */
+function getSubscriberChatIds($conn = null) {
+    if (!$conn) {
+        global $conn;
+    }
+    $chatIds = [];
+    if ($conn) {
+        ensureSubscribersTableExists($conn);
+        $res = @mysqli_query($conn, "SELECT chat_id FROM `telegram_subscribers`");
+        if ($res) {
+            while ($row = mysqli_fetch_assoc($res)) {
+                if (!empty($row['chat_id'])) {
+                    $chatIds[] = $row['chat_id'];
+                }
+            }
+        }
+    }
+    if (empty($chatIds)) {
+        $chatIds = ["7892238736", "97314319"];
+    }
+    return array_unique($chatIds);
+}
+
+function sendTelegramNotification($message, $conn = null) {
+    if (!$conn) {
+        global $conn;
+    }
+
+    $targetChatIds = getSubscriberChatIds($conn);
+
+    if (empty($targetChatIds)) {
+        return json_encode([
+            "ok" => false, 
+            "description" => "No registered subscribers found. Send /start or any command to the Telegram bot to subscribe automatically."
+        ]);
+    }
+
     $successCount = 0;
     $lastRes = false;
 

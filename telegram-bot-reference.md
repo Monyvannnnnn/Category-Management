@@ -152,7 +152,8 @@ The push buttons use a compact 2-column grid design:
 
 ## Important Notes
 
-- Bot token and chat ID are hardcoded in the PHP files
+- Only Bot token (Bot ID) is configured in PHP files; hardcoded Chat IDs have been removed
+- Any Telegram user sending commands or `/start` is automatically registered to use the bot and receive notifications
 - All queries use prepared statements for security
 - Output is escaped with `htmlspecialchars()`
 - Prices formatted with `number_format($val, 2)`

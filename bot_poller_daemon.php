@@ -8,6 +8,7 @@ set_time_limit(0);
 ignore_user_abort(true);
 
 require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/notify_bot.php';
 
 $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8";
 
@@ -63,6 +64,9 @@ function sendTelegramMessage($chatId, $text, $botToken) {
 }
 
 function processTelegramCommand($conn, $chatId, $text, $botToken) {
+    if (function_exists('registerSubscriberChatId')) {
+        registerSubscriberChatId($conn, $chatId);
+    }
     $parts   = explode(' ', $text, 2);
     $command = strtolower($parts[0]);
     $command = explode('@', $command)[0]; // Remove @botname suffix
