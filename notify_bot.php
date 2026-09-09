@@ -142,7 +142,7 @@ function getSubscriberChatIds($conn = null) {
         }
     }
     // Fallback default chat IDs
-    return ["905493982", "7892238736"];
+    return ["7892238736"];
 }
 
 function sendTelegramNotification($message) {
