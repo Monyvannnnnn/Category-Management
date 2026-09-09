@@ -119,12 +119,6 @@ function ensureSubscribersTableExists($conn = null) {
       PRIMARY KEY (`chat_id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
     @mysqli_query($conn, $sql);
-
-    // Seed default initial subscriber chat IDs if empty
-    $sub_count = @mysqli_query($conn, "SELECT COUNT(*) as cnt FROM telegram_subscribers");
-    if ($sub_count && ($r = mysqli_fetch_assoc($sub_count)) && (int)$r['cnt'] === 0) {
-        @mysqli_query($conn, "INSERT IGNORE INTO `telegram_subscribers` (`chat_id`) VALUES ('7892238736'), ('97314319')");
-    }
 }
 
 /**
@@ -157,9 +151,6 @@ function getSubscriberChatIds($conn = null) {
                 }
             }
         }
-    }
-    if (empty($chatIds)) {
-        $chatIds = ["7892238736", "97314319"];
     }
     return array_unique($chatIds);
 }

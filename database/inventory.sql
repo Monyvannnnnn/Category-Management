@@ -132,8 +132,21 @@ CREATE TABLE `product` (
 -- Dumping data for table `product`
 --
 
-INSERT INTO `product` (`id`, `product_code`, `product_name`, `category_id`, `price`, `quantity`, `created_at`, `lastupdate`) VALUES
-(1, 'CD-33', 'harry poter', 105, 40.00, 10, '2026-08-31 14:18:28', '2026-08-31 14:18:28');
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `telegram_subscribers`
+--
+
+CREATE TABLE `telegram_subscribers` (
+  `chat_id` varchar(100) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`chat_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+
 
 --
 -- Indexes for dumped tables

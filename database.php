@@ -122,10 +122,5 @@ $create_subscribers_sql = "CREATE TABLE IF NOT EXISTS `telegram_subscribers` (
 
 mysqli_query($conn, $create_subscribers_sql);
 
-// Seed default initial subscriber chat IDs if empty
-$sub_count = mysqli_query($conn, "SELECT COUNT(*) as cnt FROM telegram_subscribers");
-if ($sub_count && ($r = mysqli_fetch_assoc($sub_count)) && (int)$r['cnt'] === 0) {
-    mysqli_query($conn, "INSERT IGNORE INTO `telegram_subscribers` (`chat_id`) VALUES ('7892238736'), ('97314319')");
-}
 
 
