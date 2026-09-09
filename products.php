@@ -2119,6 +2119,27 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     });
     </script>
 
+    <!-- Automatic Join Telegram Bot Alert Modal -->
+    <div id="joinBotModal" class="custom-modal-backdrop" style="display: none; z-index: 100000;">
+        <div class="custom-modal-content" style="max-width: 460px; text-align: center; padding: 32px 26px; border-radius: 16px; background: #1e293b; border: 1px solid rgba(56, 189, 248, 0.3); box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);">
+            <div style="width: 70px; height: 70px; background: linear-gradient(135deg, #38bdf8, #0284c7); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 18px; box-shadow: 0 8px 24px rgba(56, 189, 248, 0.45);">
+                <i class="fa-brands fa-telegram" style="font-size: 38px; color: #ffffff;"></i>
+            </div>
+            <h3 style="font-size: 22px; font-weight: 700; color: #f8fafc; margin-bottom: 8px;">Join Telegram Bot</h3>
+            <p style="font-size: 14px; color: #94a3b8; line-height: 1.5; margin-bottom: 24px;">
+                Connect to <strong>@datanortify_bot</strong> on Telegram to activate real-time notifications and alerts for your inventory!
+            </p>
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <a href="https://t.me/datanortify_bot" target="_blank" id="btnJoinBotModalConnect" style="background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 15px; padding: 13px 22px; border-radius: 10px; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; gap: 8px; box-shadow: 0 4px 16px rgba(56, 189, 248, 0.45); transition: all 0.2s ease;">
+                    <i class="fa-brands fa-telegram" style="font-size: 20px;"></i> Join Bot (@datanortify_bot) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 12px;"></i>
+                </a>
+                <button type="button" id="btnCloseJoinBotModal" style="background: rgba(255, 255, 255, 0.05); color: #94a3b8; font-size: 13px; font-weight: 600; border: 1px solid rgba(255, 255, 255, 0.1); padding: 10px; border-radius: 8px; cursor: pointer; transition: all 0.2s ease;">
+                    Dismiss / Later
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Manual Telegram Push Modal -->
     <div id="pushModal" class="custom-modal-backdrop" style="display: none;">
         <div class="custom-modal-content" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">

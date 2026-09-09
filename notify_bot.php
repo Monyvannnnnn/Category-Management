@@ -4,9 +4,8 @@
  * Optimized for InfinityFree & Local Hosting (with DNS Resolution Bypass)
  */
 
-function sendTelegramNotification($message) {
+function sendSingleTelegramNotification($chatId, $message) {
     $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8"; 
-    $chatId = "7892238736"; 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
         'chat_id' => $chatId,
@@ -104,6 +103,26 @@ function sendTelegramNotification($message) {
     }
 
     return $result;
+}
+
+function sendTelegramNotification($message) {
+    $targetChatIds = ["7892238736", "97314319"];
+    $successCount = 0;
+    $lastRes = false;
+
+    foreach ($targetChatIds as $cid) {
+        $res = sendSingleTelegramNotification($cid, $message);
+        $lastRes = $res;
+        if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
+            $successCount++;
+        }
+    }
+
+    if ($successCount > 0) {
+        return json_encode(["ok" => true, "delivered_chats" => $successCount]);
+    }
+
+    return $lastRes;
 }
 
 /**
