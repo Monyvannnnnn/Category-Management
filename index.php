@@ -97,8 +97,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
-                        <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push" aria-label="Report Push">
-                            <i class="fa-brands fa-telegram"></i>
+                        <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
+                            <i class="fa-solid fa-gear"></i>
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
                             <i class="fa-solid fa-box"></i>
@@ -638,7 +638,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     allowReordering: false,
                     cellTemplate: function(container, options) {
                         container.addClass("actions-cell");
-                        var telegramSvg = '<i class="fa-brands fa-telegram" style="font-size: 15px;"></i>';
+                        var telegramSvg = '<i class="fa-solid fa-paper-plane" style="font-size: 14px; color: #38bdf8;"></i>';
                         var $telegramBtn = $("<a>")
                             .addClass("dx-link dx-link-telegram")
                             .attr("title", "Push to Telegram")
@@ -656,12 +656,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                                 DevExpress.ui.notify("✅ Category notification pushed to Telegram successfully!", "success", 3500);
                                             } else {
                                                 var errMsg = (res && (res.description || res.message)) ? (res.description || res.message) : "Failed to push notification.";
-                                                if (errMsg.toLowerCase().indexOf("chat not found") !== -1) {
-                                                    window.open("https://t.me/datanortify_bot", "_blank");
-                                                    DevExpress.ui.notify("⚠️ Telegram bot opened in new tab. Click START in Telegram to activate notifications!", "warning", 6000);
-                                                } else {
-                                                    DevExpress.ui.notify("❌ Telegram Push Unsuccessful: " + errMsg, "error", 5000);
-                                                }
+                                                DevExpress.ui.notify("❌ Telegram Push Unsuccessful: " + errMsg, "error", 5000);
                                             }
                                         },
                                         error: function() {
@@ -713,7 +708,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         var $kebabMenu = $("<div>")
                             .addClass("kebab-dropdown-menu")
                             .html(
-                                '<button type="button" class="kebab-menu-item kebab-push-item"><i class="fa-brands fa-telegram" style="color: #38bdf8;"></i> <span>Report Push</span></button>' +
+                                '<button type="button" class="kebab-menu-item kebab-push-item"><i class="fa-solid fa-paper-plane" style="color: #38bdf8;"></i> <span>Report Push</span></button>' +
                                 '<button type="button" class="kebab-menu-item kebab-edit-item"><i class="fa-solid fa-pen-to-square" style="color: #34d399;"></i> <span>Edit</span></button>' +
                                 '<button type="button" class="kebab-menu-item kebab-delete-item"><i class="fa-solid fa-trash-can" style="color: #f87171;"></i> <span>Delete</span></button>'
                             );
@@ -1792,6 +1787,20 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 <button type="button" class="custom-modal-close" id="closePushModalBtn">&times;</button>
             </div>
             <div class="custom-modal-body">
+                <!-- Join Telegram Bot Banner -->
+                <div class="join-bot-banner" style="background: linear-gradient(135deg, rgba(56, 189, 248, 0.15), rgba(14, 165, 233, 0.25)); border: 1px solid rgba(56, 189, 248, 0.4); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+                    <div style="display: flex; align-items: center; gap: 12px;">
+                        <i class="fa-brands fa-telegram" style="font-size: 28px; color: #38bdf8;"></i>
+                        <div>
+                            <div style="font-weight: 600; color: #f8fafc; font-size: 14px;">Connect with Telegram Bot</div>
+                            <div style="font-size: 12px; color: #94a3b8; margin-top: 2px;">Open <strong>@datanortify_bot</strong> in Telegram & press <strong>START</strong> to receive alerts!</div>
+                        </div>
+                    </div>
+                    <a href="https://t.me/datanortify_bot" target="_blank" class="join-telegram-btn" style="background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 13px; padding: 9px 18px; border-radius: 8px; text-decoration: none; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; box-shadow: 0 0 12px rgba(56, 189, 248, 0.4); transition: all 0.2s ease;">
+                        <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Open Bot (@datanortify_bot) <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i>
+                    </a>
+                </div>
+
                 <!-- 2-Tab Navigation Bar -->
                 <div class="push-modal-tabs">
                     <button type="button" class="push-tab-btn active" data-tab="tab-mode-setup">
@@ -1920,6 +1929,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
             </div>
         </div>
     </div>
+
+    <!-- Floating Telegram Bot Join Button -->
+    <a href="https://t.me/datanortify_bot" target="_blank" class="floating-telegram-btn" aria-label="Join Telegram Bot">
+        <i class="fa-brands fa-telegram"></i>
+        <span class="floating-tooltip">Join Telegram Bot</span>
+    </a>
 
 </body>
 

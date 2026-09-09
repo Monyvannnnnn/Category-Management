@@ -3,8 +3,23 @@
  * Inventory & Category Management System
  */
 
-$(document.ready).ready(function () {
+$(document).ready(function () {
     console.log("Inventory App Initialized");
+
+    // Notify user to join Telegram bot when visiting the website
+    setTimeout(function() {
+        if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+            DevExpress.ui.notify({
+                message: "📲 Click here to join @datanortify_bot on Telegram to get real-time alerts!",
+                type: "info",
+                displayTime: 7000,
+                closeOnClick: true,
+                onClick: function() {
+                    window.open("https://t.me/datanortify_bot", "_blank");
+                }
+            });
+        }
+    }, 1200);
 });
 
 // Helper: Format DateTime to dd/MM/yyyy HH:mm:ss
