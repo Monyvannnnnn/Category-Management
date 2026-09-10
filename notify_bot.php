@@ -4,8 +4,8 @@
  * Optimized for InfinityFree & Local Hosting (with DNS Resolution Bypass)
  */
 
-function sendSingleTelegramNotification($chatId, $message) {
-    $botToken = "8587070306:AAHHGV2Z6ZzmOiDi6dxL8GnXqQPqDNBuDd8"; 
+function sendSingleTelegramNotification($chatId, $message, $customBotToken = null) {
+    $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc"; 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
         'chat_id' => $chatId,
@@ -155,17 +155,45 @@ function getSubscriberChatIds($conn = null) {
     return array_unique($chatIds);
 }
 
-function sendTelegramNotification($message, $conn = null) {
+/**
+ * Send notification to specific user (or broadcast if userId is null)
+ */
+function sendTelegramNotification($message, $conn = null, $userId = null) {
     if (!$conn) {
         global $conn;
     }
 
+    // Per-User Isolation Mode: If userId is supplied, send ONLY to that specific user's chat_id
+    if ($userId !== null && (int)$userId > 0) {
+        $uId = (int)$userId;
+        if ($conn) {
+            $stmt = mysqli_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, "i", $uId);
+                mysqli_stmt_execute($stmt);
+                $res = mysqli_stmt_get_result($stmt);
+                $row = mysqli_fetch_assoc($res);
+                mysqli_stmt_close($stmt);
+
+                if ($row && !empty($row['chat_id'])) {
+                    $bToken = !empty($row['bot_token']) ? $row['bot_token'] : null;
+                    return sendSingleTelegramNotification($row['chat_id'], $message, $bToken);
+                }
+            }
+        }
+        return json_encode([
+            "ok" => false,
+            "description" => "No connected Telegram account found for User ID {$uId}."
+        ]);
+    }
+
+    // Broadcast Mode (Fallback): Send to all registered subscribers
     $targetChatIds = getSubscriberChatIds($conn);
 
     if (empty($targetChatIds)) {
         return json_encode([
             "ok" => false, 
-            "description" => "No registered subscribers found. Send /start or any command to the Telegram bot to subscribe automatically."
+            "description" => "No registered subscribers found. Connect Telegram first."
         ]);
     }
 

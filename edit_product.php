@@ -1,9 +1,13 @@
 <?php
 
 require_once "database.php";
+require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
 
 header("Content-Type: application/json");
+
+$user = getCurrentUser();
+$userId = (int)($user['id'] ?? 1);
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -19,10 +23,10 @@ if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
 
 $id = (int)$_GET["id"];
 
-// First get existing product
-$stmt = mysqli_prepare($conn, "SELECT * FROM product WHERE id = ?");
+// First get existing product owned by this user
+$stmt = mysqli_prepare($conn, "SELECT * FROM product WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_bind_param($stmt, "ii", $id, $userId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $product = mysqli_fetch_assoc($result);
@@ -54,11 +58,11 @@ if ($productCode === "" || $productName === "" || $categoryId <= 0) {
     exit;
 }
 
-// Check if the new Product Code already exists for another product
+// Check if the new Product Code already exists for another product owned by this user
 if (strcasecmp($productCode, $origProductCode) !== 0) {
-    $check_code_stmt = mysqli_prepare($conn, "SELECT id FROM product WHERE LOWER(TRIM(product_code)) = LOWER(?) AND id != ?");
+    $check_code_stmt = mysqli_prepare($conn, "SELECT id FROM product WHERE user_id = ? AND LOWER(TRIM(product_code)) = LOWER(?) AND id != ?");
     if ($check_code_stmt) {
-        mysqli_stmt_bind_param($check_code_stmt, "si", $productCode, $id);
+        mysqli_stmt_bind_param($check_code_stmt, "isi", $userId, $productCode, $id);
         mysqli_stmt_execute($check_code_stmt);
         mysqli_stmt_store_result($check_code_stmt);
         if (mysqli_stmt_num_rows($check_code_stmt) > 0) {
@@ -71,9 +75,9 @@ if (strcasecmp($productCode, $origProductCode) !== 0) {
     }
 }
 
-$stmt = mysqli_prepare($conn, "UPDATE product SET product_code = ?, product_name = ?, category_id = ?, price = ?, quantity = ? WHERE id = ?");
+$stmt = mysqli_prepare($conn, "UPDATE product SET product_code = ?, product_name = ?, category_id = ?, price = ?, quantity = ? WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "ssidii", $productCode, $productName, $categoryId, $price, $quantity, $id);
+    mysqli_stmt_bind_param($stmt, "ssidiii", $productCode, $productName, $categoryId, $price, $quantity, $id, $userId);
     if (mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
 

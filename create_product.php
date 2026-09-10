@@ -1,9 +1,13 @@
 <?php
 
 require_once "database.php";
+require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
 
 header("Content-Type: application/json");
+
+$user = getCurrentUser();
+$userId = (int)($user['id'] ?? 1);
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -23,10 +27,10 @@ if ($product_code === "" || $product_name === "" || $category_id <= 0) {
     exit;
 }
 
-// Check if Product Code already exists
-$check_code_stmt = mysqli_prepare($conn, "SELECT id FROM product WHERE LOWER(TRIM(product_code)) = LOWER(?)");
+// Check if Product Code already exists for this user
+$check_code_stmt = mysqli_prepare($conn, "SELECT id FROM product WHERE user_id = ? AND LOWER(TRIM(product_code)) = LOWER(?)");
 if ($check_code_stmt) {
-    mysqli_stmt_bind_param($check_code_stmt, "s", $product_code);
+    mysqli_stmt_bind_param($check_code_stmt, "is", $userId, $product_code);
     mysqli_stmt_execute($check_code_stmt);
     mysqli_stmt_store_result($check_code_stmt);
     if (mysqli_stmt_num_rows($check_code_stmt) > 0) {
@@ -38,20 +42,20 @@ if ($check_code_stmt) {
     mysqli_stmt_close($check_code_stmt);
 }
 
-$stmt = mysqli_prepare($conn, "INSERT INTO product (product_code, product_name, category_id, price, quantity) VALUES (?, ?, ?, ?, ?)");
+$stmt = mysqli_prepare($conn, "INSERT INTO product (user_id, product_code, product_name, category_id, price, quantity) VALUES (?, ?, ?, ?, ?, ?)");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "ssidi", $product_code, $product_name, $category_id, $price, $quantity);
+    mysqli_stmt_bind_param($stmt, "issidi", $userId, $product_code, $product_name, $category_id, $price, $quantity);
     if (mysqli_stmt_execute($stmt)) {
         $newId = mysqli_insert_id($conn);
         mysqli_stmt_close($stmt);
-        
+
         $sel = mysqli_prepare($conn, "SELECT product.*, category.category_name FROM product LEFT JOIN category ON product.category_id = category.id WHERE product.id = ?");
         mysqli_stmt_bind_param($sel, "i", $newId);
         mysqli_stmt_execute($sel);
         $row = mysqli_stmt_get_result($sel);
         $data = mysqli_fetch_assoc($row);
         mysqli_stmt_close($sel);
-        
+
         $catName = $data['category_name'] ?? 'N/A';
         $msg = "<b>📦 New Product Created</b>\n"
              . "<b>Code:</b> " . htmlspecialchars($product_code) . "\n"

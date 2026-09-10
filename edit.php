@@ -1,9 +1,13 @@
 <?php
 
 require_once "database.php";
+require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
 
 header("Content-Type: application/json");
+
+$user = getCurrentUser();
+$userId = (int)($user['id'] ?? 1);
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -19,10 +23,10 @@ if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
 
 $id = (int)$_GET["id"];
 
-// First get existing category
-$stmt = mysqli_prepare($conn, "SELECT * FROM category WHERE id = ?");
+// First get existing category owned by this user
+$stmt = mysqli_prepare($conn, "SELECT * FROM category WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $id);
+    mysqli_stmt_bind_param($stmt, "ii", $id, $userId);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
     $category = mysqli_fetch_assoc($result);
@@ -43,7 +47,8 @@ if (!$category) {
 $categoryCode = isset($_POST["category_code"]) ? preg_replace('/\s+/', ' ', trim($_POST["category_code"])) : $category["category_code"];
 $categoryName = isset($_POST["category_name"]) ? preg_replace('/\s+/', ' ', trim($_POST["category_name"])) : $category["category_name"];
 
-// Trim and normalize original database values just in case
+// Trim and normalize original database values
+$origCategoryCode = preg_replace('/\s+/', ' ', trim($category["category_code"]));
 $origCategoryName = preg_replace('/\s+/', ' ', trim($category["category_name"]));
 
 if ($categoryCode === "" || $categoryName === "") {
@@ -52,11 +57,28 @@ if ($categoryCode === "" || $categoryName === "") {
     exit;
 }
 
-// Check if the new Category Name already exists for another category (case-insensitive & trimmed)
+// Check if the new Category Code already exists for another category owned by this user
+if (strcasecmp($categoryCode, $origCategoryCode) !== 0) {
+    $check_code_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE user_id = ? AND LOWER(TRIM(category_code)) = LOWER(?) AND id != ?");
+    if ($check_code_stmt) {
+        mysqli_stmt_bind_param($check_code_stmt, "isi", $userId, $categoryCode, $id);
+        mysqli_stmt_execute($check_code_stmt);
+        mysqli_stmt_store_result($check_code_stmt);
+        if (mysqli_stmt_num_rows($check_code_stmt) > 0) {
+            mysqli_stmt_close($check_code_stmt);
+            http_response_code(400);
+            echo json_encode(["message" => "Category Code '$categoryCode' already exists."]);
+            exit;
+        }
+        mysqli_stmt_close($check_code_stmt);
+    }
+}
+
+// Check if the new Category Name already exists for another category owned by this user
 if (strcasecmp($categoryName, $origCategoryName) !== 0) {
-    $check_name_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE LOWER(TRIM(category_name)) = LOWER(?) AND id != ?");
+    $check_name_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE user_id = ? AND LOWER(TRIM(category_name)) = LOWER(?) AND id != ?");
     if ($check_name_stmt) {
-        mysqli_stmt_bind_param($check_name_stmt, "si", $categoryName, $id);
+        mysqli_stmt_bind_param($check_name_stmt, "isi", $userId, $categoryName, $id);
         mysqli_stmt_execute($check_name_stmt);
         mysqli_stmt_store_result($check_name_stmt);
         if (mysqli_stmt_num_rows($check_name_stmt) > 0) {
@@ -69,9 +91,9 @@ if (strcasecmp($categoryName, $origCategoryName) !== 0) {
     }
 }
 
-$stmt = mysqli_prepare($conn, "UPDATE category SET category_code = ?, category_name = ? WHERE id = ?");
+$stmt = mysqli_prepare($conn, "UPDATE category SET category_code = ?, category_name = ? WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "ssi", $categoryCode, $categoryName, $id);
+    mysqli_stmt_bind_param($stmt, "ssii", $categoryCode, $categoryName, $id, $userId);
     if (mysqli_stmt_execute($stmt)) {
         mysqli_stmt_close($stmt);
 

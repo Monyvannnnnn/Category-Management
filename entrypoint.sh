@@ -21,6 +21,12 @@ if command -v mariadb &> /dev/null || command -v mysql &> /dev/null; then
     mysql -e "CREATE DATABASE IF NOT EXISTS inventory_db;" || true
     mysql -e "GRANT ALL PRIVILEGES ON *.* TO 'root'@'localhost' IDENTIFIED BY '' WITH GRANT OPTION;" || true
     mysql -e "FLUSH PRIVILEGES;" || true
+
+    # Import schema & seed data from recreate_all_databases.sql if present
+    if [ -f "/var/www/html/database/recreate_all_databases.sql" ]; then
+        echo "[Entrypoint] Importing recreate_all_databases.sql into inventory database..."
+        mysql inventory < /var/www/html/database/recreate_all_databases.sql || true
+    fi
 fi
 
 # Execute passed container command (Apache foreground)

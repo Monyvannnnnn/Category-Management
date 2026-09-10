@@ -1,9 +1,13 @@
 <?php
 
 require_once "database.php";
+require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
 
 header("Content-Type: application/json");
+
+$user = getCurrentUser();
+$userId = (int)($user['id'] ?? 1);
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -20,10 +24,25 @@ if ($category_code === "" || $category_name === "") {
     exit;
 }
 
-// Check if Category Name already exists (case-insensitive & trimmed)
-$check_name_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE LOWER(TRIM(category_name)) = LOWER(?)");
+// Check if Category Code already exists for this user
+$check_code_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE user_id = ? AND LOWER(TRIM(category_code)) = LOWER(?)");
+if ($check_code_stmt) {
+    mysqli_stmt_bind_param($check_code_stmt, "is", $userId, $category_code);
+    mysqli_stmt_execute($check_code_stmt);
+    mysqli_stmt_store_result($check_code_stmt);
+    if (mysqli_stmt_num_rows($check_code_stmt) > 0) {
+        mysqli_stmt_close($check_code_stmt);
+        http_response_code(400);
+        echo json_encode(["message" => "Category Code '$category_code' already exists."]);
+        exit;
+    }
+    mysqli_stmt_close($check_code_stmt);
+}
+
+// Check if Category Name already exists for this user
+$check_name_stmt = mysqli_prepare($conn, "SELECT id FROM category WHERE user_id = ? AND LOWER(TRIM(category_name)) = LOWER(?)");
 if ($check_name_stmt) {
-    mysqli_stmt_bind_param($check_name_stmt, "s", $category_name);
+    mysqli_stmt_bind_param($check_name_stmt, "is", $userId, $category_name);
     mysqli_stmt_execute($check_name_stmt);
     mysqli_stmt_store_result($check_name_stmt);
     if (mysqli_stmt_num_rows($check_name_stmt) > 0) {
@@ -35,14 +54,13 @@ if ($check_name_stmt) {
     mysqli_stmt_close($check_name_stmt);
 }
 
-$stmt = mysqli_prepare($conn, "INSERT INTO category (category_code, category_name) VALUES (?, ?)");
+$stmt = mysqli_prepare($conn, "INSERT INTO category (user_id, category_code, category_name) VALUES (?, ?, ?)");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "ss", $category_code, $category_name);
+    mysqli_stmt_bind_param($stmt, "iss", $userId, $category_code, $category_name);
     if (mysqli_stmt_execute($stmt)) {
         $newId = mysqli_insert_id($conn);
         mysqli_stmt_close($stmt);
-        // Return the full inserted row so DevExtreme's store stays consistent
-        // and the new row shows immediately with correct id/created_at.
+
         $sel = mysqli_prepare($conn, "SELECT * FROM category WHERE id = ?");
         mysqli_stmt_bind_param($sel, "i", $newId);
         mysqli_stmt_execute($sel);

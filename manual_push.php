@@ -6,6 +6,7 @@
 
 require_once "database.php";
 require_once "notify_bot.php";
+require_once "includes/auth_helper.php";
 
 header("Content-Type: application/json");
 
@@ -21,6 +22,11 @@ if ($requestMethod !== "POST" && $requestMethod !== "GET") {
 $inputJSON = json_decode(file_get_contents('php://input'), true);
 $action = $_REQUEST['action'] ?? $inputJSON['action'] ?? 'summary';
 $customMessage = trim($_REQUEST['message'] ?? $inputJSON['message'] ?? '');
+
+$currentUser = getCurrentUser();
+$userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_id'] ?? 0));
+$userWhere = ($userId > 0) ? " AND user_id = {$userId} " : "";
+$userWhereWhere = ($userId > 0) ? " WHERE user_id = {$userId} " : "";
 
 // --------------------------------------------------------------------------
 // 1. Get Notification Setting
@@ -54,7 +60,6 @@ if ($action === 'get_settings') {
 } elseif ($action === 'push_single_category') {
     $id = (int)($_REQUEST['id'] ?? $inputJSON['id'] ?? 0);
     if ($id <= 0) {
-        http_response_code(400);
         echo json_encode(["ok" => false, "message" => "Invalid category ID."]);
         exit;
     }
@@ -62,6 +67,9 @@ if ($action === 'get_settings') {
     $res = mysqli_query($conn, "SELECT c.*, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.id = $id GROUP BY c.id");
     if ($row = mysqli_fetch_assoc($res)) {
         $nowStr = date('Y-m-d H:i:s');
+        $targetUserId = (int)($row['user_id'] ?? $userId);
+        if ($targetUserId <= 0) $targetUserId = $userId;
+
         $msg = "<b>🏷️ SINGLE CATEGORY DETAILS</b>\n"
              . "<i>Pushed: {$nowStr}</i>\n"
              . "───────────────────────\n"
@@ -75,10 +83,9 @@ if ($action === 'get_settings') {
              . "───────────────────────\n"
              . "<i>Pushed manually from Category row</i>";
 
-        echo sendTelegramNotification($msg);
+        echo sendTelegramNotification($msg, $conn, $targetUserId);
         exit;
     } else {
-        http_response_code(404);
         echo json_encode(["ok" => false, "message" => "Category not found."]);
         exit;
     }
@@ -89,7 +96,6 @@ if ($action === 'get_settings') {
 } elseif ($action === 'push_single_product') {
     $id = (int)($_REQUEST['id'] ?? $inputJSON['id'] ?? 0);
     if ($id <= 0) {
-        http_response_code(400);
         echo json_encode(["ok" => false, "message" => "Invalid product ID."]);
         exit;
     }
@@ -98,6 +104,9 @@ if ($action === 'get_settings') {
     if ($row = mysqli_fetch_assoc($res)) {
         $val = (float)$row['price'] * (int)$row['quantity'];
         $nowStr = date('Y-m-d H:i:s');
+        $targetUserId = (int)($row['user_id'] ?? $userId);
+        if ($targetUserId <= 0) $targetUserId = $userId;
+
         $msg = "<b>📦 SINGLE PRODUCT DETAILS</b>\n"
              . "<i>Pushed: {$nowStr}</i>\n"
              . "───────────────────────\n"
@@ -112,10 +121,9 @@ if ($action === 'get_settings') {
              . "───────────────────────\n"
              . "<i>Pushed manually from Product row</i>";
 
-        echo sendTelegramNotification($msg);
+        echo sendTelegramNotification($msg, $conn, $targetUserId);
         exit;
     } else {
-        http_response_code(404);
         echo json_encode(["ok" => false, "message" => "Product not found."]);
         exit;
     }
@@ -151,7 +159,7 @@ if ($action === 'get_settings') {
          . "───────────────────────\n"
          . "<i>Pushed manually from Category DataGrid selection</i>";
 
-    echo sendTelegramNotification($msg);
+    echo sendTelegramNotification($msg, $conn, $userId);
     exit;
 
 // --------------------------------------------------------------------------
@@ -190,14 +198,14 @@ if ($action === 'get_settings') {
          . "💰 <b>Total Valuation:</b> $" . number_format($sumVal, 2) . "\n"
          . "<i>Pushed manually from Product DataGrid selection</i>";
 
-    echo sendTelegramNotification($msg);
+    echo sendTelegramNotification($msg, $conn, $userId);
     exit;
 
 // --------------------------------------------------------------------------
 // 7. Push Low Stock Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_low_stock') {
-    $lowStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 ORDER BY p.quantity ASC");
+    $lowStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 {$userWhere} ORDER BY p.quantity ASC");
     $items = [];
     if ($lowStockRes) {
         while ($row = mysqli_fetch_assoc($lowStockRes)) {
@@ -216,14 +224,14 @@ if ($action === 'get_settings') {
     }
     $msg .= "───────────────────────\n<i>Pushed manually from Inventory Dashboard</i>";
 
-    echo sendTelegramNotification($msg);
+    echo sendTelegramNotification($msg, $conn, $userId);
     exit;
 
 // --------------------------------------------------------------------------
 // 7b. Push Out of Stock Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_out_of_stock') {
-    $outOfStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity = 0 ORDER BY p.product_name ASC");
+    $outOfStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity = 0 {$userWhere} ORDER BY p.product_name ASC");
     $items = [];
     if ($outOfStockRes) {
         while ($row = mysqli_fetch_assoc($outOfStockRes)) {
@@ -242,14 +250,14 @@ if ($action === 'get_settings') {
     }
     $msg .= "───────────────────────\n<i>Pushed manually from Inventory Dashboard</i>";
 
-    echo sendTelegramNotification($msg);
+    echo sendTelegramNotification($msg, $conn, $userId);
     exit;
 
 // --------------------------------------------------------------------------
 // 8. Push Financial Valuation Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_valuation') {
-    $res = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product");
+    $res = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product {$userWhereWhere}");
     if ($res && $row = mysqli_fetch_assoc($res)) {
         $nowStr = date('Y-m-d H:i:s');
         $msg = "<b>💰 INVENTORY FINANCIAL & VALUATION REPORT</b>\n"
@@ -262,7 +270,7 @@ if ($action === 'get_settings') {
              . "───────────────────────\n"
              . "<i>Pushed manually from Inventory Dashboard</i>";
 
-        echo sendTelegramNotification($msg);
+        echo sendTelegramNotification($msg, $conn, $userId);
         exit;
     }
 
@@ -270,10 +278,10 @@ if ($action === 'get_settings') {
 // 9. Manual Push: Inventory Summary
 // --------------------------------------------------------------------------
 } elseif ($action === 'summary') {
-    $catRes = mysqli_query($conn, "SELECT COUNT(*) AS total_cats FROM category");
+    $catRes = mysqli_query($conn, "SELECT COUNT(*) AS total_cats FROM category {$userWhereWhere}");
     $totalCats = ($catRes && $catRow = mysqli_fetch_assoc($catRes)) ? (int)$catRow['total_cats'] : 0;
 
-    $prodRes = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val FROM product");
+    $prodRes = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val FROM product {$userWhereWhere}");
     $totalProds = 0;
     $totalStock = 0;
     $totalVal = 0.00;
@@ -283,7 +291,7 @@ if ($action === 'get_settings') {
         $totalVal = (float)$prodRow['total_val'];
     }
 
-    $lowStockRes = mysqli_query($conn, "SELECT product_code, product_name, quantity FROM product WHERE quantity <= 5 ORDER BY quantity ASC LIMIT 5");
+    $lowStockRes = mysqli_query($conn, "SELECT product_code, product_name, quantity FROM product WHERE quantity <= 5 {$userWhere} ORDER BY quantity ASC LIMIT 5");
     $lowStockList = [];
     if ($lowStockRes) {
         while ($row = mysqli_fetch_assoc($lowStockRes)) {
@@ -310,7 +318,7 @@ if ($action === 'get_settings') {
     $msg .= "<i>Pushed manually from Inventory Dashboard</i>";
     $msg = str_replace('&le;', '&lt;=', $msg);
 
-    $result = sendTelegramNotification($msg);
+    $result = sendTelegramNotification($msg, $conn, $userId);
     echo $result;
     exit;
 
@@ -318,8 +326,8 @@ if ($action === 'get_settings') {
 // 10. Manual Push: Recently Added Items
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_added') {
-    $recentProds = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.id DESC LIMIT 5");
-    $recentCats  = mysqli_query($conn, "SELECT * FROM category ORDER BY id DESC LIMIT 5");
+    $recentProds = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC LIMIT 5");
+    $recentCats  = mysqli_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY id DESC LIMIT 5");
 
     $prodList = [];
     if ($recentProds) {
@@ -353,7 +361,7 @@ if ($action === 'get_settings') {
 
     $msg .= "───────────────────────\n<i>Sent manually from Inventory Dashboard</i>";
 
-    $result = sendTelegramNotification($msg);
+    $result = sendTelegramNotification($msg, $conn, $userId);
     echo $result;
     exit;
 
@@ -361,8 +369,8 @@ if ($action === 'get_settings') {
 // 11. Manual Push: Recently Updated Items
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_updated') {
-    $updatedProds = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.lastupdate DESC LIMIT 5");
-    $updatedCats  = mysqli_query($conn, "SELECT * FROM category ORDER BY lastupdate DESC LIMIT 5");
+    $updatedProds = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.lastupdate DESC LIMIT 5");
+    $updatedCats  = mysqli_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY lastupdate DESC LIMIT 5");
 
     $prodList = [];
     if ($updatedProds) {
@@ -398,7 +406,7 @@ if ($action === 'get_settings') {
 
     $msg .= "───────────────────────\n<i>Sent manually from Inventory Dashboard</i>";
 
-    $result = sendTelegramNotification($msg);
+    $result = sendTelegramNotification($msg, $conn, $userId);
     echo $result;
     exit;
 
@@ -420,7 +428,7 @@ if ($action === 'get_settings') {
          . "───────────────────────\n"
          . "<i>Sent from Inventory System Dashboard</i>";
 
-    $result = sendTelegramNotification($msg);
+    $result = sendTelegramNotification($msg, $conn, $userId);
     echo $result;
     exit;
 

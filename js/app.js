@@ -5,41 +5,6 @@
 
 $(document).ready(function () {
     console.log("Inventory App Initialized");
-
-    // Automatically trigger Join Telegram Bot alert modal on page load / refresh for desktop & mobile
-    setTimeout(function () {
-        if ($("#joinBotModal").length) {
-            $("#joinBotModal").css({ "display": "flex", "opacity": "0" }).show().animate({ opacity: 1 }, 300);
-        }
-
-        // Also display notification toast
-        if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
-            DevExpress.ui.notify({
-                message: "📲 Click here to join @datanortify_bot on Telegram to get real-time alerts!",
-                type: "info",
-                displayTime: 7000,
-                closeOnClick: true,
-                onClick: function () {
-                    window.open("https://t.me/datanortify_bot", "_blank");
-                }
-            });
-        }
-    }, 500);
-
-    // Close join bot modal
-    $(document).on("click", "#btnCloseJoinBotModal, #btnJoinBotModalConnect", function () {
-        $("#joinBotModal").animate({ opacity: 0 }, 200, function () {
-            $(this).css("display", "none");
-        });
-    });
-
-    $(document).on("click", "#joinBotModal", function (e) {
-        if ($(e.target).is("#joinBotModal")) {
-            $("#joinBotModal").animate({ opacity: 0 }, 200, function () {
-                $(this).css("display", "none");
-            });
-        }
-    });
 });
 
 // Helper: Format DateTime to dd/MM/yyyy HH:mm:ss

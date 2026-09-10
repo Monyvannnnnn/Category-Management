@@ -9,30 +9,5 @@ services:
     plan: free
     region: singapore
     envVars:
-      - key: DB_HOST
-        fromDatabase:
-          name: inventory-db
-          property: host
-      - key: DB_USER
-        fromDatabase:
-          name: inventory-db
-          property: user
-      - key: DB_PASS
-        fromDatabase:
-          name: inventory-db
-          property: password
-      - key: DB_NAME
-        fromDatabase:
-          name: inventory-db
-          property: database
-
-# ----------------------------------------------------
-# Managed PostgreSQL / MySQL Database Specification
-# ----------------------------------------------------
-databases:
-  - name: inventory-db
-    databaseName: inventory_db
-    user: inventory_user
-    plan: free
-    region: singapore
-
+      - key: PORT
+        value: "80"
