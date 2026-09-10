@@ -1,17 +1,33 @@
 <?php
 // Configuration Constants
+
+/*
+// ============================================================
+// OLD DATABASE CONFIGURATION (COMMENTED OUT)
+// ============================================================
 define("DB_HOST", "127.0.0.1");
 define("DB_PORT", "3307"); // XAMPP MariaDB/MySQL port
 define("DB_NAME", "telegram_test");
 define("DB_USER", "root");
 define("DB_PASS", "");
+*/
+
+// ============================================================
+// NEW SUPABASE (POSTGRESQL) CONFIGURATION
+// ============================================================
+define("DB_HOST", getenv('DB_HOST') ?: "db.wpzaeloeqsiacehkxvgq.supabase.co");
+define("DB_PORT", getenv('DB_PORT') ?: "5432");
+define("DB_NAME", getenv('DB_NAME') ?: "postgres");
+define("DB_USER", getenv('DB_USER') ?: "postgres");
+define("DB_PASS", getenv('DB_PASS') ?: "Munyvann.310394");
+define("DB_DRIVER", "pgsql");
+define("DB_URL", getenv('DATABASE_URL') ?: "postgresql://postgres:Munyvann.310394@db.wpzaeloeqsiacehkxvgq.supabase.co:5432/postgres");
 
 define("DEFAULT_BOT_TOKEN", "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc");
 define("DEFAULT_BOT_USERNAME", "reportpush_bot");
 
 /**
- * Returns a PDO MySQL Connection.
- * Tries XAMPP port 3307 first, then default port 3306.
+ * Returns a PDO Connection for Supabase (PostgreSQL) or fallback.
  */
 function getDBConnection() {
     static $pdo = null;
@@ -19,38 +35,26 @@ function getDBConnection() {
         return $pdo;
     }
 
-    $ports = [3307, 3306];
-
-    foreach ($ports as $port) {
+    try {
+        $dsn = "pgsql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME;
+        $pdo = new PDO($dsn, DB_USER, DB_PASS, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+        return $pdo;
+    } catch (PDOException $e) {
+        // Fallback to MySQL if PDO pgsql is not enabled or connection fails
         try {
-            // Try connecting directly to target DB
-            $pdo = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS, [
+            $pdo = new PDO("mysql:host=" . DB_HOST . ";port=" . DB_PORT . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS, [
                 PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                 PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
             ]);
             return $pdo;
-        } catch (PDOException $e) {
-            // Try creating DB if missing on this port
-            try {
-                $pdoHost = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";charset=utf8mb4", DB_USER, DB_PASS, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-                ]);
-                $pdoHost->exec("CREATE DATABASE IF NOT EXISTS `" . DB_NAME . "` DEFAULT CHARACTER SET utf8mb4");
-                $pdoHost->exec("USE `" . DB_NAME . "`");
-                
-                $schema = file_get_contents(__DIR__ . "/../database/schema.sql");
-                $pdoHost->exec($schema);
-
-                $pdo = new PDO("mysql:host=" . DB_HOST . ";port=" . $port . ";dbname=" . DB_NAME . ";charset=utf8mb4", DB_USER, DB_PASS, [
-                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-                ]);
-                return $pdo;
-            } catch (PDOException $ex) {
-                // Try next port
-            }
+        } catch (PDOException $ex) {
+            die("Database connection failed: " . $e->getMessage());
         }
     }
+}
 
     // Fallback to SQLite if MySQL is unreachable
     $sqlitePath = __DIR__ . "/../database/database.sq3";
