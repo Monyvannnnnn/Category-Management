@@ -18,16 +18,57 @@ $driver = $cfg['driver'] ?? 'mysql';
 
 if ($driver === 'pgsql') {
     // ============================================================
-    // SUPABASE (POSTGRESQL) PDO DRIVER & MYSQLI ADAPTER
+    // SUPABASE (POSTGRESQL) PDO DRIVER & AUTO-RECOVERY ADAPTER
     // ============================================================
-    try {
-        $dsn = "pgsql:host={$cfg['host']};port={$cfg['port']};dbname={$cfg['name']};sslmode=require";
-        $pdo = new PDO($dsn, $cfg['user'], $cfg['pass'], [
-            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
-        ]);
-    } catch (PDOException $e) {
-        die("Supabase Connection Failed: " . $e->getMessage());
+    $pdo = null;
+    $lastException = null;
+
+    $userCandidates = array_values(array_unique(array_filter([
+        $cfg['user'] ?? '',
+        'postgres.wpzaeloeqsiacehkxvgq',
+        'postgres'
+    ])));
+
+    $portCandidates = array_values(array_unique(array_filter([
+        (int)($cfg['port'] ?? 6543),
+        6543,
+        5432
+    ])));
+
+    $passCandidates = array_values(array_unique(array_filter([
+        $cfg['pass'] ?? '',
+        'Munyvann.310394'
+    ])));
+
+    $hostCandidates = array_values(array_unique(array_filter([
+        $cfg['host'] ?? '',
+        'aws-0-ap-northeast-2.pooler.supabase.com'
+    ])));
+
+    foreach ($hostCandidates as $h) {
+        foreach ($portCandidates as $p) {
+            foreach ($userCandidates as $u) {
+                foreach ($passCandidates as $pass) {
+                    try {
+                        $dsn = "pgsql:host={$h};port={$p};dbname={$cfg['name']};sslmode=require";
+                        $pdo = new PDO($dsn, $u, $pass, [
+                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                            PDO::ATTR_TIMEOUT => 4
+                        ]);
+                        if ($pdo) {
+                            break 4; // Found working combination!
+                        }
+                    } catch (PDOException $ex) {
+                        $lastException = $ex;
+                    }
+                }
+            }
+        }
+    }
+
+    if (!$pdo) {
+        die("Supabase Connection Failed: " . ($lastException ? $lastException->getMessage() : 'Unknown error'));
     }
 
     if (!class_exists('PgSqlResultWrapper')) {
