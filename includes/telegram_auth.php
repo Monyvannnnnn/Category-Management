@@ -45,3 +45,15 @@ function verifyAndBindConnectionCode($pdo, $code, $chatId) {
 
     return $userBot;
 }
+
+/**
+ * Returns user bot connection row if chat_id is registered and connected.
+ */
+function getConnectedUserByChatId($pdo, $chatId) {
+    if (empty($chatId)) return null;
+    $stmt = $pdo->prepare("SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
+    $stmt->execute([$chatId]);
+    $userBot = $stmt->fetch();
+    return $userBot ?: null;
+}
+

@@ -83,6 +83,23 @@ function handleCodeBinding($conn, $chatId, $code) {
 }
 
 /**
+ * Helper to fetch connected bot row for incoming chatId
+ */
+function getConnectedUserByChatIdMySQLi($conn, $chatId) {
+    if (empty($chatId)) return null;
+    $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "s", $chatId);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($res);
+        mysqli_stmt_close($stmt);
+        return $row;
+    }
+    return null;
+}
+
+/**
  * Process Command for specific user_id
  */
 function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
@@ -96,28 +113,124 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
     $rawArg  = trim($parts[1] ?? '');
     $arg     = strtolower($rawArg);
 
-    if ($command === '/start') {
+    // 1. One-Time Connection Code Binding (/start CONNECT-XXXXXX)
+    if ($command === '/start' && !empty($rawArg)) {
         $boundBot = handleCodeBinding($conn, $chatId, $rawArg);
         if ($boundBot) {
-            $userId = (int)$boundBot['user_id'];
+            $uId = (int)$boundBot['user_id'];
             $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
                  . "═════════════════════════════\n"
                  . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
-                 . "Linked to your Inventory Account.\n\n"
-                 . "Type /help to see all commands!";
-            sendTelegramMessage($chatId, $msg, $botToken);
-            return;
-        } else {
-            $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
-                 . "═════════════════════════════\n"
-                 . "Connected Chat ID: <code>{$chatId}</code>\n\n"
-                 . "Type /help to see available inventory commands!";
+                 . "Linked to Website Account User #{$uId}.\n\n"
+                 . "Type /help to see all available commands!";
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
         }
     }
 
+    // 2. Strict Access Control Guard: Check if chat_id is connected in DB
+    $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
+    if (!$userBot || empty($userBot['user_id'])) {
+        $msg = "❌ <b>This Telegram account is not connected.</b>\n"
+             . "═════════════════════════════\n"
+             . "Please connect your account first on the website.";
+        sendTelegramMessage($chatId, $msg, $botToken);
+        return;
+    }
+
+    // Authenticated User ID from DB
+    $userId = (int)$userBot['user_id'];
+
+    // 3. Process commands for connected user
     switch ($command) {
+        case '/start':
+            $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
+                 . "═════════════════════════════\n"
+                 . "Status: <b>Connected ✅</b>\n"
+                 . "Account User ID: <code>#{$userId}</code>\n"
+                 . "Connected Chat ID: <code>{$chatId}</code>\n\n"
+                 . "Type /help to see available inventory commands!";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        case '/report':
+        case '/summary':
+            $catStmt = mysqli_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
+            mysqli_stmt_bind_param($catStmt, "i", $userId);
+            mysqli_stmt_execute($catStmt);
+            $catRes = mysqli_stmt_get_result($catStmt);
+            $catCnt = ($r = mysqli_fetch_assoc($catRes)) ? (int)$r['cat_cnt'] : 0;
+            mysqli_stmt_close($catStmt);
+
+            $prodStmt = mysqli_prepare($conn, "SELECT COUNT(*) as prod_cnt, COALESCE(SUM(quantity), 0) as total_qty, COALESCE(SUM(price * quantity), 0) as total_val FROM product WHERE user_id = ?");
+            mysqli_stmt_bind_param($prodStmt, "i", $userId);
+            mysqli_stmt_execute($prodStmt);
+            $prodRes = mysqli_stmt_get_result($prodStmt);
+            $pData = mysqli_fetch_assoc($prodRes);
+            $prodCnt = (int)($pData['prod_cnt'] ?? 0);
+            $totalQty = (int)($pData['total_qty'] ?? 0);
+            $totalVal = number_format((float)($pData['total_val'] ?? 0), 2);
+            mysqli_stmt_close($prodStmt);
+
+            $msg = "📊 <b>YOUR REAL-TIME INVENTORY REPORT</b>\n"
+                 . "═════════════════════════════\n"
+                 . "🏷️ Total Categories: <b>{$catCnt}</b>\n"
+                 . "📦 Total Products: <b>{$prodCnt}</b>\n"
+                 . "🔢 Total Items In Stock: <b>{$totalQty} units</b>\n"
+                 . "💵 Total Asset Valuation: <b>\${$totalVal}</b>\n";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        case '/orders':
+        case '/products':
+            $stmt = mysqli_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
+            mysqli_stmt_bind_param($stmt, "i", $userId);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+
+            if ($res && mysqli_num_rows($res) > 0) {
+                $msg = "📦 <b>YOUR ORDERS & PRODUCTS OVERVIEW</b>\n"
+                     . "═════════════════════════════\n\n";
+                while ($r = mysqli_fetch_assoc($res)) {
+                    $code  = htmlspecialchars($r['product_code']);
+                    $name  = htmlspecialchars($r['product_name']);
+                    $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                    $price = number_format((float)$r['price'], 2);
+                    $qty   = (int)$r['quantity'];
+                    $msg  .= "📦 <b>{$name}</b>\n"
+                          . "├ 🆔 Code: <code>{$code}</code>\n"
+                          . "├ 🏷️ Category: <code>{$cat}</code>\n"
+                          . "├ 💰 Price: <b>\${$price}</b>\n"
+                          . "└ 🔢 Stock: <b>{$qty} units</b>\n\n";
+                }
+            } else {
+                $msg = "📦 <b>NO PRODUCTS / ORDERS FOUND</b>";
+            }
+            mysqli_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        case '/settings':
+            $stmt = mysqli_prepare($conn, "SELECT name, email, username FROM users WHERE id = ?");
+            mysqli_stmt_bind_param($stmt, "i", $userId);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $uRow = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
+
+            $uName = htmlspecialchars($uRow['name'] ?? 'User #' . $userId);
+            $uEmail = htmlspecialchars($uRow['email'] ?? 'N/A');
+
+            $msg = "⚙️ <b>ACCOUNT SETTINGS & CONNECTION INFO</b>\n"
+                 . "═════════════════════════════\n"
+                 . "👤 <b>User:</b> {$uName}\n"
+                 . "📧 <b>Email:</b> {$uEmail}\n"
+                 . "🆔 <b>User ID:</b> <code>#{$userId}</code>\n"
+                 . "📱 <b>Telegram Chat ID:</b> <code>{$chatId}</code>\n"
+                 . "Status: <b>Connected ✅</b>";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
         case '/search':
             if (empty($arg)) {
                 $msg = "⚠️ <b>INVALID SEARCH FORMAT</b>\n"
@@ -183,33 +296,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
-        case '/summary':
-            $catStmt = mysqli_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
-            mysqli_stmt_bind_param($catStmt, "i", $userId);
-            mysqli_stmt_execute($catStmt);
-            $catRes = mysqli_stmt_get_result($catStmt);
-            $catCnt = ($r = mysqli_fetch_assoc($catRes)) ? (int)$r['cat_cnt'] : 0;
-            mysqli_stmt_close($catStmt);
-
-            $prodStmt = mysqli_prepare($conn, "SELECT COUNT(*) as prod_cnt, COALESCE(SUM(quantity), 0) as total_qty, COALESCE(SUM(price * quantity), 0) as total_val FROM product WHERE user_id = ?");
-            mysqli_stmt_bind_param($prodStmt, "i", $userId);
-            mysqli_stmt_execute($prodStmt);
-            $prodRes = mysqli_stmt_get_result($prodStmt);
-            $pData = mysqli_fetch_assoc($prodRes);
-            $prodCnt = (int)($pData['prod_cnt'] ?? 0);
-            $totalQty = (int)($pData['total_qty'] ?? 0);
-            $totalVal = number_format((float)($pData['total_val'] ?? 0), 2);
-            mysqli_stmt_close($prodStmt);
-
-            $msg = "📊 <b>YOUR REAL-TIME INVENTORY SUMMARY</b>\n"
-                 . "═════════════════════════════\n"
-                 . "🏷️ Total Categories: <b>{$catCnt}</b>\n"
-                 . "📦 Total Product Types: <b>{$prodCnt}</b>\n"
-                 . "🔢 Total Items In Stock: <b>{$totalQty} units</b>\n"
-                 . "💎 Total Asset Valuation: <b>\${$totalVal}</b>\n";
-            sendTelegramMessage($chatId, $msg, $botToken);
-            break;
-
         case '/lowstock':
             $stmt = mysqli_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? AND quantity <= 5 ORDER BY quantity ASC");
             mysqli_stmt_bind_param($stmt, "i", $userId);
@@ -238,11 +324,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
         default:
             $msg = "ℹ️ <b>AVAILABLE COMMANDS</b>\n"
                  . "═════════════════════════════\n"
-                 . "🏷️ <code>/categories</code> - List your categories\n"
-                 . "🔍 <code>/search &lt;keyword&gt;</code> - Search your products\n"
-                 . "📊 <code>/summary</code> - Real-time inventory summary\n"
-                 . "⚠️ <code>/lowstock</code> - View low stock items (&le; 5)\n"
-                 . "🚀 <code>/start</code> - Welcome & Connection Status";
+                 . "📊 <code>/report</code> - Inventory report & valuation\n"
+                 . "📦 <code>/orders</code> - Recent orders & products\n"
+                 . "⚙️ <code>/settings</code> - Account settings & connection\n"
+                 . "🏷️ <code>/categories</code> - Category overview\n"
+                 . "🔍 <code>/search &lt;keyword&gt;</code> - Search products\n"
+                 . "⚠️ <code>/lowstock</code> - View low stock items\n"
+                 . "🚀 <code>/start</code> - Connection status";
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
     }
