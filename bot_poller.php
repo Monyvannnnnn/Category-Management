@@ -58,26 +58,43 @@ function sendTelegramMessage($chatId, $text, $botToken) {
  * Handle user bot connection binding via /start <code>
  */
 function handleCodeBinding($conn, $chatId, $code) {
-    $now = date('Y-m-d H:i:s');
+    $code = trim($code);
+    $userBot = null;
+
+    // 1. Try exact connection code match
     if (!empty($code)) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(connection_code) = UPPER(?) AND (code_expires_at IS NULL OR code_expires_at >= NOW() OR code_expires_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR))");
-        mysqli_stmt_bind_param($stmt, "s", $code);
-    } else {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (code_expires_at IS NULL OR code_expires_at >= NOW()) ORDER BY id DESC LIMIT 1");
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(?)");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "s", $code);
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $userBot = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
+        }
     }
 
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    $userBot = mysqli_fetch_assoc($res);
-    mysqli_stmt_close($stmt);
+    // 2. Fallback: Check for any pending unlinked connection code
+    if (!$userBot) {
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (chat_id IS NULL OR chat_id = '') ORDER BY id DESC LIMIT 1");
+        if ($stmt) {
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $userBot = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
+        }
+    }
 
+    // 3. Bind chat_id & clear connection_code
     if ($userBot) {
         $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
-        mysqli_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
-        mysqli_stmt_execute($upd);
-        mysqli_stmt_close($upd);
+        if ($upd) {
+            mysqli_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
+            mysqli_stmt_execute($upd);
+            mysqli_stmt_close($upd);
+        }
         return $userBot;
     }
+
     return null;
 }
 
