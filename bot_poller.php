@@ -176,14 +176,18 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     // Database-level Atomic Update Deduplication Lock
     if (!empty($updateId)) {
         @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
-          `update_id` bigint(20) NOT NULL,
+          `update_id` varchar(100) NOT NULL,
           `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (`update_id`)
         ) ENGINE=InnoDB;");
 
+        // Clean up overflow / old entries
+        @mysqli_query($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+
+        $updateIdStr = (string)$updateId;
         $insStmt = mysqli_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
         if ($insStmt) {
-            mysqli_stmt_bind_param($insStmt, "i", $updateId);
+            mysqli_stmt_bind_param($insStmt, "s", $updateIdStr);
             mysqli_stmt_execute($insStmt);
             $affected = mysqli_stmt_affected_rows($insStmt);
             mysqli_stmt_close($insStmt);

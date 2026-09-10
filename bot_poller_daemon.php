@@ -27,7 +27,7 @@ registerBotCommands($defaultBotToken);
 
 // Auto-ensure atomic updates table exists
 mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
-  `update_id` bigint(20) NOT NULL,
+  `update_id` varchar(100) NOT NULL,
   `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`update_id`)
 ) ENGINE=InnoDB;");
@@ -80,13 +80,14 @@ while (true) {
             $data = json_decode($response, true);
             if ($data && isset($data['result']) && is_array($data['result'])) {
                 foreach ($data['result'] as $update) {
-                    $updateId = (int)$update['update_id'];
-                    $offsetMap[$bToken] = $updateId + 1;
+                    $updateIdRaw = $update['update_id'] ?? '';
+                    $updateIdStr = (string)$updateIdRaw;
+                    $offsetMap[$bToken] = ((int)$updateIdRaw) + 1;
 
                     // Atomic Database-Level Deduplication Lock across concurrent container instances
                     $insStmt = mysqli_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
                     if ($insStmt) {
-                        mysqli_stmt_bind_param($insStmt, "i", $updateId);
+                        mysqli_stmt_bind_param($insStmt, "s", $updateIdStr);
                         mysqli_stmt_execute($insStmt);
                         $affected = mysqli_stmt_affected_rows($insStmt);
                         mysqli_stmt_close($insStmt);
