@@ -60,11 +60,10 @@ function sendTelegramMessage($chatId, $text, $botToken) {
 function handleCodeBinding($conn, $chatId, $code) {
     $now = date('Y-m-d H:i:s');
     if (!empty($code)) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(connection_code) = UPPER(?) AND (code_expires_at IS NULL OR code_expires_at >= ?)");
-        mysqli_stmt_bind_param($stmt, "ss", $code, $now);
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(connection_code) = UPPER(?) AND (code_expires_at IS NULL OR code_expires_at >= NOW() OR code_expires_at >= DATE_SUB(NOW(), INTERVAL 1 HOUR))");
+        mysqli_stmt_bind_param($stmt, "s", $code);
     } else {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (code_expires_at IS NULL OR code_expires_at >= ?) ORDER BY id DESC LIMIT 1");
-        mysqli_stmt_bind_param($stmt, "s", $now);
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (code_expires_at IS NULL OR code_expires_at >= NOW()) ORDER BY id DESC LIMIT 1");
     }
 
     mysqli_stmt_execute($stmt);
@@ -73,8 +72,8 @@ function handleCodeBinding($conn, $chatId, $code) {
     mysqli_stmt_close($stmt);
 
     if ($userBot) {
-        $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = ?, connection_code = NULL, code_expires_at = NULL WHERE id = ?");
-        mysqli_stmt_bind_param($upd, "ssi", $chatId, $now, $userBot['id']);
+        $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
+        mysqli_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
         mysqli_stmt_execute($upd);
         mysqli_stmt_close($upd);
         return $userBot;

@@ -83,19 +83,19 @@ switch ($action) {
 
     case 'generate_code':
         $code = str_pad((string)rand(100000, 999999), 6, '0', STR_PAD_LEFT);
-        $expiresAt = date('Y-m-d H:i:s', strtotime('+10 minutes'));
+        $expiresAt = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
         $existing = getUserBotRow($conn, $userId);
         if ($existing) {
-            $stmt = mysqli_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = ? WHERE user_id = ?");
-            mysqli_stmt_bind_param($stmt, "ssi", $code, $expiresAt, $userId);
+            $stmt = mysqli_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE user_id = ?");
+            mysqli_stmt_bind_param($stmt, "si", $code, $userId);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         } else {
             $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
             $defaultUsername = "reportpush_bot";
-            $stmt = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, ?)");
-            mysqli_stmt_bind_param($stmt, "issss", $userId, $defaultToken, $defaultUsername, $code, $expiresAt);
+            $stmt = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))");
+            mysqli_stmt_bind_param($stmt, "isss", $userId, $defaultToken, $defaultUsername, $code);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
         }
