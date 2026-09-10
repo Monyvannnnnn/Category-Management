@@ -208,6 +208,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
 
         case '/orders':
         case '/products':
+        case '/product':
             $stmt = mysqli_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
             mysqli_stmt_bind_param($stmt, "i", $userId);
             mysqli_stmt_execute($stmt);
@@ -294,6 +295,36 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
             break;
 
         case '/categories':
+        case '/category':
+            if (!empty($rawArg)) {
+                $stmt = mysqli_prepare($conn, "SELECT c.id, c.category_code, c.category_name, c.created_at, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? AND (UPPER(c.category_code) = UPPER(?) OR c.id = ? OR UPPER(c.category_name) LIKE UPPER(?)) GROUP BY c.id LIMIT 1");
+                $catIdArg = (int)$rawArg;
+                $catLikeArg = "%" . $rawArg . "%";
+                mysqli_stmt_bind_param($stmt, "isis", $userId, $rawArg, $catIdArg, $catLikeArg);
+                mysqli_stmt_execute($stmt);
+                $res = mysqli_stmt_get_result($stmt);
+
+                if ($res && $r = mysqli_fetch_assoc($res)) {
+                    $cId   = (int)$r['id'];
+                    $cCode = htmlspecialchars($r['category_code']);
+                    $cName = htmlspecialchars($r['category_name']);
+                    $cnt   = (int)$r['prod_count'];
+                    $qty   = (int)$r['total_qty'];
+                    $msg = "🏷️ <b>SINGLE CATEGORY DETAILS</b>\n"
+                         . "═════════════════════════════\n"
+                         . "<b>ID:</b> #{$cId}\n"
+                         . "<b>Code:</b> <code>{$cCode}</code>\n"
+                         . "<b>Name:</b> {$cName}\n"
+                         . "<b>Associated Products:</b> {$cnt} items\n"
+                         . "<b>Total Stock Qty:</b> {$qty} units";
+                } else {
+                    $msg = "❌ <b>CATEGORY NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
+                }
+                mysqli_stmt_close($stmt);
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
             $stmt = mysqli_prepare($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? GROUP BY c.id ORDER BY c.category_name ASC");
             mysqli_stmt_bind_param($stmt, "i", $userId);
             mysqli_stmt_execute($stmt);

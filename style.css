@@ -2476,6 +2476,7 @@ label,
 
 /* Floating Telegram Join Button */
 .floating-telegram-btn {
+  display: none !important;
   position: fixed;
   bottom: 28px;
   right: 28px;

@@ -134,36 +134,63 @@ function registerSubscriberChatId($conn, $chatId) {
 }
 
 /**
- * Get all registered subscriber Chat IDs from DB
+ * Get all registered subscriber and connected user Chat IDs from DB
  */
 function getSubscriberChatIds($conn = null) {
     if (!$conn) {
         global $conn;
     }
-    $chatIds = [];
+    $targets = []; // Map of chatId => botToken
     if ($conn) {
         ensureSubscribersTableExists($conn);
-        $res = @mysqli_query($conn, "SELECT chat_id FROM `telegram_subscribers`");
-        if ($res) {
-            while ($row = mysqli_fetch_assoc($res)) {
-                if (!empty($row['chat_id'])) {
-                    $chatIds[] = $row['chat_id'];
+
+        // 1. Fetch all connected user bots
+        $res1 = @mysqli_query($conn, "SELECT chat_id, bot_token FROM `user_telegram_bots` WHERE chat_id IS NOT NULL AND chat_id != ''");
+        if ($res1) {
+            while ($row = mysqli_fetch_assoc($res1)) {
+                $cid = trim($row['chat_id']);
+                if (!empty($cid) && !isset($targets[$cid])) {
+                    $targets[$cid] = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
+                }
+            }
+        }
+
+        // 2. Fetch from standalone subscribers list
+        $res2 = @mysqli_query($conn, "SELECT chat_id FROM `telegram_subscribers` WHERE chat_id IS NOT NULL AND chat_id != ''");
+        if ($res2) {
+            while ($row = mysqli_fetch_assoc($res2)) {
+                $cid = trim($row['chat_id']);
+                if (!empty($cid) && !isset($targets[$cid])) {
+                    $targets[$cid] = null;
                 }
             }
         }
     }
-    return array_unique($chatIds);
+    return $targets;
 }
 
 /**
- * Send notification to specific user (or broadcast if userId is null)
+ * Send notification to specific user (or auto-detect logged-in user for per-user isolation)
  */
 function sendTelegramNotification($message, $conn = null, $userId = null) {
     if (!$conn) {
         global $conn;
     }
 
-    // Per-User Isolation Mode: If userId is supplied, send ONLY to that specific user's chat_id
+    // Auto-detect logged-in user ID if not explicitly passed
+    if ($userId === null || (int)$userId <= 0) {
+        if (function_exists('getCurrentUser')) {
+            $u = getCurrentUser();
+            if (!empty($u['id'])) {
+                $userId = (int)$u['id'];
+            }
+        }
+        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
+            $userId = (int)$_SESSION['user_id'];
+        }
+    }
+
+    // Per-User Isolation Mode: If userId is resolved, send ONLY to that specific user's chat_id
     if ($userId !== null && (int)$userId > 0) {
         $uId = (int)$userId;
         if ($conn) {
@@ -187,21 +214,21 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
         ]);
     }
 
-    // Broadcast Mode (Fallback): Send to all registered subscribers
-    $targetChatIds = getSubscriberChatIds($conn);
+    // Broadcast Mode: Send to ALL connected Telegram users & subscribers
+    $targets = getSubscriberChatIds($conn);
 
-    if (empty($targetChatIds)) {
+    if (empty($targets)) {
         return json_encode([
             "ok" => false, 
-            "description" => "No registered subscribers found. Connect Telegram first."
+            "description" => "No connected Telegram users or subscribers found."
         ]);
     }
 
     $successCount = 0;
     $lastRes = false;
 
-    foreach ($targetChatIds as $cid) {
-        $res = sendSingleTelegramNotification($cid, $message);
+    foreach ($targets as $cid => $bToken) {
+        $res = sendSingleTelegramNotification($cid, $message, $bToken);
         $lastRes = $res;
         if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
             $successCount++;

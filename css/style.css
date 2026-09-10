@@ -121,7 +121,7 @@ label,
    ========================================================================== */
 
 .header {
-  display: block;
+  display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 20px;
@@ -133,9 +133,10 @@ label,
   font-size: 24px;
   font-weight: 700;
   color: #f8fafc;
-  display: block;
+  display: flex;
   align-items: center;
   gap: 12px;
+  margin: 0;
 }
 
 .header h1 i {
@@ -3210,6 +3211,7 @@ label,
 
 /* Floating Telegram Join Button */
 .floating-telegram-btn {
+  display: none !important;
   position: fixed;
   bottom: 28px;
   right: 28px;

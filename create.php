@@ -68,11 +68,13 @@ if ($stmt) {
         $data = mysqli_fetch_assoc($row);
         mysqli_stmt_close($sel);
 
-        $msg = "<b>🏷️ New Category Created</b>\n"
-             . "<b>Code:</b> " . htmlspecialchars($category_code) . "\n"
-             . "<b>Name:</b> " . htmlspecialchars($category_name);
+        $msg = "🏷️ <b>NEW CATEGORY CREATED</b>\n"
+             . "═════════════════════════════\n"
+             . "🆔 <b>ID:</b> #{$newId}\n"
+             . "🏷️ <b>Code:</b> <code>" . htmlspecialchars($category_code) . "</code>\n"
+             . "📦 <b>Name:</b> <b>" . htmlspecialchars($category_name) . "</b>";
         if (isAutoTelegramEnabled($conn)) {
-            sendTelegramNotification($msg);
+            sendTelegramNotification($msg, $conn, $userId);
         }
 
         echo json_encode($data);

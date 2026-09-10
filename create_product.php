@@ -64,7 +64,7 @@ if ($stmt) {
              . "<b>Price:</b> $" . number_format($price, 2) . "\n"
              . "<b>Quantity:</b> " . $quantity;
         if (isAutoTelegramEnabled($conn)) {
-            sendTelegramNotification($msg);
+            sendTelegramNotification($msg, $conn, $userId);
         }
 
         echo json_encode($data);

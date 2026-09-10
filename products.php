@@ -134,9 +134,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
-                        <button type="button" class="add-btn" id="openCreateUserModalBtn" data-tooltip="Create New User" aria-label="Create New User">
-                            <i class="fa-solid fa-user-plus"></i>
-                        </button>
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
                             <i class="fa-solid fa-gear"></i>
                         </button>
@@ -2339,12 +2336,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             </div>
         </div>
     </div>
-
-    <!-- Floating Telegram Bot Join Button -->
-    <a href="https://t.me/reportpush_bot" target="_blank" class="floating-telegram-btn" aria-label="Join Telegram Bot">
-        <i class="fa-brands fa-telegram"></i>
-        <span class="floating-tooltip">Join Telegram Bot</span>
-    </a>
 
     <!-- Create User Modal Dialog -->
     <div class="auth-modal-overlay" id="createUserModal">

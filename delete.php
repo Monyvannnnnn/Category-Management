@@ -1,9 +1,13 @@
 <?php
 
 require_once "database.php";
+require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
 
 header("Content-Type: application/json");
+
+$user = getCurrentUser();
+$userId = (int)($user['id'] ?? 1);
 
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     http_response_code(405);
@@ -43,7 +47,7 @@ if ($stmt) {
              . "<b>Code:</b> " . htmlspecialchars($catCode) . "\n"
              . "<b>Name:</b> " . htmlspecialchars($catName);
         if (isAutoTelegramEnabled($conn)) {
-            sendTelegramNotification($msg);
+            sendTelegramNotification($msg, $conn, $userId);
         }
 
         echo json_encode(["success" => true]);

@@ -101,7 +101,7 @@ if ($stmt) {
              . "<b>Code:</b> " . htmlspecialchars($categoryCode) . "\n"
              . "<b>Name:</b> " . htmlspecialchars($categoryName);
         if (isAutoTelegramEnabled($conn)) {
-            sendTelegramNotification($msg);
+            sendTelegramNotification($msg, $conn, $userId);
         }
 
         echo json_encode(["success" => true]);
