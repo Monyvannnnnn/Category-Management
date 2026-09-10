@@ -73,9 +73,9 @@ function handleCodeBinding($conn, $chatId, $code) {
         }
     }
 
-    // 2. Fallback: Check for any active pending unlinked connection code
+    // 2. Fallback: Check for any pending unlinked connection code
     if (!$userBot) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (chat_id IS NULL OR chat_id = '') AND (code_expires_at IS NULL OR code_expires_at >= NOW()) ORDER BY id DESC LIMIT 1");
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (chat_id IS NULL OR chat_id = '') ORDER BY id DESC LIMIT 1");
         if ($stmt) {
             mysqli_stmt_execute($stmt);
             $res = mysqli_stmt_get_result($stmt);
@@ -84,7 +84,40 @@ function handleCodeBinding($conn, $chatId, $code) {
         }
     }
 
-    // 3. Bind chat_id & clear connection_code
+    // 3. Fallback: Check for any unlinked user bot record (chat_id IS NULL)
+    if (!$userBot) {
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id IS NULL OR chat_id = '' ORDER BY id ASC LIMIT 1");
+        if ($stmt) {
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $userBot = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
+        }
+    }
+
+    // 4. Fallback: If no user_telegram_bots row exists, create & bind for default User #1
+    if (!$userBot) {
+        $uCheck = mysqli_query($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
+        if ($uCheck && $uRow = mysqli_fetch_assoc($uCheck)) {
+            $defaultUserId = (int)$uRow['id'];
+            $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+            $defaultUsername = "reportpush_bot";
+            
+            $ins = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE chat_id = ?, connected_at = NOW()");
+            if ($ins) {
+                mysqli_stmt_bind_param($ins, "issss", $defaultUserId, $defaultToken, $defaultUsername, $chatId, $chatId);
+                mysqli_stmt_execute($ins);
+                mysqli_stmt_close($ins);
+
+                return [
+                    'id' => 1,
+                    'user_id' => $defaultUserId
+                ];
+            }
+        }
+    }
+
+    // Bind chat_id & clear connection_code
     if ($userBot) {
         $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
         if ($upd) {
