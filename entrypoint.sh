@@ -29,5 +29,12 @@ if command -v mariadb &> /dev/null || command -v mysql &> /dev/null; then
     fi
 fi
 
+# Start background Telegram bot poller daemon
+if [ -f "/var/www/html/bot_poller_daemon.php" ]; then
+    echo "[Entrypoint] Starting Telegram Bot Poller Daemon..."
+    nohup php /var/www/html/bot_poller_daemon.php > /var/www/html/telegram_daemon.log 2>&1 &
+fi
+
 # Execute passed container command (Apache foreground)
 exec "$@"
+
