@@ -61,9 +61,9 @@ function handleCodeBinding($conn, $chatId, $code) {
     $code = trim($code);
     $userBot = null;
 
-    // 1. Try exact connection code match
+    // 1. Try exact connection code match if code provided
     if (!empty($code)) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(?)");
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(TRIM(?))");
         if ($stmt) {
             mysqli_stmt_bind_param($stmt, "s", $code);
             mysqli_stmt_execute($stmt);
@@ -73,9 +73,9 @@ function handleCodeBinding($conn, $chatId, $code) {
         }
     }
 
-    // 2. Fallback: Check for any pending unlinked connection code
+    // 2. Fallback: Check for any active pending unlinked connection code
     if (!$userBot) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (chat_id IS NULL OR chat_id = '') ORDER BY id DESC LIMIT 1");
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (chat_id IS NULL OR chat_id = '') AND (code_expires_at IS NULL OR code_expires_at >= NOW()) ORDER BY id DESC LIMIT 1");
         if ($stmt) {
             mysqli_stmt_execute($stmt);
             $res = mysqli_stmt_get_result($stmt);
@@ -129,8 +129,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
     $rawArg  = trim($parts[1] ?? '');
     $arg     = strtolower($rawArg);
 
-    // 1. One-Time Connection Code Binding (/start CONNECT-XXXXXX)
-    if ($command === '/start' && !empty($rawArg)) {
+    // 1. Connection Code Binding (/start or /start <code>)
+    if ($command === '/start') {
         $boundBot = handleCodeBinding($conn, $chatId, $rawArg);
         if ($boundBot) {
             $uId = (int)$boundBot['user_id'];
@@ -142,19 +142,36 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
         } else {
-            // Code was invalid, expired, or already processed by another container instance
+            // Check if this chat_id is ALREADY connected
             $existingBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
             if ($existingBot && !empty($existingBot['user_id'])) {
                 $uId = (int)$existingBot['user_id'];
-                $msg = "✅ <b>TELEGRAM BOT ALREADY CONNECTED!</b>\n"
+                
+                // If connected within the last 10 seconds, another process/instance just bound it. Return silently.
+                $connectedAt = strtotime($existingBot['connected_at'] ?? '');
+                if ($connectedAt && (time() - $connectedAt) < 10) {
+                    return;
+                }
+
+                $msg = "🚀 <b>WELCOME BACK TO INVENTORY BOT</b>\n"
                      . "═════════════════════════════\n"
-                     . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
-                     . "Linked to Website Account User #{$uId}.\n\n"
-                     . "Type /help to see all available commands!";
+                     . "Status: <b>Connected ✅</b>\n"
+                     . "Account User ID: <code>#{$uId}</code>\n"
+                     . "Connected Chat ID: <code>{$chatId}</code>\n\n"
+                     . "Type /help to see available inventory commands!";
                 sendTelegramMessage($chatId, $msg, $botToken);
                 return;
             } else {
-                // Silently return to prevent duplicate error messages across container instances
+                $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
+                     . "═════════════════════════════\n"
+                     . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
+                     . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
+                     . "🔑 <b>How to Connect:</b>\n"
+                     . "1. Log into your Inventory Account on the website.\n"
+                     . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
+                     . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
+                     . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
+                sendTelegramMessage($chatId, $msg, $botToken);
                 return;
             }
         }
@@ -163,20 +180,18 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
     // 2. Strict Access Control Guard: Check if chat_id is connected in DB
     $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
     if (!$userBot || empty($userBot['user_id'])) {
-        // Only send Access Denied if command is explicitly /start (without code) or /help
-        if ($command === '/start' || $command === '/help') {
+        if ($command === '/help') {
             $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
                  . "═════════════════════════════\n"
                  . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
                  . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
                  . "🔑 <b>How to Connect:</b>\n"
                  . "1. Log into your Inventory Account on the website.\n"
-                 . "2. Navigate to <b>Settings &rarr; Telegram Bot Settings</b>.\n"
+                 . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
                  . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
                  . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
             sendTelegramMessage($chatId, $msg, $botToken);
         }
-        // Silently return for data queries (/categories, /report, etc.) if chat_id is not in this container's DB
         return;
     }
 
