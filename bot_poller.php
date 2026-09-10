@@ -60,19 +60,7 @@ function sendTelegramMessage($chatId, $text, $botToken) {
 function handleCodeBinding($conn, $chatId, $code) {
     $code = trim($code);
     $userBot = null;
-
-    // 0. If this chatId is ALREADY connected in user_telegram_bots, return it!
-    $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
-    if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "s", $chatId);
-        mysqli_stmt_execute($stmt);
-        $res = mysqli_stmt_get_result($stmt);
-        $userBot = mysqli_fetch_assoc($res);
-        mysqli_stmt_close($stmt);
-        if ($userBot) {
-            return $userBot;
-        }
-    }
+    $isFreshBind = false;
 
     // 1. Try exact connection code match if code provided
     if (!empty($code)) {
@@ -83,6 +71,7 @@ function handleCodeBinding($conn, $chatId, $code) {
             $res = mysqli_stmt_get_result($stmt);
             $userBot = mysqli_fetch_assoc($res);
             mysqli_stmt_close($stmt);
+            if ($userBot) $isFreshBind = true;
         }
     }
 
@@ -94,6 +83,7 @@ function handleCodeBinding($conn, $chatId, $code) {
             $res = mysqli_stmt_get_result($stmt);
             $userBot = mysqli_fetch_assoc($res);
             mysqli_stmt_close($stmt);
+            if ($userBot) $isFreshBind = true;
         }
     }
 
@@ -105,6 +95,7 @@ function handleCodeBinding($conn, $chatId, $code) {
             $res = mysqli_stmt_get_result($stmt);
             $userBot = mysqli_fetch_assoc($res);
             mysqli_stmt_close($stmt);
+            if ($userBot) $isFreshBind = true;
         }
     }
 
@@ -134,20 +125,27 @@ function handleCodeBinding($conn, $chatId, $code) {
             return [
                 'id' => 1,
                 'user_id' => $defaultUserId,
-                'chat_id' => $chatId
+                'chat_id' => $chatId,
+                'is_fresh_bind' => true,
+                'connected_at' => date('Y-m-d H:i:s')
             ];
         }
     }
 
     // Bind chat_id & clear connection_code for found userBot
     if ($userBot) {
-        $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
-        if ($upd) {
-            mysqli_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
-            mysqli_stmt_execute($upd);
-            mysqli_stmt_close($upd);
+        if (empty($userBot['chat_id']) || $userBot['chat_id'] !== $chatId || !empty($userBot['connection_code'])) {
+            $isFreshBind = true;
+            $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
+            if ($upd) {
+                mysqli_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
+                mysqli_stmt_execute($upd);
+                mysqli_stmt_close($upd);
+            }
+            $userBot['connected_at'] = date('Y-m-d H:i:s');
         }
         $userBot['chat_id'] = $chatId;
+        $userBot['is_fresh_bind'] = $isFreshBind;
         return $userBot;
     }
 
@@ -190,13 +188,35 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
         $boundBot = handleCodeBinding($conn, $chatId, $rawArg);
         if ($boundBot) {
             $uId = (int)$boundBot['user_id'];
-            $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
-                 . "═════════════════════════════\n"
-                 . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
-                 . "Linked to Website Account User #{$uId}.\n\n"
-                 . "Type /help to see all available commands!";
-            sendTelegramMessage($chatId, $msg, $botToken);
-            return;
+            $isFresh = !empty($boundBot['is_fresh_bind']);
+
+            $connectedAtStr = $boundBot['connected_at'] ?? '';
+            $connectedTs = !empty($connectedAtStr) ? strtotime($connectedAtStr) : 0;
+            $secondsAgo = ($connectedTs > 0) ? (time() - $connectedTs) : 999;
+
+            if ($isFresh && $secondsAgo <= 5) {
+                // First process executing fresh bind: Send Success Message!
+                $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
+                     . "Linked to Website Account User #{$uId}.\n\n"
+                     . "Type /help to see all available commands!";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            } else if (!$isFresh && $secondsAgo > 15) {
+                // User returning after a long time: Send Welcome Back message!
+                $msg = "🚀 <b>WELCOME BACK TO INVENTORY BOT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Status: <b>Connected ✅</b>\n"
+                     . "Account User ID: <code>#{$uId}</code>\n"
+                     . "Connected Chat ID: <code>{$chatId}</code>\n\n"
+                     . "Type /help to see available inventory commands!";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            } else {
+                // Secondary concurrent process: Return SILENTLY to eliminate duplicates!
+                return;
+            }
         }
     }
 
