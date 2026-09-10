@@ -188,35 +188,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
         $boundBot = handleCodeBinding($conn, $chatId, $rawArg);
         if ($boundBot) {
             $uId = (int)$boundBot['user_id'];
-            $isFresh = !empty($boundBot['is_fresh_bind']);
-
-            $connectedAtStr = $boundBot['connected_at'] ?? '';
-            $connectedTs = !empty($connectedAtStr) ? strtotime($connectedAtStr) : 0;
-            $secondsAgo = ($connectedTs > 0) ? (time() - $connectedTs) : 999;
-
-            if ($isFresh && $secondsAgo <= 5) {
-                // First process executing fresh bind: Send Success Message!
-                $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
-                     . "═════════════════════════════\n"
-                     . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
-                     . "Linked to Website Account User #{$uId}.\n\n"
-                     . "Type /help to see all available commands!";
-                sendTelegramMessage($chatId, $msg, $botToken);
-                return;
-            } else if (!$isFresh && $secondsAgo > 15) {
-                // User returning after a long time: Send Welcome Back message!
-                $msg = "🚀 <b>WELCOME BACK TO INVENTORY BOT</b>\n"
-                     . "═════════════════════════════\n"
-                     . "Status: <b>Connected ✅</b>\n"
-                     . "Account User ID: <code>#{$uId}</code>\n"
-                     . "Connected Chat ID: <code>{$chatId}</code>\n\n"
-                     . "Type /help to see available inventory commands!";
-                sendTelegramMessage($chatId, $msg, $botToken);
-                return;
-            } else {
-                // Secondary concurrent process: Return SILENTLY to eliminate duplicates!
-                return;
-            }
+            $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
+                 . "═════════════════════════════\n"
+                 . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
+                 . "Linked to Website Account User #{$uId}.\n\n"
+                 . "Type /help to see all available commands!";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            return;
         }
     }
 

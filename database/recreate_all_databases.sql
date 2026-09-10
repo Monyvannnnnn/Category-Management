@@ -102,6 +102,13 @@ CREATE TABLE `grid_state` (
   UNIQUE KEY `uq_grid_name` (`grid_name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- Table structure for `processed_telegram_updates`
+CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
+  `update_id` bigint(20) NOT NULL,
+  `processed_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`update_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 -- ------------------------------------------------------------
 -- 2. DROP & RECREATE `telegram_test` DATABASE
 -- ------------------------------------------------------------

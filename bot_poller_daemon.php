@@ -25,9 +25,15 @@ if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
 $defaultBotToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
 registerBotCommands($defaultBotToken);
 
+// Auto-ensure atomic updates table exists
+mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
+  `update_id` bigint(20) NOT NULL,
+  `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`update_id`)
+) ENGINE=InnoDB;");
+
 // Global offset and processed updates registry for multi-bot polling
 $offsetMap = [];
-$processedUpdates = [];
 
 echo "[" . date('Y-m-d H:i:s') . "] Starting Multi-Tenant Telegram Bot Poller Daemon...\n";
 
@@ -74,17 +80,21 @@ while (true) {
             $data = json_decode($response, true);
             if ($data && isset($data['result']) && is_array($data['result'])) {
                 foreach ($data['result'] as $update) {
-                    $updateId = $update['update_id'];
+                    $updateId = (int)$update['update_id'];
                     $offsetMap[$bToken] = $updateId + 1;
 
-                    // Deduplicate updates per bot token
-                    $dedupKey = $bToken . '_' . $updateId;
-                    if (isset($processedUpdates[$dedupKey])) {
-                        continue;
-                    }
-                    $processedUpdates[$dedupKey] = true;
-                    if (count($processedUpdates) > 1000) {
-                        $processedUpdates = array_slice($processedUpdates, -500, 500, true);
+                    // Atomic Database-Level Deduplication Lock across concurrent container instances
+                    $insStmt = mysqli_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
+                    if ($insStmt) {
+                        mysqli_stmt_bind_param($insStmt, "i", $updateId);
+                        mysqli_stmt_execute($insStmt);
+                        $affected = mysqli_stmt_affected_rows($insStmt);
+                        mysqli_stmt_close($insStmt);
+
+                        if ($affected === 0) {
+                            // Another container instance already claimed and processed this update_id!
+                            continue;
+                        }
                     }
 
                     if (isset($update['message'])) {
