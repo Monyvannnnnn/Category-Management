@@ -23,14 +23,24 @@ $driver = getenv('DB_DRIVER');
 $is_vercel = !empty(getenv('VERCEL')) || !empty(getenv('VERCEL_ENV'));
 
 if ($driver === 'pgsql' || $is_vercel || (getenv('DB_HOST') && strpos(getenv('DB_HOST'), 'supabase') !== false)) {
+    $host = getenv('DB_HOST') ?: "aws-0-ap-northeast-2.pooler.supabase.com";
+    $user = getenv('DB_USER') ?: "postgres.wpzaeloeqsiacehkxvgq";
+    
+    // Ensure pooler username includes the Supabase tenant project ref
+    if (strpos($host, 'pooler.supabase.com') !== false && strpos($user, '.') === false) {
+        $user = $user . ".wpzaeloeqsiacehkxvgq";
+    }
+
+    $pass = getenv('DB_PASS') ?: "Munyvann.310394";
+
     return [
         "driver"   => "pgsql",
-        "host"     => getenv('DB_HOST') ?: "aws-0-ap-northeast-2.pooler.supabase.com",
+        "host"     => $host,
         "port"     => (int)(getenv('DB_PORT') ?: 6543),
         "name"     => getenv('DB_NAME') ?: "postgres",
-        "user"     => getenv('DB_USER') ?: "postgres.wpzaeloeqsiacehkxvgq",
-        "pass"     => getenv('DB_PASS') ?: "Munyvann.310394",
-        "url"      => getenv('DATABASE_URL') ?: "postgresql://postgres.wpzaeloeqsiacehkxvgq:Munyvann.310394@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres"
+        "user"     => $user,
+        "pass"     => $pass,
+        "url"      => getenv('DATABASE_URL') ?: "postgresql://{$user}:{$pass}@{$host}:6543/postgres"
     ];
 }
 
