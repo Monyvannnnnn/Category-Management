@@ -330,7 +330,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         <div class="demo-box">
             <span><i class="fa-solid fa-key me-1"></i> Default Admin:</span>
-            <span><code>admin</code> / <code>password123</code></span>
+            <span><code>admin</code> / <code>1234</code></span>
         </div>
 
         <div class="auth-footer">
