@@ -142,7 +142,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
         } else {
-            // Code was invalid, expired, or already processed
+            // Code was invalid, expired, or already processed by another container instance
             $existingBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
             if ($existingBot && !empty($existingBot['user_id'])) {
                 $uId = (int)$existingBot['user_id'];
@@ -154,10 +154,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
                 sendTelegramMessage($chatId, $msg, $botToken);
                 return;
             } else {
-                $msg = "❌ <b>INVALID OR EXPIRED CONNECTION CODE</b>\n"
-                     . "═════════════════════════════\n"
-                     . "Please generate a new connection link from your website profile settings.";
-                sendTelegramMessage($chatId, $msg, $botToken);
+                // Silently return to prevent duplicate error messages across container instances
                 return;
             }
         }
@@ -166,16 +163,20 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
     // 2. Strict Access Control Guard: Check if chat_id is connected in DB
     $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
     if (!$userBot || empty($userBot['user_id'])) {
-        $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
-             . "═════════════════════════════\n"
-             . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
-             . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
-             . "🔑 <b>How to Connect:</b>\n"
-             . "1. Log into your Inventory Account on the website.\n"
-             . "2. Navigate to <b>Settings &rarr; Telegram Bot Settings</b>.\n"
-             . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
-             . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
-        sendTelegramMessage($chatId, $msg, $botToken);
+        // Only send Access Denied if command is explicitly /start (without code) or /help
+        if ($command === '/start' || $command === '/help') {
+            $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
+                 . "═════════════════════════════\n"
+                 . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
+                 . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
+                 . "🔑 <b>How to Connect:</b>\n"
+                 . "1. Log into your Inventory Account on the website.\n"
+                 . "2. Navigate to <b>Settings &rarr; Telegram Bot Settings</b>.\n"
+                 . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
+                 . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
+            sendTelegramMessage($chatId, $msg, $botToken);
+        }
+        // Silently return for data queries (/categories, /report, etc.) if chat_id is not in this container's DB
         return;
     }
 
