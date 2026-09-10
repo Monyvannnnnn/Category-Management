@@ -5,8 +5,9 @@
  * Updated with 8 new commands
  */
 
-require_once 'database.php';
-require_once 'notify_bot.php';
+require_once __DIR__ . '/database.php';
+require_once __DIR__ . '/notify_bot.php';
+require_once __DIR__ . '/bot_poller.php';
 
 $botToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
 
@@ -16,12 +17,14 @@ $update  = json_decode($content, true);
 
 if (!isset($update["message"])) exit;
 
-$chatId  = $update["message"]["chat"]["id"] ?? '';
-$text    = trim($update["message"]["text"] ?? '');
+$updateId = (int)($update["update_id"] ?? 0);
+$chatId   = $update["message"]["chat"]["id"] ?? '';
+$text     = trim($update["message"]["text"] ?? '');
 
 if (empty($chatId) || empty($text)) exit;
 
-processTelegramCommand($conn, $chatId, $text, $botToken);
+processTelegramCommand($conn, $chatId, $text, $botToken, 1, $updateId);
+exit;
 
 function sendTelegramMessage($chatId, $text) {
     global $botToken;

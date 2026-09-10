@@ -104,7 +104,7 @@ while (true) {
 
                         if (!empty($chatId) && !empty($text)) {
                             echo "[" . date('Y-m-d H:i:s') . "] Bot (User {$bUserId}) received: '$text' from Chat ID: $chatId\n";
-                            processTelegramCommand($conn, $chatId, $text, $bToken, $bUserId);
+                            processTelegramCommand($conn, $chatId, $text, $bToken, $bUserId, $updateId);
                         }
                     }
                 }

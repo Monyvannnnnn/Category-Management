@@ -172,7 +172,29 @@ function getConnectedUserByChatIdMySQLi($conn, $chatId) {
 /**
  * Process Command for specific user_id
  */
-function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
+function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $updateId = 0) {
+    // Database-level Atomic Update Deduplication Lock
+    if (!empty($updateId)) {
+        @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
+          `update_id` bigint(20) NOT NULL,
+          `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (`update_id`)
+        ) ENGINE=InnoDB;");
+
+        $insStmt = mysqli_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
+        if ($insStmt) {
+            mysqli_stmt_bind_param($insStmt, "i", $updateId);
+            mysqli_stmt_execute($insStmt);
+            $affected = mysqli_stmt_affected_rows($insStmt);
+            mysqli_stmt_close($insStmt);
+
+            if ($affected === 0) {
+                // Already processed by Webhook, Daemon, or another poller instance!
+                return;
+            }
+        }
+    }
+
     if (function_exists('registerSubscriberChatId')) {
         registerSubscriberChatId($conn, $chatId);
     }
