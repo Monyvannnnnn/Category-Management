@@ -1,179 +1,204 @@
 <?php
-
-if (function_exists('mysqli_report')) {
-    mysqli_report(MYSQLI_REPORT_OFF);
-}
+// database.php - Dual MySQL / PostgreSQL Database Connection Layer
 
 if (file_exists(__DIR__ . "/db_config.php")) {
     $cfg = require __DIR__ . "/db_config.php";
 } else {
     $cfg = [
-        "host" => getenv('DB_HOST') ?: "127.0.0.1",
-        "user" => getenv('DB_USER') ?: "root",
-        "pass" => getenv('DB_PASS') ?: "",
-        "name" => getenv('DB_NAME') ?: "inventory",
-        "port" => (int)(getenv('DB_PORT') ?: 3306)
+        "driver" => getenv('DB_DRIVER') ?: "mysql",
+        "host"   => getenv('DB_HOST') ?: "127.0.0.1",
+        "user"   => getenv('DB_USER') ?: "root",
+        "pass"   => getenv('DB_PASS') ?: "",
+        "name"   => getenv('DB_NAME') ?: "inventory",
+        "port"   => (int)(getenv('DB_PORT') ?: 3306)
     ];
 }
 
-$conn = mysqli_connect($cfg["host"], $cfg["user"], $cfg["pass"], $cfg["name"], $cfg["port"]);
+$driver = $cfg['driver'] ?? 'mysql';
 
-if (!$conn) {
-    die("Database connection failed: " . mysqli_connect_error());
-}
+if ($driver === 'pgsql') {
+    // ============================================================
+    // SUPABASE (POSTGRESQL) PDO DRIVER & MYSQLI ADAPTER
+    // ============================================================
+    try {
+        $dsn = "pgsql:host={$cfg['host']};port={$cfg['port']};dbname={$cfg['name']};sslmode=require";
+        $pdo = new PDO($dsn, $cfg['user'], $cfg['pass'], [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
+        ]);
+    } catch (PDOException $e) {
+        die("Supabase Connection Failed: " . $e->getMessage());
+    }
 
-// ----------------------------------------------------
-// AUTO-INITIALIZE CATEGORY TABLE
-// ----------------------------------------------------
-$create_category_sql = "CREATE TABLE IF NOT EXISTS `category` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `category_code` varchar(50) NOT NULL,
-  `category_name` varchar(100) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  UNIQUE KEY `user_cat_code` (`user_id`, `category_code`),
-  UNIQUE KEY `user_cat_name` (`user_id`, `category_name`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
+    if (!class_exists('PgSqlResultWrapper')) {
+        class PgSqlResultWrapper {
+            private $stmt;
+            public function __construct($stmt) {
+                $this->stmt = $stmt;
+            }
+            public function fetch_assoc() {
+                return $this->stmt ? $this->stmt->fetch(PDO::FETCH_ASSOC) : false;
+            }
+            public function fetch_array() {
+                return $this->stmt ? $this->stmt->fetch(PDO::FETCH_BOTH) : false;
+            }
+            public function num_rows() {
+                return $this->stmt ? $this->stmt->rowCount() : 0;
+            }
+        }
+    }
 
-mysqli_query($conn, $create_category_sql);
+    if (!class_exists('PgSqlConnWrapper')) {
+        class PgSqlConnWrapper {
+            public $pdo;
+            public $lastError = "";
+            public $lastErrno = 0;
+            public $insertId = 0;
 
-// Check if user_id column exists in category table
-$cat_uid_check = mysqli_query($conn, "SHOW COLUMNS FROM category LIKE 'user_id'");
-if ($cat_uid_check && mysqli_num_rows($cat_uid_check) == 0) {
-    mysqli_query($conn, "ALTER TABLE category ADD COLUMN user_id int(11) NOT NULL AFTER id, ADD KEY (user_id)");
-}
+            public function __construct($pdo) {
+                $this->pdo = $pdo;
+            }
 
-// Check if lastupdate column exists, if not, add it
-$column_check = mysqli_query($conn, "SHOW COLUMNS FROM category LIKE 'lastupdate'");
-if ($column_check && mysqli_num_rows($column_check) == 0) {
-    mysqli_query($conn, "ALTER TABLE category ADD COLUMN lastupdate timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()");
-}
+            private function normalizeSql($sql) {
+                // Strip MySQL backticks for PostgreSQL compatibility
+                $sql = str_replace('`', '"', $sql);
+                // Convert INSERT IGNORE INTO -> INSERT INTO ... ON CONFLICT DO NOTHING
+                if (preg_match('/INSERT\s+IGNORE\s+INTO/i', $sql)) {
+                    $sql = preg_replace('/INSERT\s+IGNORE\s+INTO/i', 'INSERT INTO', $sql) . ' ON CONFLICT DO NOTHING';
+                }
+                return $sql;
+            }
 
-// Migration: Drop legacy single-column UNIQUE keys and ensure composite per-user UNIQUE keys exist
-$cat_idx = mysqli_query($conn, "SHOW INDEX FROM category");
-$cat_keys = [];
-if ($cat_idx) {
-    while ($r = mysqli_fetch_assoc($cat_idx)) {
-        $cat_keys[$r['Key_name']] = true;
+            public function query($sql) {
+                try {
+                    $sql = $this->normalizeSql($sql);
+                    $stmt = $this->pdo->query($sql);
+                    $this->lastError = "";
+                    $this->lastErrno = 0;
+                    return new PgSqlResultWrapper($stmt);
+                } catch (Exception $e) {
+                    $this->lastError = $e->getMessage();
+                    $this->lastErrno = $e->getCode();
+                    return false;
+                }
+            }
+
+            public function prepare($sql) {
+                try {
+                    $sql = $this->normalizeSql($sql);
+                    $stmt = $this->pdo->prepare($sql);
+                    return new PgSqlStmtWrapper($stmt, $this);
+                } catch (Exception $e) {
+                    $this->lastError = $e->getMessage();
+                    return false;
+                }
+            }
+        }
+    }
+
+    if (!class_exists('PgSqlStmtWrapper')) {
+        class PgSqlStmtWrapper {
+            private $stmt;
+            private $connWrapper;
+            private $params = [];
+
+            public function __construct($stmt, $connWrapper) {
+                $this->stmt = $stmt;
+                $this->connWrapper = $connWrapper;
+            }
+
+            public function bind_param($types, &...$params) {
+                $this->params = &$params;
+                return true;
+            }
+
+            public function execute() {
+                try {
+                    $res = $this->stmt->execute($this->params);
+                    $this->connWrapper->insertId = (int)$this->connWrapper->pdo->lastInsertId();
+                    return $res;
+                } catch (Exception $e) {
+                    $this->connWrapper->lastError = $e->getMessage();
+                    return false;
+                }
+            }
+
+            public function get_result() {
+                return new PgSqlResultWrapper($this->stmt);
+            }
+
+            public function num_rows() {
+                return $this->stmt->rowCount();
+            }
+
+            public function store_result() {
+                return true;
+            }
+
+            public function close() {
+                return true;
+            }
+        }
+    }
+
+    $conn = new PgSqlConnWrapper($pdo);
+
+    // Provide polyfill wrapper functions for MySQLi if running under PostgreSQL
+    if (!function_exists('mysqli_query')) {
+        function mysqli_query($c, $sql) { return $c instanceof PgSqlConnWrapper ? $c->query($sql) : false; }
+    }
+    if (!function_exists('mysqli_fetch_assoc')) {
+        function mysqli_fetch_assoc($res) { return $res instanceof PgSqlResultWrapper ? $res->fetch_assoc() : false; }
+    }
+    if (!function_exists('mysqli_fetch_array')) {
+        function mysqli_fetch_array($res) { return $res instanceof PgSqlResultWrapper ? $res->fetch_array() : false; }
+    }
+    if (!function_exists('mysqli_num_rows')) {
+        function mysqli_num_rows($res) { return $res instanceof PgSqlResultWrapper ? $res->num_rows() : 0; }
+    }
+    if (!function_exists('mysqli_insert_id')) {
+        function mysqli_insert_id($c) { return $c instanceof PgSqlConnWrapper ? $c->insertId : 0; }
+    }
+    if (!function_exists('mysqli_error')) {
+        function mysqli_error($c) { return $c instanceof PgSqlConnWrapper ? $c->lastError : ''; }
+    }
+    if (!function_exists('mysqli_errno')) {
+        function mysqli_errno($c) { return $c instanceof PgSqlConnWrapper ? $c->lastErrno : 0; }
+    }
+    if (!function_exists('mysqli_real_escape_string')) {
+        function mysqli_real_escape_string($c, $str) { return addslashes($str); }
+    }
+    if (!function_exists('mysqli_prepare')) {
+        function mysqli_prepare($c, $sql) { return $c instanceof PgSqlConnWrapper ? $c->prepare($sql) : false; }
+    }
+    if (!function_exists('mysqli_stmt_bind_param')) {
+        function mysqli_stmt_bind_param($s, $types, &...$params) { return $s instanceof PgSqlStmtWrapper ? $s->bind_param($types, ...$params) : false; }
+    }
+    if (!function_exists('mysqli_stmt_execute')) {
+        function mysqli_stmt_execute($s) { return $s instanceof PgSqlStmtWrapper ? $s->execute() : false; }
+    }
+    if (!function_exists('mysqli_stmt_store_result')) {
+        function mysqli_stmt_store_result($s) { return $s instanceof PgSqlStmtWrapper ? $s->store_result() : true; }
+    }
+    if (!function_exists('mysqli_stmt_num_rows')) {
+        function mysqli_stmt_num_rows($s) { return $s instanceof PgSqlStmtWrapper ? $s->num_rows() : 0; }
+    }
+    if (!function_exists('mysqli_stmt_close')) {
+        function mysqli_stmt_close($s) { return $s instanceof PgSqlStmtWrapper ? $s->close() : true; }
+    }
+    if (!function_exists('mysqli_stmt_get_result')) {
+        function mysqli_stmt_get_result($s) { return $s instanceof PgSqlStmtWrapper ? $s->get_result() : false; }
+    }
+
+} else {
+    // ============================================================
+    // STANDARD MYSQLI DRIVER (FOR LOCAL XAMPP / MYSQL)
+    // ============================================================
+    if (function_exists('mysqli_report')) {
+        mysqli_report(MYSQLI_REPORT_OFF);
+    }
+    $conn = mysqli_connect($cfg["host"], $cfg["user"], $cfg["pass"], $cfg["name"], $cfg["port"]);
+    if (!$conn) {
+        die("Database connection failed: " . mysqli_connect_error());
     }
 }
-if (isset($cat_keys['category_code'])) {
-    @mysqli_query($conn, "DROP INDEX `category_code` ON `category`");
-}
-if (isset($cat_keys['category_name'])) {
-    @mysqli_query($conn, "DROP INDEX `category_name` ON `category`");
-}
-if (!isset($cat_keys['user_cat_code'])) {
-    @mysqli_query($conn, "ALTER TABLE `category` ADD UNIQUE KEY `user_cat_code` (`user_id`, `category_code`)");
-}
-if (!isset($cat_keys['user_cat_name'])) {
-    @mysqli_query($conn, "ALTER TABLE `category` ADD UNIQUE KEY `user_cat_name` (`user_id`, `category_name`)");
-}
-
-// ----------------------------------------------------
-// AUTO-INITIALIZE PRODUCT TABLE
-// ----------------------------------------------------
-$create_product_sql = "CREATE TABLE IF NOT EXISTS `product` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `product_code` varchar(50) NOT NULL,
-  `product_name` varchar(100) NOT NULL,
-  `category_id` int(11) NOT NULL,
-  `price` decimal(10,2) NOT NULL DEFAULT 0.00,
-  `quantity` int(11) NOT NULL DEFAULT 0,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `lastupdate` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
-  PRIMARY KEY (`id`),
-  KEY `user_id` (`user_id`),
-  KEY `category_id` (`category_id`),
-  UNIQUE KEY `user_prod_code` (`user_id`, `product_code`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
-
-mysqli_query($conn, $create_product_sql);
-
-// Check if user_id column exists in product table
-$prod_uid_check = mysqli_query($conn, "SHOW COLUMNS FROM product LIKE 'user_id'");
-if ($prod_uid_check && mysqli_num_rows($prod_uid_check) == 0) {
-    mysqli_query($conn, "ALTER TABLE product ADD COLUMN user_id int(11) NOT NULL AFTER id, ADD KEY (user_id)");
-}
-
-// Migration: Drop legacy single-column UNIQUE keys and ensure composite per-user UNIQUE key exists
-$prod_idx = mysqli_query($conn, "SHOW INDEX FROM product");
-$prod_keys = [];
-if ($prod_idx) {
-    while ($r = mysqli_fetch_assoc($prod_idx)) {
-        $prod_keys[$r['Key_name']] = true;
-    }
-}
-if (isset($prod_keys['product_code'])) {
-    @mysqli_query($conn, "DROP INDEX `product_code` ON `product`");
-}
-if (!isset($prod_keys['user_prod_code'])) {
-    @mysqli_query($conn, "ALTER TABLE `product` ADD UNIQUE KEY `user_prod_code` (`user_id`, `product_code`)");
-}
-
-// ----------------------------------------------------
-// AUTO-INITIALIZE SYSTEM SETTINGS & SUBSCRIBERS TABLE
-// ----------------------------------------------------
-$create_settings_sql = "CREATE TABLE IF NOT EXISTS `system_settings` (
-  `setting_key` varchar(50) NOT NULL,
-  `setting_value` varchar(255) NOT NULL,
-  PRIMARY KEY (`setting_key`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
-
-mysqli_query($conn, $create_settings_sql);
-mysqli_query($conn, "INSERT IGNORE INTO `system_settings` (`setting_key`, `setting_value`) VALUES ('auto_telegram_notify', '1')");
-
-$create_subscribers_sql = "CREATE TABLE IF NOT EXISTS `telegram_subscribers` (
-  `chat_id` varchar(100) NOT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`chat_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
-
-mysqli_query($conn, $create_subscribers_sql);
-
-// ----------------------------------------------------
-// AUTO-INITIALIZE USERS TABLE
-// ----------------------------------------------------
-$create_users_sql = "CREATE TABLE IF NOT EXISTS `users` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(100) NOT NULL,
-  `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `name` varchar(100) NOT NULL,
-  `role` varchar(50) NOT NULL DEFAULT 'user',
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `username` (`username`),
-  UNIQUE KEY `email` (`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
-
-mysqli_query($conn, $create_users_sql);
-
-// Check if role column exists in users table, add if missing
-$role_check = mysqli_query($conn, "SHOW COLUMNS FROM users LIKE 'role'");
-if ($role_check && mysqli_num_rows($role_check) == 0) {
-    mysqli_query($conn, "ALTER TABLE users ADD COLUMN `role` varchar(50) NOT NULL DEFAULT 'user' AFTER `name`");
-}
-
-// ----------------------------------------------------
-// AUTO-INITIALIZE USER TELEGRAM BOTS TABLE
-// ----------------------------------------------------
-$create_user_bots_sql = "CREATE TABLE IF NOT EXISTS `user_telegram_bots` (
-  `id` int(11) NOT NULL AUTO_INCREMENT,
-  `user_id` int(11) NOT NULL,
-  `bot_token` varchar(255) NOT NULL,
-  `bot_username` varchar(100) NOT NULL,
-  `chat_id` varchar(100) DEFAULT NULL,
-  `connection_code` varchar(50) DEFAULT NULL,
-  `code_expires_at` datetime DEFAULT NULL,
-  `connected_at` datetime DEFAULT NULL,
-  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  PRIMARY KEY (`id`),
-  UNIQUE KEY `user_id` (`user_id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
-
-mysqli_query($conn, $create_user_bots_sql);

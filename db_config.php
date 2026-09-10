@@ -18,72 +18,56 @@ if (file_exists(__DIR__ . '/.env')) {
     }
 }
 
-// ============================================================
-// LOCAL MYSQL CONFIGURATION (ACTIVE FOR XAMPP / MYSQLI)
-// ============================================================
-$db_host_env = getenv('DB_HOST');
+// 1. Check if running on Vercel or explicitly requested PostgreSQL
+$driver = getenv('DB_DRIVER');
+$is_vercel = !empty(getenv('VERCEL')) || !empty(getenv('VERCEL_ENV'));
 
-if (!empty($db_host_env) && strpos($db_host_env, 'postgres') === false && strpos($db_host_env, 'dpg-') === false) {
+if ($driver === 'pgsql' || $is_vercel || (getenv('DB_HOST') && strpos(getenv('DB_HOST'), 'supabase') !== false)) {
     return [
-        "host" => $db_host_env,
-        "user" => getenv('DB_USER') ?: "root",
-        "pass" => getenv('DB_PASS') ?: "",
-        "name" => getenv('DB_NAME') ?: "inventory",
-        "port" => (int)(getenv('DB_PORT') ?: 3306)
+        "driver"   => "pgsql",
+        "host"     => getenv('DB_HOST') ?: "aws-0-ap-northeast-2.pooler.supabase.com",
+        "port"     => (int)(getenv('DB_PORT') ?: 6543),
+        "name"     => getenv('DB_NAME') ?: "postgres",
+        "user"     => getenv('DB_USER') ?: "postgres.wpzaeloeqsiacehkxvgq",
+        "pass"     => getenv('DB_PASS') ?: "Munyvann.310394",
+        "url"      => getenv('DATABASE_URL') ?: "postgresql://postgres.wpzaeloeqsiacehkxvgq:Munyvann.310394@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres"
     ];
 }
 
-// Check if inside Docker container (entrypoint.sh exists)
+// 2. Check if inside Docker container (entrypoint.sh exists)
 if (file_exists('/usr/local/bin/entrypoint.sh') || file_exists('/var/www/html/entrypoint.sh')) {
     return [
-        "host" => "127.0.0.1",
-        "user" => "root",
-        "pass" => "",
-        "name" => "inventory",
-        "port" => 3306
+        "driver" => "mysql",
+        "host"   => "127.0.0.1",
+        "user"   => "root",
+        "pass"   => "",
+        "name"   => "inventory",
+        "port"   => 3306
     ];
 }
 
-// Local Environment Check (XAMPP on Windows)
+// 3. Local Environment Check (XAMPP on Windows)
 $is_local = (php_sapi_name() === 'cli')
     || (isset($_SERVER['HTTP_HOST']) && in_array($_SERVER['HTTP_HOST'], ['localhost', '127.0.0.1', 'localhost:8080']))
     || (isset($_SERVER['SERVER_ADDR']) && in_array($_SERVER['SERVER_ADDR'], ['127.0.0.1', '::1']));
 
 if ($is_local) {
     return [
-        "host" => "127.0.0.1",
-        "user" => "root",
-        "pass" => "",
-        "name" => "inventory",
-        "port" => 3307
+        "driver" => "mysql",
+        "host"   => "127.0.0.1",
+        "user"   => "root",
+        "pass"   => "",
+        "name"   => "inventory",
+        "port"   => 3307
     ];
 } else {
     // Remote Production Hosting fallback
     return [
-        "host" => "sql310.infinityfree.com",
-        "user" => "if0_42693065",
-        "pass" => "Munyvann3103094",
-        "name" => "if0_42693065_inventory",
-        "port" => 3306
+        "driver" => "mysql",
+        "host"   => "sql310.infinityfree.com",
+        "user"   => "if0_42693065",
+        "pass"   => "Munyvann3103094",
+        "name"   => "if0_42693065_inventory",
+        "port"   => 3306
     ];
 }
-
-/*
-// ============================================================
-// SUPABASE (POSTGRESQL) CONFIGURATION (COMMENTED OUT)
-// Note: Your current PHP code uses `mysqli_connect()`, which is 
-// MySQL-only. Supabase requires PostgreSQL (PDO pgsql).
-// ============================================================
-return [
-    "driver"   => "pgsql",
-    "host"     => "aws-0-ap-northeast-2.pooler.supabase.com",
-    "port"     => 6543,
-    "name"     => "postgres",
-    "user"     => "postgres.wpzaeloeqsiacehkxvgq",
-    "pass"     => "Munyvann.310394",
-    "url"      => "postgresql://postgres.wpzaeloeqsiacehkxvgq:Munyvann.310394@aws-0-ap-northeast-2.pooler.supabase.com:6543/postgres"
-];
-*/
-
-
-
