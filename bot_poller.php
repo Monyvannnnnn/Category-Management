@@ -125,6 +125,25 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
                  . "Type /help to see all available commands!";
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
+        } else {
+            // Code was invalid, expired, or already processed
+            $existingBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
+            if ($existingBot && !empty($existingBot['user_id'])) {
+                $uId = (int)$existingBot['user_id'];
+                $msg = "✅ <b>TELEGRAM BOT ALREADY CONNECTED!</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
+                     . "Linked to Website Account User #{$uId}.\n\n"
+                     . "Type /help to see all available commands!";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            } else {
+                $msg = "❌ <b>INVALID OR EXPIRED CONNECTION CODE</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Please generate a new connection link from your website profile settings.";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            }
         }
     }
 
