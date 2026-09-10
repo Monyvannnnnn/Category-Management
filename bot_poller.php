@@ -150,9 +150,15 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
     // 2. Strict Access Control Guard: Check if chat_id is connected in DB
     $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
     if (!$userBot || empty($userBot['user_id'])) {
-        $msg = "❌ <b>This Telegram account is not connected.</b>\n"
+        $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
              . "═════════════════════════════\n"
-             . "Please connect your account first on the website.";
+             . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
+             . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
+             . "🔑 <b>How to Connect:</b>\n"
+             . "1. Log into your Inventory Account on the website.\n"
+             . "2. Navigate to <b>Settings &rarr; Telegram Bot Settings</b>.\n"
+             . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
+             . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
         sendTelegramMessage($chatId, $msg, $botToken);
         return;
     }
