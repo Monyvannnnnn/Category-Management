@@ -61,9 +61,22 @@ function handleCodeBinding($conn, $chatId, $code) {
     $code = trim($code);
     $userBot = null;
 
+    // 0. If this chatId is ALREADY connected in user_telegram_bots, return it!
+    $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "s", $chatId);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        $userBot = mysqli_fetch_assoc($res);
+        mysqli_stmt_close($stmt);
+        if ($userBot) {
+            return $userBot;
+        }
+    }
+
     // 1. Try exact connection code match if code provided
     if (!empty($code)) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(TRIM(?))");
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(TRIM(?)) LIMIT 1");
         if ($stmt) {
             mysqli_stmt_bind_param($stmt, "s", $code);
             mysqli_stmt_execute($stmt);
@@ -75,7 +88,7 @@ function handleCodeBinding($conn, $chatId, $code) {
 
     // 2. Fallback: Check for any pending unlinked connection code
     if (!$userBot) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (chat_id IS NULL OR chat_id = '') ORDER BY id DESC LIMIT 1");
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND connection_code != '' ORDER BY id DESC LIMIT 1");
         if ($stmt) {
             mysqli_stmt_execute($stmt);
             $res = mysqli_stmt_get_result($stmt);
@@ -84,7 +97,7 @@ function handleCodeBinding($conn, $chatId, $code) {
         }
     }
 
-    // 3. Fallback: Check for any unlinked user bot record (chat_id IS NULL)
+    // 3. Fallback: Check for any unlinked user bot record (chat_id IS NULL OR chat_id = '')
     if (!$userBot) {
         $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id IS NULL OR chat_id = '' ORDER BY id ASC LIMIT 1");
         if ($stmt) {
@@ -95,29 +108,38 @@ function handleCodeBinding($conn, $chatId, $code) {
         }
     }
 
-    // 4. Fallback: If no user_telegram_bots row exists, create & bind for default User #1
+    // 4. Fallback: Get primary user in user_telegram_bots table
     if (!$userBot) {
-        $uCheck = mysqli_query($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
-        if ($uCheck && $uRow = mysqli_fetch_assoc($uCheck)) {
-            $defaultUserId = (int)$uRow['id'];
-            $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
-            $defaultUsername = "reportpush_bot";
-            
-            $ins = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, ?, ?, NOW()) ON DUPLICATE KEY UPDATE chat_id = ?, connected_at = NOW()");
-            if ($ins) {
-                mysqli_stmt_bind_param($ins, "issss", $defaultUserId, $defaultToken, $defaultUsername, $chatId, $chatId);
-                mysqli_stmt_execute($ins);
-                mysqli_stmt_close($ins);
-
-                return [
-                    'id' => 1,
-                    'user_id' => $defaultUserId
-                ];
-            }
+        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
+        if ($stmt) {
+            mysqli_stmt_execute($stmt);
+            $res = mysqli_stmt_get_result($stmt);
+            $userBot = mysqli_fetch_assoc($res);
+            mysqli_stmt_close($stmt);
         }
     }
 
-    // Bind chat_id & clear connection_code
+    // 5. Ultimate Fallback: Create row for default User #1
+    if (!$userBot) {
+        $uCheck = mysqli_query($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
+        $defaultUserId = ($uCheck && $uRow = mysqli_fetch_assoc($uCheck)) ? (int)$uRow['id'] : 1;
+        $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+        $defaultUsername = "reportpush_bot";
+
+        $ins = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, ?, ?, NOW())");
+        if ($ins) {
+            mysqli_stmt_bind_param($ins, "isss", $defaultUserId, $defaultToken, $defaultUsername, $chatId);
+            mysqli_stmt_execute($ins);
+            mysqli_stmt_close($ins);
+            return [
+                'id' => 1,
+                'user_id' => $defaultUserId,
+                'chat_id' => $chatId
+            ];
+        }
+    }
+
+    // Bind chat_id & clear connection_code for found userBot
     if ($userBot) {
         $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
         if ($upd) {
@@ -125,6 +147,7 @@ function handleCodeBinding($conn, $chatId, $code) {
             mysqli_stmt_execute($upd);
             mysqli_stmt_close($upd);
         }
+        $userBot['chat_id'] = $chatId;
         return $userBot;
     }
 
@@ -174,39 +197,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1) {
                  . "Type /help to see all available commands!";
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
-        } else {
-            // Check if this chat_id is ALREADY connected
-            $existingBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
-            if ($existingBot && !empty($existingBot['user_id'])) {
-                $uId = (int)$existingBot['user_id'];
-                
-                // If connected within the last 10 seconds, another process/instance just bound it. Return silently.
-                $connectedAt = strtotime($existingBot['connected_at'] ?? '');
-                if ($connectedAt && (time() - $connectedAt) < 10) {
-                    return;
-                }
-
-                $msg = "🚀 <b>WELCOME BACK TO INVENTORY BOT</b>\n"
-                     . "═════════════════════════════\n"
-                     . "Status: <b>Connected ✅</b>\n"
-                     . "Account User ID: <code>#{$uId}</code>\n"
-                     . "Connected Chat ID: <code>{$chatId}</code>\n\n"
-                     . "Type /help to see available inventory commands!";
-                sendTelegramMessage($chatId, $msg, $botToken);
-                return;
-            } else {
-                $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
-                     . "═════════════════════════════\n"
-                     . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
-                     . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
-                     . "🔑 <b>How to Connect:</b>\n"
-                     . "1. Log into your Inventory Account on the website.\n"
-                     . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
-                     . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
-                     . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
-                sendTelegramMessage($chatId, $msg, $botToken);
-                return;
-            }
         }
     }
 
