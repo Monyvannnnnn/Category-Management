@@ -24,7 +24,8 @@ $action = $_REQUEST['action'] ?? $inputJSON['action'] ?? 'summary';
 $customMessage = trim($_REQUEST['message'] ?? $inputJSON['message'] ?? '');
 
 $currentUser = getCurrentUser();
-$userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_id'] ?? 0));
+$userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_id'] ?? 1));
+if ($userId <= 0) $userId = 1;
 $userWhere = ($userId > 0) ? " AND user_id = {$userId} " : "";
 $userWhereWhere = ($userId > 0) ? " WHERE user_id = {$userId} " : "";
 

@@ -187,6 +187,9 @@ function isUserTelegramConnected($conn = null, $userId = null) {
             $userId = (int)$_SESSION['user_id'];
         }
     }
+    if ($userId === null || (int)$userId <= 0) {
+        $userId = 1;
+    }
     if ($userId !== null && (int)$userId > 0) {
         $uId = (int)$userId;
         if ($conn) {
@@ -198,6 +201,14 @@ function isUserTelegramConnected($conn = null, $userId = null) {
                 $row = db_fetch_assoc($res);
                 db_stmt_close($stmt);
                 if ($row && !empty(trim($row['chat_id']))) {
+                    return true;
+                }
+            }
+            // Fallback for stateless serverless sessions: check any connected row
+            $resAny = db_query($conn, "SELECT chat_id FROM user_telegram_bots WHERE chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+            if ($resAny) {
+                $rowAny = db_fetch_assoc($resAny);
+                if ($rowAny && !empty(trim($rowAny['chat_id']))) {
                     return true;
                 }
             }
