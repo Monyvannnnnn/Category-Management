@@ -2,10 +2,129 @@
 // includes/auth_helper.php
 
 if (session_status() === PHP_SESSION_NONE) {
+    if (!headers_sent()) {
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+                || ($_SERVER['SERVER_PORT'] ?? 80) == 443 
+                || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+        
+        session_set_cookie_params([
+            'lifetime' => 86400 * 30,
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure'   => $isHttps
+        ]);
+    }
     session_start();
 }
 
 require_once __DIR__ . "/../database.php";
+
+/**
+ * Generate a consistent HMAC secret key for cookie signing.
+ */
+function getAuthSecret() {
+    $secret = getenv('APP_SECRET') ?: (defined('DB_PASS') ? DB_PASS : 'inventory_system_secure_fallback');
+    return hash('sha256', 'inventory_vercel_auth_salt_2026_' . $secret);
+}
+
+/**
+ * Set a secure, HTTP-only, signed authentication cookie for serverless persistence.
+ */
+function setAuthCookie($user) {
+    if (headers_sent()) return;
+    $secret = getAuthSecret();
+    $payloadData = [
+        'id'       => (int)($user['id'] ?? 0),
+        'name'     => $user['name'] ?? '',
+        'username' => $user['username'] ?? '',
+        'email'    => $user['email'] ?? '',
+        'role'     => $user['role'] ?? 'admin',
+        'time'     => time()
+    ];
+    $payloadJson = json_encode($payloadData);
+    $encodedPayload = rtrim(strtr(base64_encode($payloadJson), '+/', '-_'), '=');
+    $sig = hash_hmac('sha256', $encodedPayload, $secret);
+    $cookieValue = $encodedPayload . '.' . $sig;
+    $expire = time() + (86400 * 30); // 30 days
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+            || ($_SERVER['SERVER_PORT'] ?? 80) == 443 
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+             
+    setcookie('inventory_auth', $cookieValue, [
+        'expires'  => $expire,
+        'path'     => '/',
+        'httponly' => true,
+        'samesite' => 'Lax',
+        'secure'   => $isHttps
+    ]);
+}
+
+/**
+ * Clear the auth cookie and session cookies upon logout.
+ */
+function clearAuthCookie() {
+    $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') 
+            || ($_SERVER['SERVER_PORT'] ?? 80) == 443 
+            || (!empty($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+    if (!headers_sent()) {
+        setcookie('inventory_auth', '', [
+            'expires'  => time() - 86400,
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure'   => $isHttps
+        ]);
+        setcookie(session_name(), '', [
+            'expires'  => time() - 86400,
+            'path'     => '/',
+            'httponly' => true,
+            'samesite' => 'Lax',
+            'secure'   => $isHttps
+        ]);
+    }
+    unset($_COOKIE['inventory_auth']);
+}
+
+/**
+ * Rehydrate session variables from signed auth cookie on stateless serverless requests.
+ */
+function rehydrateUserFromCookie() {
+    if (empty($_COOKIE['inventory_auth'])) {
+        return null;
+    }
+    $parts = explode('.', $_COOKIE['inventory_auth']);
+    if (count($parts) !== 2) {
+        return null;
+    }
+    list($encodedPayload, $sig) = $parts;
+    $secret = getAuthSecret();
+    $expectedSig = hash_hmac('sha256', $encodedPayload, $secret);
+    if (!hash_equals($expectedSig, $sig)) {
+        return null;
+    }
+    $jsonStr = base64_decode(strtr($encodedPayload, '-_', '+/'));
+    $payloadData = json_decode($jsonStr, true);
+    if (!$payloadData || empty($payloadData['id'])) {
+        return null;
+    }
+
+    $_SESSION['user_id']   = (int)$payloadData['id'];
+    $_SESSION['user_name'] = $payloadData['name'] ?? '';
+    $_SESSION['name']      = $payloadData['name'] ?? '';
+    $_SESSION['username']  = $payloadData['username'] ?? '';
+    $_SESSION['email']     = $payloadData['email'] ?? '';
+    $_SESSION['role']      = $payloadData['role'] ?? 'admin';
+    unset($_SESSION['logged_out']);
+
+    return [
+        'id'       => (int)$payloadData['id'],
+        'name'     => $payloadData['name'] ?? '',
+        'username' => $payloadData['username'] ?? '',
+        'email'    => $payloadData['email'] ?? '',
+        'role'     => $payloadData['role'] ?? 'admin'
+    ];
+}
 
 /**
  * Get currently logged-in user array or null if guest.
@@ -16,14 +135,15 @@ function getCurrentUser() {
     }
     if (!empty($_SESSION['user_id'])) {
         return [
-            'id' => (int)$_SESSION['user_id'],
-            'name' => $_SESSION['user_name'] ?? ($_SESSION['name'] ?? 'Chhourn CryMunyvann'),
+            'id'       => (int)$_SESSION['user_id'],
+            'name'     => $_SESSION['user_name'] ?? ($_SESSION['name'] ?? 'Chhourn CryMunyvann'),
             'username' => $_SESSION['username'] ?? 'admin',
-            'email' => $_SESSION['email'] ?? 'admin@example.com',
-            'role' => $_SESSION['role'] ?? 'admin'
+            'email'    => $_SESSION['email'] ?? 'admin@example.com',
+            'role'     => $_SESSION['role'] ?? 'admin'
         ];
     }
-    return null;
+    // Attempt rehydration from signed cookie (Essential for Vercel serverless functions)
+    return rehydrateUserFromCookie();
 }
 
 /**
@@ -77,10 +197,30 @@ function authenticateUser($conn, $loginInput, $password) {
         $_SESSION['email']     = $user['email'];
         $_SESSION['role']      = $user['role'] ?? 'admin';
 
+        setAuthCookie($user);
+
         return ['success' => true, 'user' => $user];
     } else {
         return ['success' => false, 'message' => 'Invalid Username/Email or Password.'];
     }
+}
+
+/**
+ * Log out user completely and clear session & cookies.
+ */
+function logoutUser() {
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $_SESSION = array();
+    clearAuthCookie();
+    @session_unset();
+    @session_destroy();
+    if (session_status() === PHP_SESSION_NONE) {
+        session_start();
+    }
+    $_SESSION['logged_out'] = true;
+    session_write_close();
 }
 
 /**

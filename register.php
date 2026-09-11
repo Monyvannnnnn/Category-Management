@@ -23,12 +23,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     $res = createUserAccount($conn, $name, $username, $email, $password, $role);
     if ($res['success']) {
         // Auto Login upon successful registration
+        unset($_SESSION['logged_out']);
         $_SESSION['user_id']   = $res['user']['id'];
         $_SESSION['user_name'] = $res['user']['name'];
         $_SESSION['name']      = $res['user']['name'];
         $_SESSION['username']  = $res['user']['username'];
         $_SESSION['email']     = $res['user']['email'];
         $_SESSION['role']      = $res['user']['role'];
+        setAuthCookie($res['user']);
 
         if ($isAjax) {
             header('Content-Type: application/json');
