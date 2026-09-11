@@ -22,18 +22,16 @@ function verifyTelegramUserAuthorization($pdo, $botToken, $incomingChatId) {
  */
 function verifyAndBindConnectionCode($pdo, $code, $chatId) {
     $now = date('Y-m-d H:i:s');
+    $code = trim($code ?? '');
 
-    if (!empty($code)) {
-        // Find bot row with matching code that has not expired
-        $stmt = $pdo->prepare("SELECT * FROM user_telegram_bots WHERE UPPER(connection_code) = UPPER(?) AND (code_expires_at IS NULL OR code_expires_at >= ?)");
-        $stmt->execute([$code, $now]);
-        $userBot = $stmt->fetch();
-    } else {
-        // If code parameter is empty (user typed /start manually), check for latest pending unexpired code
-        $stmt = $pdo->prepare("SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND (code_expires_at IS NULL OR code_expires_at >= ?) ORDER BY id DESC LIMIT 1");
-        $stmt->execute([$now]);
-        $userBot = $stmt->fetch();
+    if (empty($code)) {
+        return false;
     }
+
+    // Find bot row with matching code that has not expired
+    $stmt = $pdo->prepare("SELECT * FROM user_telegram_bots WHERE UPPER(connection_code) = UPPER(?) AND (code_expires_at IS NULL OR code_expires_at >= ?)");
+    $stmt->execute([$code, $now]);
+    $userBot = $stmt->fetch();
 
     if (!$userBot) {
         return false;

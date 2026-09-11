@@ -72,93 +72,35 @@ function sendTelegramMessage($chatId, $text, $botToken) {
  */
 function handleCodeBinding($conn, $chatId, $code) {
     $code = trim($code);
+    if (empty($code)) {
+        return null;
+    }
+
     $userBot = null;
     $isFreshBind = false;
 
-    // 1. Try exact connection code match if code provided
-    if (!empty($code)) {
-        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(TRIM(?)) LIMIT 1");
-        if ($stmt) {
-            db_stmt_bind_param($stmt, "s", $code);
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-            $userBot = db_fetch_assoc($res);
-            db_stmt_close($stmt);
-            if ($userBot) $isFreshBind = true;
-        }
+    // 1. Try exact connection code match for valid website user account (must be unexpired)
+    $stmt = db_prepare($conn, "SELECT b.* FROM user_telegram_bots b JOIN users u ON b.user_id = u.id WHERE UPPER(TRIM(b.connection_code)) = UPPER(TRIM(?)) AND (b.code_expires_at IS NULL OR b.code_expires_at >= NOW()) LIMIT 1");
+    if ($stmt) {
+        db_stmt_bind_param($stmt, "s", $code);
+        db_stmt_execute($stmt);
+        $res = db_stmt_get_result($stmt);
+        $userBot = db_fetch_assoc($res);
+        db_stmt_close($stmt);
+        if ($userBot) $isFreshBind = true;
     }
 
-    // 2. Fallback: Check for any pending unlinked connection code
-    if (!$userBot) {
-        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND connection_code != '' ORDER BY id DESC LIMIT 1");
-        if ($stmt) {
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-            $userBot = db_fetch_assoc($res);
-            db_stmt_close($stmt);
-            if ($userBot) $isFreshBind = true;
-        }
-    }
-
-    // 3. Fallback: Check for any unlinked user bot record (chat_id IS NULL OR chat_id = '')
-    if (!$userBot) {
-        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id IS NULL OR chat_id = '' ORDER BY id ASC LIMIT 1");
-        if ($stmt) {
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-            $userBot = db_fetch_assoc($res);
-            db_stmt_close($stmt);
-            if ($userBot) $isFreshBind = true;
-        }
-    }
-
-    // 4. Fallback: Get primary user in user_telegram_bots table
-    if (!$userBot) {
-        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
-        if ($stmt) {
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-            $userBot = db_fetch_assoc($res);
-            db_stmt_close($stmt);
-        }
-    }
-
-    // 5. Ultimate Fallback: Create row for default User #1
-    if (!$userBot) {
-        $uCheck = db_query($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
-        $defaultUserId = ($uCheck && $uRow = db_fetch_assoc($uCheck)) ? (int)$uRow['id'] : 1;
-        $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
-        $defaultUsername = "reportpush_bot";
-
-        $ins = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, ?, ?, NOW())");
-        if ($ins) {
-            db_stmt_bind_param($ins, "isss", $defaultUserId, $defaultToken, $defaultUsername, $chatId);
-            db_stmt_execute($ins);
-            db_stmt_close($ins);
-            return [
-                'id' => 1,
-                'user_id' => $defaultUserId,
-                'chat_id' => $chatId,
-                'is_fresh_bind' => true,
-                'connected_at' => date('Y-m-d H:i:s')
-            ];
-        }
-    }
-
-    // Bind chat_id & clear connection_code for found userBot
+    // Bind chat_id & clear connection_code for matched userBot
     if ($userBot) {
-        if (empty($userBot['chat_id']) || $userBot['chat_id'] !== $chatId || !empty($userBot['connection_code'])) {
-            $isFreshBind = true;
-            $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
-            if ($upd) {
-                db_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
-                db_stmt_execute($upd);
-                db_stmt_close($upd);
-            }
-            $userBot['connected_at'] = date('Y-m-d H:i:s');
+        $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
+        if ($upd) {
+            db_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
+            db_stmt_execute($upd);
+            db_stmt_close($upd);
         }
         $userBot['chat_id'] = $chatId;
-        $userBot['is_fresh_bind'] = $isFreshBind;
+        $userBot['connected_at'] = date('Y-m-d H:i:s');
+        $userBot['is_fresh_bind'] = true;
         return $userBot;
     }
 
@@ -170,7 +112,7 @@ function handleCodeBinding($conn, $chatId, $code) {
  */
 function getConnectedUserByChatIdMySQLi($conn, $chatId) {
     if (empty($chatId)) return null;
-    $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
+    $stmt = db_prepare($conn, "SELECT b.*, u.username FROM user_telegram_bots b JOIN users u ON b.user_id = u.id WHERE b.chat_id = ? AND b.chat_id IS NOT NULL AND b.chat_id != '' LIMIT 1");
     if ($stmt) {
         db_stmt_bind_param($stmt, "s", $chatId);
         db_stmt_execute($stmt);
@@ -212,21 +154,20 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         }
     }
 
-    if (function_exists('registerSubscriberChatId')) {
-        registerSubscriberChatId($conn, $chatId);
-    }
-
     $parts   = explode(' ', $text, 2);
     $command = strtolower($parts[0]);
     $command = explode('@', $command)[0];
     $rawArg  = trim($parts[1] ?? '');
     $arg     = strtolower($rawArg);
 
-    // 1. Connection Code Binding (/start or /start <code>)
-    if ($command === '/start') {
+    // 1. Connection Code Binding (/start <code>)
+    if ($command === '/start' && !empty($rawArg)) {
         $boundBot = handleCodeBinding($conn, $chatId, $rawArg);
         if ($boundBot) {
             $uId = (int)$boundBot['user_id'];
+            if (function_exists('registerSubscriberChatId')) {
+                registerSubscriberChatId($conn, $chatId);
+            }
             $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
                  . "═════════════════════════════\n"
                  . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
@@ -234,63 +175,29 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                  . "Type /help to see all available commands!";
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
+        } else {
+            $msg = "❌ <b>INVALID OR EXPIRED CONNECTION CODE</b>\n"
+                 . "═════════════════════════════\n"
+                 . "⚠️ The connection code provided is invalid or has expired.\n\n"
+                 . "🔑 <b>How to Connect:</b>\n"
+                 . "1. Log into your Inventory Account on the website.\n"
+                 . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
+                 . "3. Click <b>Connect Bot</b> to generate a valid connection code.\n"
+                 . "4. Send <code>/start &lt;YOUR_CODE&gt;</code> here in chat to link!";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            return;
         }
     }
 
-    // 2. Access Control Guard & User Bot Lookup
+    // 2. Strict Access Control Guard & User Bot Lookup
     $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
 
-    // Fallback 1: If chat_id not explicitly linked, check user_telegram_bots table
-    if (!$userBot || empty($userBot['user_id'])) {
-        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
-        if ($stmt) {
-            db_stmt_execute($stmt);
-            $fRes = db_stmt_get_result($stmt);
-            $fRow = db_fetch_assoc($fRes);
-            db_stmt_close($stmt);
-
-            if ($fRow && !empty($fRow['user_id'])) {
-                if (empty($fRow['chat_id'])) {
-                    $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW() WHERE id = ?");
-                    if ($upd) {
-                        db_stmt_bind_param($upd, "si", $chatId, $fRow['id']);
-                        db_stmt_execute($upd);
-                        db_stmt_close($upd);
-                    }
-                    $fRow['chat_id'] = $chatId;
-                }
-                $userBot = $fRow;
-            }
-        }
-    }
-
-    // Fallback 2: Check primary admin user from users table if user_telegram_bots is unpopulated
-    if (!$userBot || empty($userBot['user_id'])) {
-        $uStmt = db_prepare($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
-        if ($uStmt) {
-            db_stmt_execute($uStmt);
-            $uRes = db_stmt_get_result($uStmt);
-            $uRow = db_fetch_assoc($uRes);
-            db_stmt_close($uStmt);
-            if ($uRow && !empty($uRow['id'])) {
-                $primaryUserId = (int)$uRow['id'];
-                $userBot = ['user_id' => $primaryUserId, 'chat_id' => $chatId];
-                $bTokenSave = !empty($botToken) ? $botToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
-                $bindStmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, 'reportpush_bot', ?, NOW())");
-                if ($bindStmt) {
-                    db_stmt_bind_param($bindStmt, "iss", $primaryUserId, $bTokenSave, $chatId);
-                    db_stmt_execute($bindStmt);
-                    db_stmt_close($bindStmt);
-                }
-            }
-        }
-    }
-
-    if (!$userBot || empty($userBot['user_id'])) {
-        $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
+    if (!$userBot || empty($userBot['user_id']) || empty($userBot['chat_id'])) {
+        $msg = "❌ <b>ACCESS DENIED: ACCOUNT DISCONNECTED OR NOT LINKED</b>\n"
              . "═════════════════════════════\n"
              . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
-             . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
+             . "⚠️ You are disconnected or not yet connected to a website account.\n"
+             . "Telegram commands are disabled until you log in to the website and connect your account.\n\n"
              . "🔑 <b>How to Connect:</b>\n"
              . "1. Log into your Inventory Account on the website.\n"
              . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
@@ -298,6 +205,10 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
              . "4. Send <code>/start &lt;YOUR_CODE&gt;</code> here in chat to link!";
         sendTelegramMessage($chatId, $msg, $botToken);
         return;
+    }
+
+    if (function_exists('registerSubscriberChatId')) {
+        registerSubscriberChatId($conn, $chatId);
     }
 
     // Authenticated User ID from DB
