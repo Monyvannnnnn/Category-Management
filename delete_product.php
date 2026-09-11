@@ -25,20 +25,20 @@ $id = (int)$_GET["id"];
 
 // Fetch product info before deletion for notification
 $prod_info = null;
-$sel_stmt = mysqli_prepare($conn, "SELECT product_code, product_name FROM product WHERE id = ?");
+$sel_stmt = db_prepare($conn, "SELECT product_code, product_name FROM product WHERE id = ?");
 if ($sel_stmt) {
-    mysqli_stmt_bind_param($sel_stmt, "i", $id);
-    mysqli_stmt_execute($sel_stmt);
-    $res = mysqli_stmt_get_result($sel_stmt);
-    $prod_info = mysqli_fetch_assoc($res);
-    mysqli_stmt_close($sel_stmt);
+    db_stmt_bind_param($sel_stmt, "i", $id);
+    db_stmt_execute($sel_stmt);
+    $res = db_stmt_get_result($sel_stmt);
+    $prod_info = db_fetch_assoc($res);
+    db_stmt_close($sel_stmt);
 }
 
-$stmt = mysqli_prepare($conn, "DELETE FROM product WHERE id = ?");
+$stmt = db_prepare($conn, "DELETE FROM product WHERE id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $id);
-    if (mysqli_stmt_execute($stmt)) {
-        mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "i", $id);
+    if (db_stmt_execute($stmt)) {
+        db_stmt_close($stmt);
 
         $prodCode = $prod_info['product_code'] ?? "N/A";
         $prodName = $prod_info['product_name'] ?? "N/A";
@@ -53,13 +53,13 @@ if ($stmt) {
         echo json_encode(["success" => true]);
         exit;
     } else {
-        mysqli_stmt_close($stmt);
+        db_stmt_close($stmt);
         http_response_code(500);
-        echo json_encode(["message" => "Delete failed: " . mysqli_error($conn)]);
+        echo json_encode(["message" => "Delete failed: " . db_error($conn)]);
         exit;
     }
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Database query preparation failed: " . mysqli_error($conn)]);
+    echo json_encode(["message" => "Database query preparation failed: " . db_error($conn)]);
     exit;
 }

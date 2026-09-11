@@ -28,33 +28,33 @@ if ($product_code === "" || $product_name === "" || $category_id <= 0) {
 }
 
 // Check if Product Code already exists for this user
-$check_code_stmt = mysqli_prepare($conn, "SELECT id FROM product WHERE user_id = ? AND LOWER(TRIM(product_code)) = LOWER(?)");
+$check_code_stmt = db_prepare($conn, "SELECT id FROM product WHERE user_id = ? AND LOWER(TRIM(product_code)) = LOWER(?)");
 if ($check_code_stmt) {
-    mysqli_stmt_bind_param($check_code_stmt, "is", $userId, $product_code);
-    mysqli_stmt_execute($check_code_stmt);
-    mysqli_stmt_store_result($check_code_stmt);
-    if (mysqli_stmt_num_rows($check_code_stmt) > 0) {
-        mysqli_stmt_close($check_code_stmt);
+    db_stmt_bind_param($check_code_stmt, "is", $userId, $product_code);
+    db_stmt_execute($check_code_stmt);
+    db_stmt_store_result($check_code_stmt);
+    if (db_stmt_num_rows($check_code_stmt) > 0) {
+        db_stmt_close($check_code_stmt);
         http_response_code(400);
         echo json_encode(["message" => "Product Code '$product_code' already exists."]);
         exit;
     }
-    mysqli_stmt_close($check_code_stmt);
+    db_stmt_close($check_code_stmt);
 }
 
-$stmt = mysqli_prepare($conn, "INSERT INTO product (user_id, product_code, product_name, category_id, price, quantity) VALUES (?, ?, ?, ?, ?, ?)");
+$stmt = db_prepare($conn, "INSERT INTO product (user_id, product_code, product_name, category_id, price, quantity) VALUES (?, ?, ?, ?, ?, ?)");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "issidi", $userId, $product_code, $product_name, $category_id, $price, $quantity);
-    if (mysqli_stmt_execute($stmt)) {
-        $newId = mysqli_insert_id($conn);
-        mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "issidi", $userId, $product_code, $product_name, $category_id, $price, $quantity);
+    if (db_stmt_execute($stmt)) {
+        $newId = db_insert_id($conn);
+        db_stmt_close($stmt);
 
-        $sel = mysqli_prepare($conn, "SELECT product.*, category.category_name FROM product LEFT JOIN category ON product.category_id = category.id WHERE product.id = ?");
-        mysqli_stmt_bind_param($sel, "i", $newId);
-        mysqli_stmt_execute($sel);
-        $row = mysqli_stmt_get_result($sel);
-        $data = mysqli_fetch_assoc($row);
-        mysqli_stmt_close($sel);
+        $sel = db_prepare($conn, "SELECT product.*, category.category_name FROM product LEFT JOIN category ON product.category_id = category.id WHERE product.id = ?");
+        db_stmt_bind_param($sel, "i", $newId);
+        db_stmt_execute($sel);
+        $row = db_stmt_get_result($sel);
+        $data = db_fetch_assoc($row);
+        db_stmt_close($sel);
 
         $catName = $data['category_name'] ?? 'N/A';
         $msg = "<b>📦 New Product Created</b>\n"
@@ -71,11 +71,11 @@ if ($stmt) {
         exit;
     } else {
         http_response_code(500);
-        echo json_encode(["message" => "Database error: " . mysqli_error($conn)]);
+        echo json_encode(["message" => "Database error: " . db_error($conn)]);
         exit;
     }
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Database preparation failed: " . mysqli_error($conn)]);
+    echo json_encode(["message" => "Database preparation failed: " . db_error($conn)]);
     exit;
 }

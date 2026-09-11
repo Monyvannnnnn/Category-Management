@@ -154,7 +154,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                 $msg = "🔍 <b>PRODUCT SEARCH DIRECTORY</b>\n"
                      . "<i>Query: '<b>" . htmlspecialchars($arg) . "</b>' • Results</i>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($result)) {
+                while ($r = db_fetch_assoc($result)) {
                     $code  = htmlspecialchars($r['product_code']);
                     $name  = htmlspecialchars($r['product_name']);
                     $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
@@ -201,7 +201,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                      . "<i>Found <b>{$total}</b> results for '<b>" . htmlspecialchars($arg) . "</b>'</i>\n"
                      . "═════════════════════════════\n\n";
                 $count = 0;
-                while ($r = mysqli_fetch_assoc($result)) {
+                while ($r = db_fetch_assoc($result)) {
                     $code  = htmlspecialchars($r['product_code']);
                     $name  = htmlspecialchars($r['product_name']);
                     $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
@@ -236,13 +236,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 3. /categories
         // ----------------------------------------------------
         case '/categories':
-            $res = mysqli_query($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id GROUP BY c.id ORDER BY c.category_name ASC");
+            $res = db_query($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id GROUP BY c.id ORDER BY c.category_name ASC");
             if ($res && mysqli_num_rows($res) > 0) {
                 $totalCats = mysqli_num_rows($res);
                 $msg = "🏷️ <b>CATEGORY MANAGEMENT OVERVIEW</b>\n"
                      . "<i>Total Listed: <b>{$totalCats} Categories</b></i>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code = htmlspecialchars($r['category_code']);
                     $name = htmlspecialchars($r['category_name']);
                     $cnt  = (int)$r['prod_count'];
@@ -278,7 +278,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             mysqli_stmt_bind_param($stmt, "s", $arg);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
-            $catRow = mysqli_fetch_assoc($result);
+            $catRow = db_fetch_assoc($result);
             mysqli_stmt_close($stmt);
 
             if (!$catRow) {
@@ -313,7 +313,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             if ($prodResult && $totalProds > 0) {
                 $msg .= "── PRODUCTS IN THIS CATEGORY ──\n\n";
                 $i = 1;
-                while ($p = mysqli_fetch_assoc($prodResult)) {
+                while ($p = db_fetch_assoc($prodResult)) {
                     $pCode = htmlspecialchars($p['product_code']);
                     $pName = htmlspecialchars($p['product_name']);
                     $pPrice = number_format((float)$p['price'], 2);
@@ -351,13 +351,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
                 $sortLabel = "Date Created (Newest First)";
             }
 
-            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity FROM product p ORDER BY {$orderBy} LIMIT 10");
+            $res = db_query($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity FROM product p ORDER BY {$orderBy} LIMIT 10");
             if ($res && mysqli_num_rows($res) > 0) {
                 $msg = "↕️ <b>SORTED INVENTORY CATALOG</b>\n"
                      . "<i>Sorted By: <b>{$sortLabel}</b></i>\n"
                      . "═════════════════════════════\n\n";
                 $i = 1;
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code  = htmlspecialchars($r['product_code']);
                     $name  = htmlspecialchars($r['product_name']);
                     $price = number_format((float)$r['price'], 2);
@@ -380,12 +380,12 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 6. /lowstock
         // ----------------------------------------------------
         case '/lowstock':
-            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 ORDER BY p.quantity ASC");
+            $res = db_query($conn, "SELECT p.product_code, p.product_name, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 ORDER BY p.quantity ASC");
             if ($res && mysqli_num_rows($res) > 0) {
                 $msg = "⚠️ <b>CRITICAL LOW STOCK ALERTS</b>\n"
                      . "<i>Threshold: <b>≤ 5 units remaining</b></i>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code = htmlspecialchars($r['product_code']);
                     $name = htmlspecialchars($r['product_name']);
                     $cat  = htmlspecialchars($r['category_name'] ?? 'Unassigned');
@@ -409,14 +409,14 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 7. /topstock
         // ----------------------------------------------------
         case '/topstock':
-            $res = mysqli_query($conn, "SELECT p.product_code, p.product_name, p.quantity, p.price, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.quantity DESC LIMIT 10");
+            $res = db_query($conn, "SELECT p.product_code, p.product_name, p.quantity, p.price, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id ORDER BY p.quantity DESC LIMIT 10");
             if ($res && mysqli_num_rows($res) > 0) {
                 $msg = "📊 <b>TOP 10 HIGHEST STOCK ITEMS</b>\n"
                      . "═════════════════════════════\n\n";
                 $i = 1;
                 $totalUnits = 0;
                 $totalValue = 0.00;
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code  = htmlspecialchars($r['product_code']);
                     $name  = htmlspecialchars($r['product_name']);
                     $qty   = (int)$r['quantity'];
@@ -456,7 +456,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
             mysqli_stmt_bind_param($stmt, "s", $arg);
             mysqli_stmt_execute($stmt);
             $result = mysqli_stmt_get_result($stmt);
-            $prod = mysqli_fetch_assoc($result);
+            $prod = db_fetch_assoc($result);
             mysqli_stmt_close($stmt);
 
             if (!$prod) {
@@ -503,20 +503,20 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 9. /summary
         // ----------------------------------------------------
         case '/summary':
-            $catRes = mysqli_query($conn, "SELECT COUNT(*) AS total_cats FROM category");
-            $totalCats = ($catRes && $catRow = mysqli_fetch_assoc($catRes)) ? (int)$catRow['total_cats'] : 0;
+            $catRes = db_query($conn, "SELECT COUNT(*) AS total_cats FROM category");
+            $totalCats = ($catRes && $catRow = db_fetch_assoc($catRes)) ? (int)$catRow['total_cats'] : 0;
 
-            $prodRes = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product");
+            $prodRes = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product");
             $totalProds = 0; $totalStock = 0; $totalVal = 0.00; $avgPrice = 0.00;
-            if ($prodRes && $prodRow = mysqli_fetch_assoc($prodRes)) {
+            if ($prodRes && $prodRow = db_fetch_assoc($prodRes)) {
                 $totalProds = (int)$prodRow['total_prods'];
                 $totalStock = (int)$prodRow['total_stock'];
                 $totalVal   = (float)$prodRow['total_val'];
                 $avgPrice   = (float)$prodRow['avg_price'];
             }
 
-            $lowStockRes = mysqli_query($conn, "SELECT COUNT(*) AS low_count FROM product WHERE quantity <= 5");
-            $lowCount = ($lowStockRes && $lowRow = mysqli_fetch_assoc($lowStockRes)) ? (int)$lowRow['low_count'] : 0;
+            $lowStockRes = db_query($conn, "SELECT COUNT(*) AS low_count FROM product WHERE quantity <= 5");
+            $lowCount = ($lowStockRes && $lowRow = db_fetch_assoc($lowStockRes)) ? (int)$lowRow['low_count'] : 0;
 
             $nowStr = date('d/m/Y H:i:s');
             $msg = "📊 <b>EXECUTIVE INVENTORY DASHBOARD</b>\n"
@@ -538,8 +538,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 10. /valuation
         // ----------------------------------------------------
         case '/valuation':
-            $prodRes = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price, COALESCE(MAX(price), 0) as max_price, COALESCE(MIN(price), 0) as min_price FROM product");
-            $row = mysqli_fetch_assoc($prodRes);
+            $prodRes = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price, COALESCE(MAX(price), 0) as max_price, COALESCE(MIN(price), 0) as min_price FROM product");
+            $row = db_fetch_assoc($prodRes);
 
             $nowStr = date('d/m/Y H:i:s');
             $msg = "💎 <b>FINANCIAL & ASSET VALUATION REPORT</b>\n"
@@ -561,15 +561,15 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 11. /added
         // ----------------------------------------------------
         case '/added':
-            $prodRes = mysqli_query($conn, "SELECT product_code, product_name, price, quantity FROM product ORDER BY id DESC LIMIT 5");
-            $catRes  = mysqli_query($conn, "SELECT category_code, category_name FROM category ORDER BY id DESC LIMIT 5");
+            $prodRes = db_query($conn, "SELECT product_code, product_name, price, quantity FROM product ORDER BY id DESC LIMIT 5");
+            $catRes  = db_query($conn, "SELECT category_code, category_name FROM category ORDER BY id DESC LIMIT 5");
 
             $msg = "🆕 <b>RECENTLY ADDED CATALOG ITEMS</b>\n"
                  . "<i>Latest Additions to Database</i>\n"
                  . "═════════════════════════════\n\n"
                  . "<b>📦 Newly Added Products:</b>\n";
             if ($prodRes && mysqli_num_rows($prodRes) > 0) {
-                while ($r = mysqli_fetch_assoc($prodRes)) {
+                while ($r = db_fetch_assoc($prodRes)) {
                     $msg .= "├ <code>{$r['product_code']}</code> <b>{$r['product_name']}</b> (\${$r['price']} | Qty: {$r['quantity']})\n";
                 }
             } else {
@@ -578,7 +578,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
 
             $msg .= "\n<b>🏷️ Newly Added Categories:</b>\n";
             if ($catRes && mysqli_num_rows($catRes) > 0) {
-                while ($r = mysqli_fetch_assoc($catRes)) {
+                while ($r = db_fetch_assoc($catRes)) {
                     $msg .= "├ <code>{$r['category_code']}</code> <b>{$r['category_name']}</b>\n";
                 }
             } else {
@@ -595,8 +595,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken) {
         // 12. /updated
         // ----------------------------------------------------
         case '/updated':
-            $prodRes = mysqli_query($conn, "SELECT product_code, product_name, lastupdate FROM product ORDER BY lastupdate DESC LIMIT 5");
-            $catRes  = mysqli_query($conn, "SELECT category_code, category_name, lastupdate FROM category ORDER BY lastupdate DESC LIMIT 5");
+            $prodRes = db_query($conn, "SELECT product_code, product_name, lastupdate FROM product ORDER BY lastupdate DESC LIMIT 5");
+            $catRes  = db_query($conn, "SELECT category_code, category_name, lastupdate FROM category ORDER BY lastupdate DESC LIMIT 5");
 
             $msg = "✏️ <b>RECENTLY MODIFIED INVENTORY</b>\n"
                  . "<i>Audit Trail & Recent Edits</i>\n"

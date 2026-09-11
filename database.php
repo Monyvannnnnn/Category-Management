@@ -23,52 +23,65 @@ if ($driver === 'pgsql') {
     $pdo = null;
     $lastException = null;
 
-    $userCandidates = array_values(array_unique(array_filter([
-        $cfg['user'] ?? '',
-        'postgres.wpzaeloeqsiacehkxvgq',
-        'postgres'
-    ])));
+    $host = $cfg['host'] ?? 'aws-0-ap-northeast-2.pooler.supabase.com';
+    $port = (int)($cfg['port'] ?? 6543);
+    $user = $cfg['user'] ?? 'postgres.wpzaeloeqsiacehkxvgq';
+    $pass = $cfg['pass'] ?? '';
+    $dbname = $cfg['name'] ?? 'postgres';
 
-    $portCandidates = array_values(array_unique(array_filter([
-        (int)($cfg['port'] ?? 6543),
-        6543,
-        5432
-    ])));
+    // Extract tenant ref if available (defaulting to project ref)
+    $tenantRef = 'wpzaeloeqsiacehkxvgq';
+    if (preg_match('/postgres\.([a-z0-9]+)/i', $user, $m)) {
+        $tenantRef = $m[1];
+    }
 
-    $passCandidates = array_values(array_unique(array_filter([
-        $cfg['pass'] ?? '',
-        'Munyvann.310394'
-    ])));
+    // Ensure pooler username includes tenant ref (e.g. postgres.wpzaeloeqsiacehkxvgq)
+    if (strpos($host, 'pooler.supabase.com') !== false && strpos($user, '.') === false) {
+        $user = $user . '.' . $tenantRef;
+    }
 
-    $hostCandidates = array_values(array_unique(array_filter([
-        $cfg['host'] ?? '',
-        'aws-0-ap-northeast-2.pooler.supabase.com'
-    ])));
+    $dsn = "pgsql:host={$host};port={$port};dbname={$dbname};sslmode=require";
 
-    foreach ($hostCandidates as $h) {
-        foreach ($portCandidates as $p) {
-            foreach ($userCandidates as $u) {
-                foreach ($passCandidates as $pass) {
-                    try {
-                        $dsn = "pgsql:host={$h};port={$p};dbname={$cfg['name']};sslmode=require";
-                        $pdo = new PDO($dsn, $u, $pass, [
-                            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-                            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-                            PDO::ATTR_TIMEOUT => 4
-                        ]);
-                        if ($pdo) {
-                            break 4; // Found working combination!
-                        }
-                    } catch (PDOException $ex) {
-                        $lastException = $ex;
-                    }
+    try {
+        $pdo = new PDO($dsn, $user, $pass, [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+            PDO::ATTR_EMULATE_PREPARES => true,
+            PDO::ATTR_TIMEOUT => 5
+        ]);
+    } catch (PDOException $ex) {
+        $lastException = $ex;
+
+        // Try alternative ports if initial connection fails
+        $altPorts = array_diff([6543, 5432], [$port]);
+        foreach ($altPorts as $p) {
+            try {
+                $altDsn = "pgsql:host={$host};port={$p};dbname={$dbname};sslmode=require";
+                $pdo = new PDO($altDsn, $user, $pass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+                    PDO::ATTR_EMULATE_PREPARES => true,
+                    PDO::ATTR_TIMEOUT => 4
+                ]);
+                if ($pdo) break;
+            } catch (PDOException $e) {
+                // preserve primary exception if it contained an authentication error
+                if (strpos($lastException->getMessage(), 'password authentication') === false) {
+                    $lastException = $e;
                 }
             }
         }
     }
 
     if (!$pdo) {
-        die("Supabase Connection Failed: " . ($lastException ? $lastException->getMessage() : 'Unknown error'));
+        $errMsg = $lastException ? $lastException->getMessage() : 'Unknown error';
+        if (strpos($errMsg, 'password authentication failed') !== false) {
+            die("Supabase Connection Failed: Password authentication failed for user '{$user}'. Please check DB_PASS in .env or reset your database password in the Supabase Dashboard.");
+        } elseif (strpos($errMsg, 'ENOIDENTIFIER') !== false || strpos($errMsg, 'no tenant identifier') !== false) {
+            die("Supabase Connection Failed: No tenant identifier provided. When using Supabase Pooler ({$host}), DB_USER must be formatted as 'postgres.[project_ref]' (e.g. postgres.wpzaeloeqsiacehkxvgq).");
+        } else {
+            die("Supabase Connection Failed: " . $errMsg);
+        }
     }
 
     if (!class_exists('PgSqlResultWrapper')) {
@@ -103,9 +116,21 @@ if ($driver === 'pgsql') {
             private function normalizeSql($sql) {
                 // Strip MySQL backticks for PostgreSQL compatibility
                 $sql = str_replace('`', '"', $sql);
+                // Strip MySQL-specific CREATE TABLE parameters
+                $sql = preg_replace('/DEFAULT\s+CHARSET\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/ENGINE\s*=\s*\w+/i', '', $sql);
+                $sql = preg_replace('/COLLATE\s*=\s*\w+/i', '', $sql);
                 // Convert INSERT IGNORE INTO -> INSERT INTO ... ON CONFLICT DO NOTHING
                 if (preg_match('/INSERT\s+IGNORE\s+INTO/i', $sql)) {
                     $sql = preg_replace('/INSERT\s+IGNORE\s+INTO/i', 'INSERT INTO', $sql) . ' ON CONFLICT DO NOTHING';
+                }
+                // Convert REPLACE INTO -> INSERT INTO ... ON CONFLICT DO NOTHING / UPDATE
+                if (preg_match('/REPLACE\s+INTO/i', $sql)) {
+                    $sql = preg_replace('/REPLACE\s+INTO/i', 'INSERT INTO', $sql) . ' ON CONFLICT DO NOTHING';
+                }
+                // Convert MySQL DATE_ADD(NOW(), INTERVAL X MINUTE) -> (NOW() + INTERVAL 'X minute')
+                if (preg_match('/DATE_ADD\s*\(\s*NOW\(\)\s*,\s*INTERVAL\s+([0-9]+)\s+MINUTE\s*\)/i', $sql, $m)) {
+                    $sql = preg_replace('/DATE_ADD\s*\(\s*NOW\(\)\s*,\s*INTERVAL\s+[0-9]+\s+MINUTE\s*\)/i', "NOW() + INTERVAL '{$m[1]} minute'", $sql);
                 }
                 return $sql;
             }
@@ -156,7 +181,11 @@ if ($driver === 'pgsql') {
             public function execute() {
                 try {
                     $res = $this->stmt->execute($this->params);
-                    $this->connWrapper->insertId = (int)$this->connWrapper->pdo->lastInsertId();
+                    try {
+                        $this->connWrapper->insertId = (int)$this->connWrapper->pdo->lastInsertId();
+                    } catch (Exception $ign) {
+                        $this->connWrapper->insertId = 0;
+                    }
                     return $res;
                 } catch (Exception $e) {
                     $this->connWrapper->lastError = $e->getMessage();
@@ -183,54 +212,6 @@ if ($driver === 'pgsql') {
     }
 
     $conn = new PgSqlConnWrapper($pdo);
-
-    // Provide polyfill wrapper functions for MySQLi if running under PostgreSQL
-    if (!function_exists('mysqli_query')) {
-        function mysqli_query($c, $sql) { return $c instanceof PgSqlConnWrapper ? $c->query($sql) : false; }
-    }
-    if (!function_exists('mysqli_fetch_assoc')) {
-        function mysqli_fetch_assoc($res) { return $res instanceof PgSqlResultWrapper ? $res->fetch_assoc() : false; }
-    }
-    if (!function_exists('mysqli_fetch_array')) {
-        function mysqli_fetch_array($res) { return $res instanceof PgSqlResultWrapper ? $res->fetch_array() : false; }
-    }
-    if (!function_exists('mysqli_num_rows')) {
-        function mysqli_num_rows($res) { return $res instanceof PgSqlResultWrapper ? $res->num_rows() : 0; }
-    }
-    if (!function_exists('mysqli_insert_id')) {
-        function mysqli_insert_id($c) { return $c instanceof PgSqlConnWrapper ? $c->insertId : 0; }
-    }
-    if (!function_exists('mysqli_error')) {
-        function mysqli_error($c) { return $c instanceof PgSqlConnWrapper ? $c->lastError : ''; }
-    }
-    if (!function_exists('mysqli_errno')) {
-        function mysqli_errno($c) { return $c instanceof PgSqlConnWrapper ? $c->lastErrno : 0; }
-    }
-    if (!function_exists('mysqli_real_escape_string')) {
-        function mysqli_real_escape_string($c, $str) { return addslashes($str); }
-    }
-    if (!function_exists('mysqli_prepare')) {
-        function mysqli_prepare($c, $sql) { return $c instanceof PgSqlConnWrapper ? $c->prepare($sql) : false; }
-    }
-    if (!function_exists('mysqli_stmt_bind_param')) {
-        function mysqli_stmt_bind_param($s, $types, &...$params) { return $s instanceof PgSqlStmtWrapper ? $s->bind_param($types, ...$params) : false; }
-    }
-    if (!function_exists('mysqli_stmt_execute')) {
-        function mysqli_stmt_execute($s) { return $s instanceof PgSqlStmtWrapper ? $s->execute() : false; }
-    }
-    if (!function_exists('mysqli_stmt_store_result')) {
-        function mysqli_stmt_store_result($s) { return $s instanceof PgSqlStmtWrapper ? $s->store_result() : true; }
-    }
-    if (!function_exists('mysqli_stmt_num_rows')) {
-        function mysqli_stmt_num_rows($s) { return $s instanceof PgSqlStmtWrapper ? $s->num_rows() : 0; }
-    }
-    if (!function_exists('mysqli_stmt_close')) {
-        function mysqli_stmt_close($s) { return $s instanceof PgSqlStmtWrapper ? $s->close() : true; }
-    }
-    if (!function_exists('mysqli_stmt_get_result')) {
-        function mysqli_stmt_get_result($s) { return $s instanceof PgSqlStmtWrapper ? $s->get_result() : false; }
-    }
-
 } else {
     // ============================================================
     // STANDARD MYSQLI DRIVER (FOR LOCAL XAMPP / MYSQL)
@@ -241,5 +222,97 @@ if ($driver === 'pgsql') {
     $conn = mysqli_connect($cfg["host"], $cfg["user"], $cfg["pass"], $cfg["name"], $cfg["port"]);
     if (!$conn) {
         die("Database connection failed: " . mysqli_connect_error());
+    }
+}
+
+// Universal database helper functions (supporting both MySQLi and PostgreSQL PDO Wrapper)
+if (!function_exists('db_query')) {
+    function db_query($c, $sql) {
+        if ($c instanceof PgSqlConnWrapper) return $c->query($sql);
+        return mysqli_query($c, $sql);
+    }
+}
+if (!function_exists('db_fetch_assoc')) {
+    function db_fetch_assoc($res) {
+        if ($res instanceof PgSqlResultWrapper) return $res->fetch_assoc();
+        return (is_object($res) || is_resource($res)) ? mysqli_fetch_assoc($res) : false;
+    }
+}
+if (!function_exists('db_fetch_array')) {
+    function db_fetch_array($res) {
+        if ($res instanceof PgSqlResultWrapper) return $res->fetch_array();
+        return (is_object($res) || is_resource($res)) ? mysqli_fetch_array($res) : false;
+    }
+}
+if (!function_exists('db_num_rows')) {
+    function db_num_rows($res) {
+        if ($res instanceof PgSqlResultWrapper) return $res->num_rows();
+        return (is_object($res) || is_resource($res)) ? mysqli_num_rows($res) : 0;
+    }
+}
+if (!function_exists('db_insert_id')) {
+    function db_insert_id($c) {
+        if ($c instanceof PgSqlConnWrapper) return $c->insertId;
+        return mysqli_insert_id($c);
+    }
+}
+if (!function_exists('db_error')) {
+    function db_error($c) {
+        if ($c instanceof PgSqlConnWrapper) return $c->lastError;
+        return mysqli_error($c);
+    }
+}
+if (!function_exists('db_errno')) {
+    function db_errno($c) {
+        if ($c instanceof PgSqlConnWrapper) return $c->lastErrno;
+        return mysqli_errno($c);
+    }
+}
+if (!function_exists('db_real_escape_string')) {
+    function db_real_escape_string($c, $str) {
+        if ($c instanceof PgSqlConnWrapper) return addslashes($str);
+        return mysqli_real_escape_string($c, $str);
+    }
+}
+if (!function_exists('db_prepare')) {
+    function db_prepare($c, $sql) {
+        if ($c instanceof PgSqlConnWrapper) return $c->prepare($sql);
+        return mysqli_prepare($c, $sql);
+    }
+}
+if (!function_exists('db_stmt_bind_param')) {
+    function db_stmt_bind_param($s, $types, &...$params) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->bind_param($types, ...$params);
+        return mysqli_stmt_bind_param($s, $types, ...$params);
+    }
+}
+if (!function_exists('db_stmt_execute')) {
+    function db_stmt_execute($s) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->execute();
+        return mysqli_stmt_execute($s);
+    }
+}
+if (!function_exists('db_stmt_store_result')) {
+    function db_stmt_store_result($s) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->store_result();
+        return mysqli_stmt_store_result($s);
+    }
+}
+if (!function_exists('db_stmt_num_rows')) {
+    function db_stmt_num_rows($s) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->num_rows();
+        return mysqli_stmt_num_rows($s);
+    }
+}
+if (!function_exists('db_stmt_close')) {
+    function db_stmt_close($s) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->close();
+        return mysqli_stmt_close($s);
+    }
+}
+if (!function_exists('db_stmt_get_result')) {
+    function db_stmt_get_result($s) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->get_result();
+        return mysqli_stmt_get_result($s);
     }
 }

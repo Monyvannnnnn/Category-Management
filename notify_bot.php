@@ -113,12 +113,12 @@ function ensureSubscribersTableExists($conn = null) {
         global $conn;
     }
     if (!$conn) return;
-    $sql = "CREATE TABLE IF NOT EXISTS `telegram_subscribers` (
-      `chat_id` varchar(100) NOT NULL,
-      `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-      PRIMARY KEY (`chat_id`)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;";
-    @mysqli_query($conn, $sql);
+    $sql = "CREATE TABLE IF NOT EXISTS telegram_subscribers (
+      chat_id varchar(100) NOT NULL,
+      created_at timestamp NOT NULL DEFAULT current_timestamp(),
+      PRIMARY KEY (chat_id)
+    );";
+    @db_query($conn, $sql);
 }
 
 /**
@@ -128,8 +128,8 @@ function registerSubscriberChatId($conn, $chatId) {
     if (empty($chatId)) return;
     ensureSubscribersTableExists($conn);
     if ($conn) {
-        $chatIdEsc = mysqli_real_escape_string($conn, $chatId);
-        @mysqli_query($conn, "INSERT IGNORE INTO `telegram_subscribers` (`chat_id`) VALUES ('$chatIdEsc')");
+        $chatIdEsc = db_real_escape_string($conn, $chatId);
+        @db_query($conn, "INSERT IGNORE INTO telegram_subscribers (chat_id) VALUES ('$chatIdEsc')");
     }
 }
 
@@ -145,9 +145,9 @@ function getSubscriberChatIds($conn = null) {
         ensureSubscribersTableExists($conn);
 
         // 1. Fetch all connected user bots
-        $res1 = @mysqli_query($conn, "SELECT chat_id, bot_token FROM `user_telegram_bots` WHERE chat_id IS NOT NULL AND chat_id != ''");
+        $res1 = @db_query($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE chat_id IS NOT NULL AND chat_id != ''");
         if ($res1) {
-            while ($row = mysqli_fetch_assoc($res1)) {
+            while ($row = db_fetch_assoc($res1)) {
                 $cid = trim($row['chat_id']);
                 if (!empty($cid) && !isset($targets[$cid])) {
                     $targets[$cid] = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
@@ -156,9 +156,9 @@ function getSubscriberChatIds($conn = null) {
         }
 
         // 2. Fetch from standalone subscribers list
-        $res2 = @mysqli_query($conn, "SELECT chat_id FROM `telegram_subscribers` WHERE chat_id IS NOT NULL AND chat_id != ''");
+        $res2 = @db_query($conn, "SELECT chat_id FROM telegram_subscribers WHERE chat_id IS NOT NULL AND chat_id != ''");
         if ($res2) {
-            while ($row = mysqli_fetch_assoc($res2)) {
+            while ($row = db_fetch_assoc($res2)) {
                 $cid = trim($row['chat_id']);
                 if (!empty($cid) && !isset($targets[$cid])) {
                     $targets[$cid] = null;
@@ -190,17 +190,17 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
         }
     }
 
-    // Per-User Isolation Mode: If userId is resolved, send ONLY to that specific user's chat_id
+    // Per-User Isolation Mode: If userId is resolved, send to that specific user's chat_id
     if ($userId !== null && (int)$userId > 0) {
         $uId = (int)$userId;
         if ($conn) {
-            $stmt = mysqli_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+            $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
             if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "i", $uId);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
-                $row = mysqli_fetch_assoc($res);
-                mysqli_stmt_close($stmt);
+                db_stmt_bind_param($stmt, "i", $uId);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
+                $row = db_fetch_assoc($res);
+                db_stmt_close($stmt);
 
                 if ($row && !empty($row['chat_id'])) {
                     $bToken = !empty($row['bot_token']) ? $row['bot_token'] : null;
@@ -208,19 +208,16 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
                 }
             }
         }
-        return json_encode([
-            "ok" => false,
-            "description" => "No connected Telegram account found for User ID {$uId}."
-        ]);
     }
 
-    // Broadcast Mode: Send to ALL connected Telegram users & subscribers
+    // Broadcast Mode / Fallback: Send to ALL connected Telegram users & subscribers
     $targets = getSubscriberChatIds($conn);
 
     if (empty($targets)) {
+        $uInfo = ($userId !== null && (int)$userId > 0) ? " for User ID {$userId}" : "";
         return json_encode([
             "ok" => false, 
-            "description" => "No connected Telegram users or subscribers found."
+            "description" => "No connected Telegram account found{$uInfo}. Please connect your Telegram bot in Settings."
         ]);
     }
 
@@ -247,12 +244,12 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
  */
 function ensureSettingsTableExists($conn) {
     if (!$conn) return;
-    $sql = "CREATE TABLE IF NOT EXISTS `system_settings` (
-      `setting_key` varchar(50) NOT NULL,
-      `setting_value` varchar(255) NOT NULL,
-      PRIMARY KEY (`setting_key`)
-    ) DEFAULT CHARSET=utf8mb4;";
-    @mysqli_query($conn, $sql);
+    $sql = "CREATE TABLE IF NOT EXISTS system_settings (
+      setting_key varchar(50) NOT NULL,
+      setting_value varchar(255) NOT NULL,
+      PRIMARY KEY (setting_key)
+    );";
+    @db_query($conn, $sql);
 }
 
 /**
@@ -261,8 +258,8 @@ function ensureSettingsTableExists($conn) {
 function isAutoTelegramEnabled($conn) {
     if (!$conn) return true;
     ensureSettingsTableExists($conn);
-    $res = @mysqli_query($conn, "SELECT setting_value FROM system_settings WHERE setting_key = 'auto_telegram_notify'");
-    if ($res && $row = mysqli_fetch_assoc($res)) {
+    $res = @db_query($conn, "SELECT setting_value FROM system_settings WHERE setting_key = 'auto_telegram_notify'");
+    if ($res && $row = db_fetch_assoc($res)) {
         return (trim($row['setting_value']) === '1');
     }
     return true;
@@ -275,8 +272,8 @@ function setAutoTelegramEnabled($conn, $status) {
     if (!$conn) return false;
     ensureSettingsTableExists($conn);
     $val = ($status === '1' || $status === 1 || $status === true || $status === 'true') ? '1' : '0';
-    $valEsc = mysqli_real_escape_string($conn, $val);
-    $res = @mysqli_query($conn, "REPLACE INTO system_settings (setting_key, setting_value) VALUES ('auto_telegram_notify', '$valEsc')");
+    $valEsc = db_real_escape_string($conn, $val);
+    $res = @db_query($conn, "REPLACE INTO system_settings (setting_key, setting_value) VALUES ('auto_telegram_notify', '$valEsc')");
     return ($res !== false);
 }
 

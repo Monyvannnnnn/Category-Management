@@ -3558,15 +3558,19 @@ label,
 
 .modal-input-wrapper {
   position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .modal-input-wrapper i.input-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
   color: #64748b;
-  font-size: 13px;
+  font-size: 14px;
+  pointer-events: none;
+  z-index: 10;
 }
 
 .modal-form-control {
@@ -3574,11 +3578,22 @@ label,
   background: #0f141c;
   border: 1px solid #2f3e57;
   border-radius: 8px;
-  padding: 10px 14px 10px 38px;
+  padding: 10px 14px 10px 44px !important;
   color: #f8fafc;
   font-size: 13px;
   outline: none;
   transition: border-color 0.2s ease;
+}
+
+.modal-form-control:-webkit-autofill,
+.modal-form-control:-webkit-autofill:hover, 
+.modal-form-control:-webkit-autofill:focus, 
+.modal-form-control:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #0f141c inset !important;
+  -webkit-text-fill-color: #f8fafc !important;
+  caret-color: #f8fafc !important;
+  padding-left: 44px !important;
+  transition: background-color 5000s ease-in-out 0s;
 }
 
 .modal-form-control:focus {

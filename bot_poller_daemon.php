@@ -26,11 +26,11 @@ $defaultBotToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
 registerBotCommands($defaultBotToken);
 
 // Auto-ensure atomic updates table exists
-mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
-  `update_id` varchar(100) NOT NULL,
-  `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (`update_id`)
-) ENGINE=InnoDB;");
+db_query($conn, "CREATE TABLE IF NOT EXISTS processed_telegram_updates (
+  update_id varchar(100) NOT NULL,
+  processed_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (update_id)
+);");
 
 // Global offset and processed updates registry for multi-bot polling
 $offsetMap = [];
@@ -47,9 +47,9 @@ while (true) {
         'bot_token' => $defaultBotToken
     ];
 
-    $res = mysqli_query($conn, "SELECT user_id, bot_token FROM user_telegram_bots WHERE bot_token IS NOT NULL AND bot_token != ''");
+    $res = db_query($conn, "SELECT user_id, bot_token FROM user_telegram_bots WHERE bot_token IS NOT NULL AND bot_token != ''");
     if ($res) {
-        while ($row = mysqli_fetch_assoc($res)) {
+        while ($row = db_fetch_assoc($res)) {
             $token = trim($row['bot_token']);
             if ($token !== $defaultBotToken) {
                 $bots[] = [
@@ -85,12 +85,12 @@ while (true) {
                     $offsetMap[$bToken] = ((int)$updateIdRaw) + 1;
 
                     // Atomic Database-Level Deduplication Lock across concurrent container instances
-                    $insStmt = mysqli_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
+                    $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
                     if ($insStmt) {
-                        mysqli_stmt_bind_param($insStmt, "s", $updateIdStr);
-                        mysqli_stmt_execute($insStmt);
-                        $affected = mysqli_stmt_affected_rows($insStmt);
-                        mysqli_stmt_close($insStmt);
+                        db_stmt_bind_param($insStmt, "s", $updateIdStr);
+                        db_stmt_execute($insStmt);
+                        $affected = ($conn instanceof PgSqlConnWrapper) ? ($insStmt ? 1 : 0) : mysqli_stmt_affected_rows($insStmt);
+                        db_stmt_close($insStmt);
 
                         if ($affected === 0) {
                             // Another container instance already claimed and processed this update_id!
@@ -105,7 +105,7 @@ while (true) {
 
                         if (!empty($chatId) && !empty($text)) {
                             echo "[" . date('Y-m-d H:i:s') . "] Bot (User {$bUserId}) received: '$text' from Chat ID: $chatId\n";
-                            processTelegramCommand($conn, $chatId, $text, $bToken, $bUserId, $updateId);
+                            processTelegramCommand($conn, $chatId, $text, $bToken, $bUserId, $updateIdRaw);
                         }
                     }
                 }

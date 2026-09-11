@@ -160,15 +160,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .input-wrapper {
             position: relative;
+            display: flex;
+            align-items: center;
         }
 
         .input-icon {
             position: absolute;
-            left: 14px;
+            left: 16px;
             top: 50%;
             transform: translateY(-50%);
             color: #64748b;
-            font-size: 14px;
+            font-size: 15px;
+            pointer-events: none;
+            z-index: 10;
             transition: color 0.2s ease;
         }
 
@@ -177,7 +181,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background: #0f141c;
             border: 1px solid #2f3e57;
             border-radius: 10px;
-            padding: 12px 16px 12px 42px;
+            padding: 12px 42px 12px 48px !important;
             color: #f8fafc;
             font-size: 14px;
             font-family: inherit;
@@ -185,12 +189,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             transition: all 0.2s ease;
         }
 
+        .form-control-custom:-webkit-autofill,
+        .form-control-custom:-webkit-autofill:hover, 
+        .form-control-custom:-webkit-autofill:focus, 
+        .form-control-custom:-webkit-autofill:active {
+            -webkit-box-shadow: 0 0 0 1000px #0f141c inset !important;
+            -webkit-text-fill-color: #f8fafc !important;
+            caret-color: #f8fafc !important;
+            padding-left: 48px !important;
+            transition: background-color 5000s ease-in-out 0s;
+        }
+
         .form-control-custom:focus {
             border-color: #6366f1;
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
 
-        .form-control-custom:focus + .input-icon,
+        .form-control-custom:focus ~ .input-icon,
         .input-wrapper:focus-within .input-icon {
             color: #6366f1;
         }

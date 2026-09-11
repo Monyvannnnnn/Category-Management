@@ -48,15 +48,15 @@ function requireAuth() {
 function authenticateUser($conn, $loginInput, $password) {
     $loginInput = trim($loginInput);
     $sql = "SELECT * FROM users WHERE username = ? OR email = ? LIMIT 1";
-    $stmt = mysqli_prepare($conn, $sql);
+    $stmt = db_prepare($conn, $sql);
     if (!$stmt) {
-        return ['success' => false, 'message' => 'Database error: ' . mysqli_error($conn)];
+        return ['success' => false, 'message' => 'Database error: ' . db_error($conn)];
     }
-    mysqli_stmt_bind_param($stmt, "ss", $loginInput, $loginInput);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $user = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "ss", $loginInput, $loginInput);
+    db_stmt_execute($stmt);
+    $result = db_stmt_get_result($stmt);
+    $user = db_fetch_assoc($result);
+    db_stmt_close($stmt);
 
     if (!$user) {
         return ['success' => false, 'message' => 'Invalid Username/Email or Password.'];
@@ -106,13 +106,13 @@ function createUserAccount($conn, $name, $username, $email, $password, $role = '
 
     // Check if username or email exists
     $chk_sql = "SELECT id, username, email FROM users WHERE username = ? OR email = ? LIMIT 1";
-    $chk_stmt = mysqli_prepare($conn, $chk_sql);
+    $chk_stmt = db_prepare($conn, $chk_sql);
     if ($chk_stmt) {
-        mysqli_stmt_bind_param($chk_stmt, "ss", $username, $email);
-        mysqli_stmt_execute($chk_stmt);
-        $chk_res = mysqli_stmt_get_result($chk_stmt);
-        $existing = mysqli_fetch_assoc($chk_res);
-        mysqli_stmt_close($chk_stmt);
+        db_stmt_bind_param($chk_stmt, "ss", $username, $email);
+        db_stmt_execute($chk_stmt);
+        $chk_res = db_stmt_get_result($chk_stmt);
+        $existing = db_fetch_assoc($chk_res);
+        db_stmt_close($chk_stmt);
 
         if ($existing) {
             if (strtolower($existing['username']) === strtolower($username)) {
@@ -126,20 +126,50 @@ function createUserAccount($conn, $name, $username, $email, $password, $role = '
 
     $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
     $insert_sql = "INSERT INTO users (name, username, email, password, role) VALUES (?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($conn, $insert_sql);
+    $stmt = db_prepare($conn, $insert_sql);
     if (!$stmt) {
-        return ['success' => false, 'message' => 'Database error: ' . mysqli_error($conn)];
+        return ['success' => false, 'message' => 'Database error: ' . db_error($conn)];
     }
-    mysqli_stmt_bind_param($stmt, "sssss", $name, $username, $email, $hashedPassword, $role);
-    $executed = mysqli_stmt_execute($stmt);
+    db_stmt_bind_param($stmt, "sssss", $name, $username, $email, $hashedPassword, $role);
+    $executed = db_stmt_execute($stmt);
     if (!$executed) {
-        $err = mysqli_stmt_error($stmt);
-        mysqli_stmt_close($stmt);
+        $err = db_error($conn);
+        db_stmt_close($stmt);
+
+        // Auto-repair PostgreSQL sequence if serial sequence is behind MAX(id)
+        if (strpos($err, '23505') !== false || strpos($err, 'users_pkey') !== false || strpos($err, 'duplicate key') !== false) {
+            if ($conn instanceof PgSqlConnWrapper) {
+                @$conn->pdo->query("SELECT setval(pg_get_serial_sequence('users', 'id'), COALESCE((SELECT MAX(id) FROM users), 1), true)");
+                
+                $retryStmt = db_prepare($conn, $insert_sql);
+                if ($retryStmt) {
+                    db_stmt_bind_param($retryStmt, "sssss", $name, $username, $email, $hashedPassword, $role);
+                    $retryExec = db_stmt_execute($retryStmt);
+                    if ($retryExec) {
+                        $newId = db_insert_id($conn);
+                        db_stmt_close($retryStmt);
+                        return [
+                            'success' => true,
+                            'user_id' => $newId,
+                            'user' => [
+                                'id' => $newId,
+                                'name' => $name,
+                                'username' => $username,
+                                'email' => $email,
+                                'role' => $role
+                            ]
+                        ];
+                    }
+                    db_stmt_close($retryStmt);
+                }
+            }
+        }
+
         return ['success' => false, 'message' => 'Failed to create user: ' . $err];
     }
 
-    $newId = mysqli_insert_id($conn);
-    mysqli_stmt_close($stmt);
+    $newId = db_insert_id($conn);
+    db_stmt_close($stmt);
 
     return [
         'success' => true,

@@ -24,16 +24,16 @@ if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
 $id = (int)$_GET["id"];
 
 // First get existing product owned by this user
-$stmt = mysqli_prepare($conn, "SELECT * FROM product WHERE id = ? AND user_id = ?");
+$stmt = db_prepare($conn, "SELECT * FROM product WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "ii", $id, $userId);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $product = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "ii", $id, $userId);
+    db_stmt_execute($stmt);
+    $result = db_stmt_get_result($stmt);
+    $product = db_fetch_assoc($result);
+    db_stmt_close($stmt);
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Database query preparation failed: " . mysqli_error($conn)]);
+    echo json_encode(["message" => "Database query preparation failed: " . db_error($conn)]);
     exit;
 }
 
@@ -60,26 +60,26 @@ if ($productCode === "" || $productName === "" || $categoryId <= 0) {
 
 // Check if the new Product Code already exists for another product owned by this user
 if (strcasecmp($productCode, $origProductCode) !== 0) {
-    $check_code_stmt = mysqli_prepare($conn, "SELECT id FROM product WHERE user_id = ? AND LOWER(TRIM(product_code)) = LOWER(?) AND id != ?");
+    $check_code_stmt = db_prepare($conn, "SELECT id FROM product WHERE user_id = ? AND LOWER(TRIM(product_code)) = LOWER(?) AND id != ?");
     if ($check_code_stmt) {
-        mysqli_stmt_bind_param($check_code_stmt, "isi", $userId, $productCode, $id);
-        mysqli_stmt_execute($check_code_stmt);
-        mysqli_stmt_store_result($check_code_stmt);
-        if (mysqli_stmt_num_rows($check_code_stmt) > 0) {
-            mysqli_stmt_close($check_code_stmt);
+        db_stmt_bind_param($check_code_stmt, "isi", $userId, $productCode, $id);
+        db_stmt_execute($check_code_stmt);
+        db_stmt_store_result($check_code_stmt);
+        if (db_stmt_num_rows($check_code_stmt) > 0) {
+            db_stmt_close($check_code_stmt);
             http_response_code(400);
             echo json_encode(["message" => "Product Code '$productCode' already exists."]);
             exit;
         }
-        mysqli_stmt_close($check_code_stmt);
+        db_stmt_close($check_code_stmt);
     }
 }
 
-$stmt = mysqli_prepare($conn, "UPDATE product SET product_code = ?, product_name = ?, category_id = ?, price = ?, quantity = ? WHERE id = ? AND user_id = ?");
+$stmt = db_prepare($conn, "UPDATE product SET product_code = ?, product_name = ?, category_id = ?, price = ?, quantity = ? WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "ssidiii", $productCode, $productName, $categoryId, $price, $quantity, $id, $userId);
-    if (mysqli_stmt_execute($stmt)) {
-        mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "ssidiii", $productCode, $productName, $categoryId, $price, $quantity, $id, $userId);
+    if (db_stmt_execute($stmt)) {
+        db_stmt_close($stmt);
 
         $msg = "<b>✏️ Product Updated</b> (ID: #{$id})\n"
              . "<b>Code:</b> " . htmlspecialchars($productCode) . "\n"
@@ -94,11 +94,11 @@ if ($stmt) {
         exit;
     } else {
         http_response_code(500);
-        echo json_encode(["message" => "Database error: " . mysqli_error($conn)]);
+        echo json_encode(["message" => "Database error: " . db_error($conn)]);
         exit;
     }
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Database update preparation failed: " . mysqli_error($conn)]);
+    echo json_encode(["message" => "Database update preparation failed: " . db_error($conn)]);
     exit;
 }

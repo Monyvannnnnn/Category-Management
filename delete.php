@@ -25,20 +25,20 @@ $id = (int)$_GET["id"];
 
 // Fetch category info before deletion for notification
 $cat_info = null;
-$sel_stmt = mysqli_prepare($conn, "SELECT category_code, category_name FROM category WHERE id = ?");
+$sel_stmt = db_prepare($conn, "SELECT category_code, category_name FROM category WHERE id = ?");
 if ($sel_stmt) {
-    mysqli_stmt_bind_param($sel_stmt, "i", $id);
-    mysqli_stmt_execute($sel_stmt);
-    $res = mysqli_stmt_get_result($sel_stmt);
-    $cat_info = mysqli_fetch_assoc($res);
-    mysqli_stmt_close($sel_stmt);
+    db_stmt_bind_param($sel_stmt, "i", $id);
+    db_stmt_execute($sel_stmt);
+    $res = db_stmt_get_result($sel_stmt);
+    $cat_info = db_fetch_assoc($res);
+    db_stmt_close($sel_stmt);
 }
 
-$stmt = mysqli_prepare($conn, "DELETE FROM category WHERE id = ?");
+$stmt = db_prepare($conn, "DELETE FROM category WHERE id = ?");
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $id);
-    if (mysqli_stmt_execute($stmt)) {
-        mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "i", $id);
+    if (db_stmt_execute($stmt)) {
+        db_stmt_close($stmt);
 
         $catCode = $cat_info['category_code'] ?? "N/A";
         $catName = $cat_info['category_name'] ?? "N/A";
@@ -53,13 +53,13 @@ if ($stmt) {
         echo json_encode(["success" => true]);
         exit;
     } else {
-        mysqli_stmt_close($stmt);
+        db_stmt_close($stmt);
         http_response_code(500);
-        echo json_encode(["message" => "Delete failed: " . mysqli_error($conn)]);
+        echo json_encode(["message" => "Delete failed: " . db_error($conn)]);
         exit;
     }
 } else {
     http_response_code(500);
-    echo json_encode(["message" => "Database query preparation failed: " . mysqli_error($conn)]);
+    echo json_encode(["message" => "Database query preparation failed: " . db_error($conn)]);
     exit;
 }

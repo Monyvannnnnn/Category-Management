@@ -21,17 +21,21 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     header("Pragma: no-cache");
     header("Expires: 0");
     $userId = (int)($currentUser['id'] ?? 1);
-    $stmt = mysqli_prepare($conn, "SELECT * FROM category WHERE user_id = ? ORDER BY id DESC");
-    mysqli_stmt_bind_param($stmt, "i", $userId);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $categories = [];
-    if ($result) {
-        while ($row = mysqli_fetch_assoc($result)) {
-            $categories[] = $row;
+    $stmt = db_prepare($conn, "SELECT * FROM category WHERE user_id = ? ORDER BY id DESC");
+    if ($stmt) {
+        db_stmt_bind_param($stmt, "i", $userId);
+        db_stmt_execute($stmt);
+        $result = db_stmt_get_result($stmt);
+        $categories = [];
+        if ($result) {
+            while ($row = db_fetch_assoc($result)) {
+                $categories[] = $row;
+            }
         }
+        db_stmt_close($stmt);
+    } else {
+        $categories = [];
     }
-    mysqli_stmt_close($stmt);
     echo json_encode($categories);
     exit;
 }

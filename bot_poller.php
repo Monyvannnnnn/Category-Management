@@ -64,64 +64,64 @@ function handleCodeBinding($conn, $chatId, $code) {
 
     // 1. Try exact connection code match if code provided
     if (!empty($code)) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(TRIM(?)) LIMIT 1");
+        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE UPPER(TRIM(connection_code)) = UPPER(TRIM(?)) LIMIT 1");
         if ($stmt) {
-            mysqli_stmt_bind_param($stmt, "s", $code);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            $userBot = mysqli_fetch_assoc($res);
-            mysqli_stmt_close($stmt);
+            db_stmt_bind_param($stmt, "s", $code);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $userBot = db_fetch_assoc($res);
+            db_stmt_close($stmt);
             if ($userBot) $isFreshBind = true;
         }
     }
 
     // 2. Fallback: Check for any pending unlinked connection code
     if (!$userBot) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND connection_code != '' ORDER BY id DESC LIMIT 1");
+        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE connection_code IS NOT NULL AND connection_code != '' ORDER BY id DESC LIMIT 1");
         if ($stmt) {
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            $userBot = mysqli_fetch_assoc($res);
-            mysqli_stmt_close($stmt);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $userBot = db_fetch_assoc($res);
+            db_stmt_close($stmt);
             if ($userBot) $isFreshBind = true;
         }
     }
 
     // 3. Fallback: Check for any unlinked user bot record (chat_id IS NULL OR chat_id = '')
     if (!$userBot) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id IS NULL OR chat_id = '' ORDER BY id ASC LIMIT 1");
+        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id IS NULL OR chat_id = '' ORDER BY id ASC LIMIT 1");
         if ($stmt) {
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            $userBot = mysqli_fetch_assoc($res);
-            mysqli_stmt_close($stmt);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $userBot = db_fetch_assoc($res);
+            db_stmt_close($stmt);
             if ($userBot) $isFreshBind = true;
         }
     }
 
     // 4. Fallback: Get primary user in user_telegram_bots table
     if (!$userBot) {
-        $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
+        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
         if ($stmt) {
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            $userBot = mysqli_fetch_assoc($res);
-            mysqli_stmt_close($stmt);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $userBot = db_fetch_assoc($res);
+            db_stmt_close($stmt);
         }
     }
 
     // 5. Ultimate Fallback: Create row for default User #1
     if (!$userBot) {
-        $uCheck = mysqli_query($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
-        $defaultUserId = ($uCheck && $uRow = mysqli_fetch_assoc($uCheck)) ? (int)$uRow['id'] : 1;
+        $uCheck = db_query($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
+        $defaultUserId = ($uCheck && $uRow = db_fetch_assoc($uCheck)) ? (int)$uRow['id'] : 1;
         $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
         $defaultUsername = "reportpush_bot";
 
-        $ins = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, ?, ?, NOW())");
+        $ins = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, ?, ?, NOW())");
         if ($ins) {
-            mysqli_stmt_bind_param($ins, "isss", $defaultUserId, $defaultToken, $defaultUsername, $chatId);
-            mysqli_stmt_execute($ins);
-            mysqli_stmt_close($ins);
+            db_stmt_bind_param($ins, "isss", $defaultUserId, $defaultToken, $defaultUsername, $chatId);
+            db_stmt_execute($ins);
+            db_stmt_close($ins);
             return [
                 'id' => 1,
                 'user_id' => $defaultUserId,
@@ -136,11 +136,11 @@ function handleCodeBinding($conn, $chatId, $code) {
     if ($userBot) {
         if (empty($userBot['chat_id']) || $userBot['chat_id'] !== $chatId || !empty($userBot['connection_code'])) {
             $isFreshBind = true;
-            $upd = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
+            $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
             if ($upd) {
-                mysqli_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
-                mysqli_stmt_execute($upd);
-                mysqli_stmt_close($upd);
+                db_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
+                db_stmt_execute($upd);
+                db_stmt_close($upd);
             }
             $userBot['connected_at'] = date('Y-m-d H:i:s');
         }
@@ -157,13 +157,13 @@ function handleCodeBinding($conn, $chatId, $code) {
  */
 function getConnectedUserByChatIdMySQLi($conn, $chatId) {
     if (empty($chatId)) return null;
-    $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
+    $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE chat_id = ? LIMIT 1");
     if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "s", $chatId);
-        mysqli_stmt_execute($stmt);
-        $res = mysqli_stmt_get_result($stmt);
-        $row = mysqli_fetch_assoc($res);
-        mysqli_stmt_close($stmt);
+        db_stmt_bind_param($stmt, "s", $chatId);
+        db_stmt_execute($stmt);
+        $res = db_stmt_get_result($stmt);
+        $row = db_fetch_assoc($res);
+        db_stmt_close($stmt);
         return $row;
     }
     return null;
@@ -175,22 +175,22 @@ function getConnectedUserByChatIdMySQLi($conn, $chatId) {
 function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $updateId = 0) {
     // Database-level Atomic Update Deduplication Lock
     if (!empty($updateId)) {
-        @mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `processed_telegram_updates` (
-          `update_id` varchar(100) NOT NULL,
-          `processed_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          PRIMARY KEY (`update_id`)
-        ) ENGINE=InnoDB;");
+        @db_query($conn, "CREATE TABLE IF NOT EXISTS processed_telegram_updates (
+          update_id varchar(100) NOT NULL,
+          processed_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (update_id)
+        );");
 
         // Clean up overflow / old entries
-        @mysqli_query($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+        @db_query($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
 
         $updateIdStr = (string)$updateId;
-        $insStmt = mysqli_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
+        $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
         if ($insStmt) {
-            mysqli_stmt_bind_param($insStmt, "s", $updateIdStr);
-            mysqli_stmt_execute($insStmt);
-            $affected = mysqli_stmt_affected_rows($insStmt);
-            mysqli_stmt_close($insStmt);
+            db_stmt_bind_param($insStmt, "s", $updateIdStr);
+            db_stmt_execute($insStmt);
+            $affected = ($conn instanceof PgSqlConnWrapper) ? ($insStmt ? 1 : 0) : mysqli_stmt_affected_rows($insStmt);
+            db_stmt_close($insStmt);
 
             if ($affected === 0) {
                 // Already processed by Webhook, Daemon, or another poller instance!
@@ -259,22 +259,22 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
 
         case '/report':
         case '/summary':
-            $catStmt = mysqli_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
-            mysqli_stmt_bind_param($catStmt, "i", $userId);
-            mysqli_stmt_execute($catStmt);
-            $catRes = mysqli_stmt_get_result($catStmt);
-            $catCnt = ($r = mysqli_fetch_assoc($catRes)) ? (int)$r['cat_cnt'] : 0;
-            mysqli_stmt_close($catStmt);
+            $catStmt = db_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
+            db_stmt_bind_param($catStmt, "i", $userId);
+            db_stmt_execute($catStmt);
+            $catRes = db_stmt_get_result($catStmt);
+            $catCnt = ($r = db_fetch_assoc($catRes)) ? (int)$r['cat_cnt'] : 0;
+            db_stmt_close($catStmt);
 
-            $prodStmt = mysqli_prepare($conn, "SELECT COUNT(*) as prod_cnt, COALESCE(SUM(quantity), 0) as total_qty, COALESCE(SUM(price * quantity), 0) as total_val FROM product WHERE user_id = ?");
-            mysqli_stmt_bind_param($prodStmt, "i", $userId);
-            mysqli_stmt_execute($prodStmt);
-            $prodRes = mysqli_stmt_get_result($prodStmt);
-            $pData = mysqli_fetch_assoc($prodRes);
+            $prodStmt = db_prepare($conn, "SELECT COUNT(*) as prod_cnt, COALESCE(SUM(quantity), 0) as total_qty, COALESCE(SUM(price * quantity), 0) as total_val FROM product WHERE user_id = ?");
+            db_stmt_bind_param($prodStmt, "i", $userId);
+            db_stmt_execute($prodStmt);
+            $prodRes = db_stmt_get_result($prodStmt);
+            $pData = db_fetch_assoc($prodRes);
             $prodCnt = (int)($pData['prod_cnt'] ?? 0);
             $totalQty = (int)($pData['total_qty'] ?? 0);
             $totalVal = number_format((float)($pData['total_val'] ?? 0), 2);
-            mysqli_stmt_close($prodStmt);
+            db_stmt_close($prodStmt);
 
             $msg = "📊 <b>YOUR REAL-TIME INVENTORY REPORT</b>\n"
                  . "═════════════════════════════\n"
@@ -288,15 +288,15 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/orders':
         case '/products':
         case '/product':
-            $stmt = mysqli_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
-            mysqli_stmt_bind_param($stmt, "i", $userId);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
+            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
 
-            if ($res && mysqli_num_rows($res) > 0) {
+            if ($res && db_num_rows($res) > 0) {
                 $msg = "📦 <b>YOUR ORDERS & PRODUCTS OVERVIEW</b>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code  = htmlspecialchars($r['product_code']);
                     $name  = htmlspecialchars($r['product_name']);
                     $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
@@ -311,17 +311,17 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             } else {
                 $msg = "📦 <b>NO PRODUCTS / ORDERS FOUND</b>";
             }
-            mysqli_stmt_close($stmt);
+            db_stmt_close($stmt);
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
         case '/settings':
-            $stmt = mysqli_prepare($conn, "SELECT name, email, username FROM users WHERE id = ?");
-            mysqli_stmt_bind_param($stmt, "i", $userId);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
-            $uRow = mysqli_fetch_assoc($res);
-            mysqli_stmt_close($stmt);
+            $stmt = db_prepare($conn, "SELECT name, email, username FROM users WHERE id = ?");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $uRow = db_fetch_assoc($res);
+            db_stmt_close($stmt);
 
             $uName = htmlspecialchars($uRow['name'] ?? 'User #' . $userId);
             $uEmail = htmlspecialchars($uRow['email'] ?? 'N/A');
@@ -344,17 +344,17 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 sendTelegramMessage($chatId, $msg, $botToken);
                 break;
             }
-            $stmt = mysqli_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND (p.product_name LIKE ? OR p.product_code LIKE ? OR c.category_name LIKE ?) LIMIT 5");
+            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND (p.product_name LIKE ? OR p.product_code LIKE ? OR c.category_name LIKE ?) LIMIT 5");
             $searchArg = "%" . $arg . "%";
-            mysqli_stmt_bind_param($stmt, "isss", $userId, $searchArg, $searchArg, $searchArg);
-            mysqli_stmt_execute($stmt);
-            $result = mysqli_stmt_get_result($stmt);
+            db_stmt_bind_param($stmt, "isss", $userId, $searchArg, $searchArg, $searchArg);
+            db_stmt_execute($stmt);
+            $result = db_stmt_get_result($stmt);
 
-            if ($result && mysqli_num_rows($result) > 0) {
+            if ($result && db_num_rows($result) > 0) {
                 $msg = "🔍 <b>YOUR PRODUCT SEARCH DIRECTORY</b>\n"
                      . "<i>Query: '<b>" . htmlspecialchars($arg) . "</b>'</i>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($result)) {
+                while ($r = db_fetch_assoc($result)) {
                     $code  = htmlspecialchars($r['product_code']);
                     $name  = htmlspecialchars($r['product_name']);
                     $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
@@ -369,21 +369,21 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             } else {
                 $msg = "❌ <b>NO MATCHES FOUND</b> for '<b>" . htmlspecialchars($arg) . "</b>'";
             }
-            mysqli_stmt_close($stmt);
+            db_stmt_close($stmt);
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
         case '/categories':
         case '/category':
             if (!empty($rawArg)) {
-                $stmt = mysqli_prepare($conn, "SELECT c.id, c.category_code, c.category_name, c.created_at, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? AND (UPPER(c.category_code) = UPPER(?) OR c.id = ? OR UPPER(c.category_name) LIKE UPPER(?)) GROUP BY c.id LIMIT 1");
+                $stmt = db_prepare($conn, "SELECT c.id, c.category_code, c.category_name, c.created_at, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? AND (UPPER(c.category_code) = UPPER(?) OR c.id = ? OR UPPER(c.category_name) LIKE UPPER(?)) GROUP BY c.id LIMIT 1");
                 $catIdArg = (int)$rawArg;
                 $catLikeArg = "%" . $rawArg . "%";
-                mysqli_stmt_bind_param($stmt, "isis", $userId, $rawArg, $catIdArg, $catLikeArg);
-                mysqli_stmt_execute($stmt);
-                $res = mysqli_stmt_get_result($stmt);
+                db_stmt_bind_param($stmt, "isis", $userId, $rawArg, $catIdArg, $catLikeArg);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
 
-                if ($res && $r = mysqli_fetch_assoc($res)) {
+                if ($res && $r = db_fetch_assoc($res)) {
                     $cId   = (int)$r['id'];
                     $cCode = htmlspecialchars($r['category_code']);
                     $cName = htmlspecialchars($r['category_name']);
@@ -399,22 +399,22 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 } else {
                     $msg = "❌ <b>CATEGORY NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
                 }
-                mysqli_stmt_close($stmt);
+                db_stmt_close($stmt);
                 sendTelegramMessage($chatId, $msg, $botToken);
                 break;
             }
 
-            $stmt = mysqli_prepare($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? GROUP BY c.id ORDER BY c.category_name ASC");
-            mysqli_stmt_bind_param($stmt, "i", $userId);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
+            $stmt = db_prepare($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? GROUP BY c.id ORDER BY c.category_name ASC");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
 
-            if ($res && mysqli_num_rows($res) > 0) {
-                $totalCats = mysqli_num_rows($res);
+            if ($res && db_num_rows($res) > 0) {
+                $totalCats = db_num_rows($res);
                 $msg = "🏷️ <b>YOUR CATEGORY OVERVIEW</b>\n"
                      . "<i>Total Listed: <b>{$totalCats} Categories</b></i>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code = htmlspecialchars($r['category_code']);
                     $name = htmlspecialchars($r['category_name']);
                     $cnt  = (int)$r['prod_count'];
@@ -427,20 +427,20 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             } else {
                 $msg = "📂 <b>NO CATEGORIES FOUND</b>";
             }
-            mysqli_stmt_close($stmt);
+            db_stmt_close($stmt);
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
         case '/lowstock':
-            $stmt = mysqli_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? AND quantity <= 5 ORDER BY quantity ASC");
-            mysqli_stmt_bind_param($stmt, "i", $userId);
-            mysqli_stmt_execute($stmt);
-            $res = mysqli_stmt_get_result($stmt);
+            $stmt = db_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? AND quantity <= 5 ORDER BY quantity ASC");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
 
-            if ($res && mysqli_num_rows($res) > 0) {
+            if ($res && db_num_rows($res) > 0) {
                 $msg = "⚠️ <b>LOW STOCK WARNING (&le; 5 units)</b>\n"
                      . "═════════════════════════════\n\n";
-                while ($r = mysqli_fetch_assoc($res)) {
+                while ($r = db_fetch_assoc($res)) {
                     $code = htmlspecialchars($r['product_code']);
                     $name = htmlspecialchars($r['product_name']);
                     $qty  = (int)$r['quantity'];
@@ -451,7 +451,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             } else {
                 $msg = "✅ <b>ALL STOCK LEVELS HEALTHY!</b>\nNo items with quantity &le; 5.";
             }
-            mysqli_stmt_close($stmt);
+            db_stmt_close($stmt);
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 

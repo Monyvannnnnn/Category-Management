@@ -24,14 +24,14 @@ if (empty($message)) {
 }
 
 // Fetch user's bot settings
-$stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE user_id = ? LIMIT 1");
+$stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE user_id = ? LIMIT 1");
 $userBot = null;
 if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $userId);
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    $userBot = mysqli_fetch_assoc($res);
-    mysqli_stmt_close($stmt);
+    db_stmt_bind_param($stmt, "i", $userId);
+    db_stmt_execute($stmt);
+    $res = db_stmt_get_result($stmt);
+    $userBot = db_fetch_assoc($res);
+    db_stmt_close($stmt);
 }
 
 $botToken = $userBot['bot_token'] ?? "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";

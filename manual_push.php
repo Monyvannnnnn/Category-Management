@@ -64,8 +64,8 @@ if ($action === 'get_settings') {
         exit;
     }
 
-    $res = mysqli_query($conn, "SELECT c.*, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.id = $id GROUP BY c.id");
-    if ($row = mysqli_fetch_assoc($res)) {
+    $res = db_query($conn, "SELECT c.*, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.id = $id GROUP BY c.id");
+    if ($row = db_fetch_assoc($res)) {
         $nowStr = date('Y-m-d H:i:s');
         $targetUserId = (int)($row['user_id'] ?? $userId);
         if ($targetUserId <= 0) $targetUserId = $userId;
@@ -100,8 +100,8 @@ if ($action === 'get_settings') {
         exit;
     }
 
-    $res = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.id = $id");
-    if ($row = mysqli_fetch_assoc($res)) {
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.id = $id");
+    if ($row = db_fetch_assoc($res)) {
         $val = (float)$row['price'] * (int)$row['quantity'];
         $nowStr = date('Y-m-d H:i:s');
         $targetUserId = (int)($row['user_id'] ?? $userId);
@@ -143,10 +143,10 @@ if ($action === 'get_settings') {
     }
 
     $idList = implode(',', $ids);
-    $res = mysqli_query($conn, "SELECT * FROM category WHERE id IN ($idList) ORDER BY category_name ASC");
+    $res = db_query($conn, "SELECT * FROM category WHERE id IN ($idList) ORDER BY category_name ASC");
     $items = [];
     if ($res) {
-        while ($row = mysqli_fetch_assoc($res)) {
+        while ($row = db_fetch_assoc($res)) {
             $items[] = "• <b>" . htmlspecialchars($row['category_code']) . "</b> - " . htmlspecialchars($row['category_name']);
         }
     }
@@ -177,11 +177,11 @@ if ($action === 'get_settings') {
     }
 
     $idList = implode(',', $ids);
-    $res = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.id IN ($idList) ORDER BY p.product_name ASC");
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.id IN ($idList) ORDER BY p.product_name ASC");
     $items = [];
     $sumVal = 0;
     if ($res) {
-        while ($row = mysqli_fetch_assoc($res)) {
+        while ($row = db_fetch_assoc($res)) {
             $val = (float)$row['price'] * (int)$row['quantity'];
             $sumVal += $val;
             $items[] = "• <b>" . htmlspecialchars($row['product_code']) . "</b> (" . htmlspecialchars($row['product_name']) . ")\n"
@@ -205,10 +205,10 @@ if ($action === 'get_settings') {
 // 7. Push Low Stock Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_low_stock') {
-    $lowStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 {$userWhere} ORDER BY p.quantity ASC");
+    $lowStockRes = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity <= 5 {$userWhere} ORDER BY p.quantity ASC");
     $items = [];
     if ($lowStockRes) {
-        while ($row = mysqli_fetch_assoc($lowStockRes)) {
+        while ($row = db_fetch_assoc($lowStockRes)) {
             $items[] = "⚠️ <b>" . htmlspecialchars($row['product_code']) . "</b> - " . htmlspecialchars($row['product_name']) . "\n   Category: " . htmlspecialchars($row['category_name'] ?? 'N/A') . " | <code>Stock: " . (int)$row['quantity'] . " remaining</code>";
         }
     }
@@ -231,10 +231,10 @@ if ($action === 'get_settings') {
 // 7b. Push Out of Stock Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_out_of_stock') {
-    $outOfStockRes = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity = 0 {$userWhere} ORDER BY p.product_name ASC");
+    $outOfStockRes = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.quantity = 0 {$userWhere} ORDER BY p.product_name ASC");
     $items = [];
     if ($outOfStockRes) {
-        while ($row = mysqli_fetch_assoc($outOfStockRes)) {
+        while ($row = db_fetch_assoc($outOfStockRes)) {
             $items[] = "❌ <b>" . htmlspecialchars($row['product_code']) . "</b> - " . htmlspecialchars($row['product_name']) . "\n   Category: " . htmlspecialchars($row['category_name'] ?? 'N/A') . " | <code>Stock: 0 units</code>";
         }
     }
@@ -257,8 +257,8 @@ if ($action === 'get_settings') {
 // 8. Push Financial Valuation Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_valuation') {
-    $res = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product {$userWhereWhere}");
-    if ($res && $row = mysqli_fetch_assoc($res)) {
+    $res = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product {$userWhereWhere}");
+    if ($res && $row = db_fetch_assoc($res)) {
         $nowStr = date('Y-m-d H:i:s');
         $msg = "<b>💰 INVENTORY FINANCIAL & VALUATION REPORT</b>\n"
              . "<i>Generated: {$nowStr}</i>\n"
@@ -278,23 +278,23 @@ if ($action === 'get_settings') {
 // 9. Manual Push: Inventory Summary
 // --------------------------------------------------------------------------
 } elseif ($action === 'summary') {
-    $catRes = mysqli_query($conn, "SELECT COUNT(*) AS total_cats FROM category {$userWhereWhere}");
-    $totalCats = ($catRes && $catRow = mysqli_fetch_assoc($catRes)) ? (int)$catRow['total_cats'] : 0;
+    $catRes = db_query($conn, "SELECT COUNT(*) AS total_cats FROM category {$userWhereWhere}");
+    $totalCats = ($catRes && $catRow = db_fetch_assoc($catRes)) ? (int)$catRow['total_cats'] : 0;
 
-    $prodRes = mysqli_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val FROM product {$userWhereWhere}");
+    $prodRes = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val FROM product {$userWhereWhere}");
     $totalProds = 0;
     $totalStock = 0;
     $totalVal = 0.00;
-    if ($prodRes && $prodRow = mysqli_fetch_assoc($prodRes)) {
+    if ($prodRes && $prodRow = db_fetch_assoc($prodRes)) {
         $totalProds = (int)$prodRow['total_prods'];
         $totalStock = (int)$prodRow['total_stock'];
         $totalVal = (float)$prodRow['total_val'];
     }
 
-    $lowStockRes = mysqli_query($conn, "SELECT product_code, product_name, quantity FROM product WHERE quantity <= 5 {$userWhere} ORDER BY quantity ASC LIMIT 5");
+    $lowStockRes = db_query($conn, "SELECT product_code, product_name, quantity FROM product WHERE quantity <= 5 {$userWhere} ORDER BY quantity ASC LIMIT 5");
     $lowStockList = [];
     if ($lowStockRes) {
-        while ($row = mysqli_fetch_assoc($lowStockRes)) {
+        while ($row = db_fetch_assoc($lowStockRes)) {
             $lowStockList[] = "• <b>" . htmlspecialchars($row['product_code']) . "</b> (" . htmlspecialchars($row['product_name']) . "): <code>" . (int)$row['quantity'] . " left</code>";
         }
     }
@@ -326,12 +326,12 @@ if ($action === 'get_settings') {
 // 10. Manual Push: Recently Added Items
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_added') {
-    $recentProds = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC LIMIT 5");
-    $recentCats  = mysqli_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY id DESC LIMIT 5");
+    $recentProds = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC LIMIT 5");
+    $recentCats  = db_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY id DESC LIMIT 5");
 
     $prodList = [];
     if ($recentProds) {
-        while ($p = mysqli_fetch_assoc($recentProds)) {
+        while ($p = db_fetch_assoc($recentProds)) {
             $prodList[] = "📦 <b>" . htmlspecialchars($p['product_code']) . "</b> - " . htmlspecialchars($p['product_name']) 
                         . " (Qty: " . (int)$p['quantity'] . ", $" . number_format((float)$p['price'], 2) . ")";
         }
@@ -339,7 +339,7 @@ if ($action === 'get_settings') {
 
     $catList = [];
     if ($recentCats) {
-        while ($c = mysqli_fetch_assoc($recentCats)) {
+        while ($c = db_fetch_assoc($recentCats)) {
             $catList[] = "🏷️ <b>" . htmlspecialchars($c['category_code']) . "</b> - " . htmlspecialchars($c['category_name']);
         }
     }
@@ -369,12 +369,12 @@ if ($action === 'get_settings') {
 // 11. Manual Push: Recently Updated Items
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_updated') {
-    $updatedProds = mysqli_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.lastupdate DESC LIMIT 5");
-    $updatedCats  = mysqli_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY lastupdate DESC LIMIT 5");
+    $updatedProds = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.lastupdate DESC LIMIT 5");
+    $updatedCats  = db_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY lastupdate DESC LIMIT 5");
 
     $prodList = [];
     if ($updatedProds) {
-        while ($p = mysqli_fetch_assoc($updatedProds)) {
+        while ($p = db_fetch_assoc($updatedProds)) {
             $prodList[] = "✏️ <b>" . htmlspecialchars($p['product_code']) . "</b> - " . htmlspecialchars($p['product_name']) 
                         . " | Stock: " . (int)$p['quantity'] . " | $" . number_format((float)$p['price'], 2)
                         . " <i>(" . htmlspecialchars($p['lastupdate']) . ")</i>";
@@ -383,7 +383,7 @@ if ($action === 'get_settings') {
 
     $catList = [];
     if ($updatedCats) {
-        while ($c = mysqli_fetch_assoc($updatedCats)) {
+        while ($c = db_fetch_assoc($updatedCats)) {
             $catList[] = "🏷️ <b>" . htmlspecialchars($c['category_code']) . "</b> - " . htmlspecialchars($c['category_name'])
                         . " <i>(" . htmlspecialchars($c['lastupdate']) . ")</i>";
         }

@@ -9,15 +9,14 @@ require_once __DIR__ . "/database.php";
 
 // Read the category table - identical query to index.php's read endpoint.
 $sql = "SELECT * FROM category ORDER BY id DESC";
-$res = mysqli_query($conn, $sql);
+$res = db_query($conn, $sql);
 if (!$res) {
-    die("Query failed: " . mysqli_error($conn));
+    die("Query failed: " . db_error($conn));
 }
 $rows = [];
-while ($r = mysqli_fetch_assoc($res)) {
+while ($r = db_fetch_assoc($res)) {
     $rows[] = $r;
 }
-mysqli_free_result($res);
 
 // Column definitions (caption + dataField) matching your grid.
 $columns = [

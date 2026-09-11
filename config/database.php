@@ -19,9 +19,9 @@ define("DB_HOST", getenv('DB_HOST') ?: "db.wpzaeloeqsiacehkxvgq.supabase.co");
 define("DB_PORT", getenv('DB_PORT') ?: "5432");
 define("DB_NAME", getenv('DB_NAME') ?: "postgres");
 define("DB_USER", getenv('DB_USER') ?: "postgres");
-define("DB_PASS", getenv('DB_PASS') ?: "Munyvann.310394");
+define("DB_PASS", getenv('DB_PASS') ?: "Monyvann310394");
 define("DB_DRIVER", "pgsql");
-define("DB_URL", getenv('DATABASE_URL') ?: "postgresql://postgres:Munyvann.310394@db.wpzaeloeqsiacehkxvgq.supabase.co:5432/postgres");
+define("DB_URL", getenv('DATABASE_URL') ?: "postgresql://postgres:Monyvann310394@db.wpzaeloeqsiacehkxvgq.supabase.co:5432/postgres");
 
 define("DEFAULT_BOT_TOKEN", "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc");
 define("DEFAULT_BOT_USERNAME", "reportpush_bot");

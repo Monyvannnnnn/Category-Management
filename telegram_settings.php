@@ -17,13 +17,13 @@ $action = $_GET['action'] ?? $_POST['action'] ?? 'get';
  * Helper to fetch user bot config
  */
 function getUserBotRow($conn, $userId) {
-    $stmt = mysqli_prepare($conn, "SELECT * FROM user_telegram_bots WHERE user_id = ? LIMIT 1");
+    $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE user_id = ? LIMIT 1");
     if ($stmt) {
-        mysqli_stmt_bind_param($stmt, "i", $userId);
-        mysqli_stmt_execute($stmt);
-        $res = mysqli_stmt_get_result($stmt);
-        $row = mysqli_fetch_assoc($res);
-        mysqli_stmt_close($stmt);
+        db_stmt_bind_param($stmt, "i", $userId);
+        db_stmt_execute($stmt);
+        $res = db_stmt_get_result($stmt);
+        $row = db_fetch_assoc($res);
+        db_stmt_close($stmt);
         return $row;
     }
     return null;
@@ -64,15 +64,15 @@ switch ($action) {
 
         $existing = getUserBotRow($conn, $userId);
         if ($existing) {
-            $stmt = mysqli_prepare($conn, "UPDATE user_telegram_bots SET bot_token = ?, bot_username = ? WHERE user_id = ?");
-            mysqli_stmt_bind_param($stmt, "ssi", $botToken, $botUsername, $userId);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+            $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET bot_token = ?, bot_username = ? WHERE user_id = ?");
+            db_stmt_bind_param($stmt, "ssi", $botToken, $botUsername, $userId);
+            db_stmt_execute($stmt);
+            db_stmt_close($stmt);
         } else {
-            $stmt = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username) VALUES (?, ?, ?)");
-            mysqli_stmt_bind_param($stmt, "iss", $userId, $botToken, $botUsername);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+            $stmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username) VALUES (?, ?, ?)");
+            db_stmt_bind_param($stmt, "iss", $userId, $botToken, $botUsername);
+            db_stmt_execute($stmt);
+            db_stmt_close($stmt);
         }
 
         echo json_encode([
@@ -87,17 +87,17 @@ switch ($action) {
 
         $existing = getUserBotRow($conn, $userId);
         if ($existing) {
-            $stmt = mysqli_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE user_id = ?");
-            mysqli_stmt_bind_param($stmt, "si", $code, $userId);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+            $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE user_id = ?");
+            db_stmt_bind_param($stmt, "si", $code, $userId);
+            db_stmt_execute($stmt);
+            db_stmt_close($stmt);
         } else {
             $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
             $defaultUsername = "reportpush_bot";
-            $stmt = mysqli_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))");
-            mysqli_stmt_bind_param($stmt, "isss", $userId, $defaultToken, $defaultUsername, $code);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
+            $stmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))");
+            db_stmt_bind_param($stmt, "isss", $userId, $defaultToken, $defaultUsername, $code);
+            db_stmt_execute($stmt);
+            db_stmt_close($stmt);
         }
 
         $botUsername = $existing['bot_username'] ?? "reportpush_bot";
@@ -115,10 +115,10 @@ switch ($action) {
         exit;
 
     case 'disconnect':
-        $stmt = mysqli_prepare($conn, "UPDATE user_telegram_bots SET chat_id = NULL, connection_code = NULL, code_expires_at = NULL, connected_at = NULL WHERE user_id = ?");
-        mysqli_stmt_bind_param($stmt, "i", $userId);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_close($stmt);
+        $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = NULL, connection_code = NULL, code_expires_at = NULL, connected_at = NULL WHERE user_id = ?");
+        db_stmt_bind_param($stmt, "i", $userId);
+        db_stmt_execute($stmt);
+        db_stmt_close($stmt);
 
         echo json_encode([
             'success' => true,

@@ -31,7 +31,7 @@ if ($driver === 'pgsql' || $is_vercel || (getenv('DB_HOST') && strpos(getenv('DB
         $user = $user . ".wpzaeloeqsiacehkxvgq";
     }
 
-    $pass = getenv('DB_PASS') ?: "Munyvann.310394";
+    $pass = getenv('DB_PASS') ?: "Monyvann310394";
 
     return [
         "driver"   => "pgsql",
