@@ -8,16 +8,19 @@ header("Expires: 0");
 require_once __DIR__ . "/includes/auth_helper.php";
 
 $user = getCurrentUser();
-$userId = (int)($user['id'] ?? ($_SESSION['user_id'] ?? 1));
-if ($userId <= 0) $userId = 1;
+if (!$user) {
+    http_response_code(401);
+    echo json_encode(['success' => false, 'message' => 'Unauthorized. Please log in.']);
+    exit;
+}
 
+$userId = (int)$user['id'];
 $action = $_GET['action'] ?? $_POST['action'] ?? 'get';
 
 /**
  * Helper to fetch user bot config
  */
 function getUserBotRow($conn, $userId) {
-    if ((int)$userId <= 0) $userId = 1;
     $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots WHERE user_id = ? LIMIT 1");
     if ($stmt) {
         db_stmt_bind_param($stmt, "i", $userId);
@@ -25,13 +28,7 @@ function getUserBotRow($conn, $userId) {
         $res = db_stmt_get_result($stmt);
         $row = db_fetch_assoc($res);
         db_stmt_close($stmt);
-        if ($row) return $row;
-    }
-    // Fallback: fetch first available bot config row if specific user_id record not found
-    $resAny = db_query($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
-    if ($resAny) {
-        $rowAny = db_fetch_assoc($resAny);
-        if ($rowAny) return $rowAny;
+        return $row;
     }
     return null;
 }

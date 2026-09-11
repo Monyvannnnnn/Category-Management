@@ -11,3 +11,15 @@ services:
     envVars:
       - key: PORT
         value: "80"
+      - key: DB_DRIVER
+        value: "pgsql"
+      - key: DB_HOST
+        value: "aws-0-ap-northeast-2.pooler.supabase.com"
+      - key: DB_USER
+        value: "postgres.wpzaeloeqsiacehkxvgq"
+      - key: DB_PASS
+        value: "Monyvann310394"
+      - key: DB_NAME
+        value: "postgres"
+      - key: DB_PORT
+        value: "6543"

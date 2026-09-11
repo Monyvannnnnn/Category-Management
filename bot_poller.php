@@ -80,7 +80,7 @@ function handleCodeBinding($conn, $chatId, $code) {
     $isFreshBind = false;
 
     // 1. Try exact connection code match for valid website user account
-    $stmt = db_prepare($conn, "SELECT b.* FROM user_telegram_bots b JOIN users u ON b.user_id = u.id WHERE UPPER(TRIM(b.connection_code)) = UPPER(TRIM(?)) LIMIT 1");
+    $stmt = db_prepare($conn, "SELECT b.* FROM user_telegram_bots b LEFT JOIN users u ON b.user_id = u.id WHERE UPPER(TRIM(b.connection_code)) = UPPER(TRIM(?)) LIMIT 1");
     if ($stmt) {
         db_stmt_bind_param($stmt, "s", $code);
         db_stmt_execute($stmt);
@@ -113,7 +113,7 @@ function handleCodeBinding($conn, $chatId, $code) {
  */
 function getConnectedUserByChatIdMySQLi($conn, $chatId) {
     if (empty($chatId)) return null;
-    $stmt = db_prepare($conn, "SELECT b.*, u.username FROM user_telegram_bots b JOIN users u ON b.user_id = u.id WHERE b.chat_id = ? AND b.chat_id IS NOT NULL AND b.chat_id != '' LIMIT 1");
+    $stmt = db_prepare($conn, "SELECT b.*, u.username FROM user_telegram_bots b LEFT JOIN users u ON b.user_id = u.id WHERE b.chat_id = ? AND b.chat_id IS NOT NULL AND b.chat_id != '' LIMIT 1");
     if ($stmt) {
         db_stmt_bind_param($stmt, "s", $chatId);
         db_stmt_execute($stmt);
