@@ -668,25 +668,41 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             .on("click", function(e) {
                                 e.preventDefault();
                                 if (options.data && options.data.id) {
-                                    $.ajax({
-                                        url: "manual_push.php",
-                                        type: "POST",
-                                        dataType: "json",
-                                        data: { action: "push_single_category", id: options.data.id },
-                                        success: function(res) {
-                                            if (res && (res.ok === true || res.ok === "true")) {
-                                                DevExpress.ui.notify("✅ Category notification pushed to Telegram successfully!", "success", 3500);
-                                            } else {
-                                                var errMsg = (res && (res.description || res.message)) ? (res.description || res.message) : "Failed to push notification.";
-                                                DevExpress.ui.notify("❌ Telegram Push Unsuccessful: " + errMsg, "error", 5000);
+                                    window.checkTelegramConnectionAndExecute(function() {
+                                        $.ajax({
+                                            url: "manual_push.php",
+                                            type: "POST",
+                                            dataType: "json",
+                                            data: { action: "push_single_category", id: options.data.id },
+                                            success: function(res) {
+                                                if (res && (res.ok === true || res.ok === "true")) {
+                                                    DevExpress.ui.notify("✅ Category notification pushed to Telegram successfully!", "success", 3500);
+                                                } else {
+                                                    var errMsg = (res && (res.description || res.message)) ? (res.description || res.message) : "Failed to push notification.";
+                                                    if (errMsg.toLowerCase().includes("not connected")) {
+                                                        window.isTelegramConnected = false;
+                                                        if (typeof fetchTelegramStatus === "function") fetchTelegramStatus();
+                                                        $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                                                        DevExpress.ui.notify("⚠️ Telegram is not connected. Please click 'Connect Telegram' to link your account.", "warning", 4000);
+                                                    } else {
+                                                        DevExpress.ui.notify("❌ Telegram Push Unsuccessful: " + errMsg, "error", 5000);
+                                                    }
+                                                }
+                                            },
+                                            error: function(xhr) {
+                                                var errMsg = (xhr && xhr.responseJSON && (xhr.responseJSON.description || xhr.responseJSON.message)) 
+                                                             ? (xhr.responseJSON.description || xhr.responseJSON.message) 
+                                                             : "Could not push notification to Telegram.";
+                                                if (errMsg.toLowerCase().includes("not connected")) {
+                                                    window.isTelegramConnected = false;
+                                                    if (typeof fetchTelegramStatus === "function") fetchTelegramStatus();
+                                                    $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                                                    DevExpress.ui.notify("⚠️ Telegram is not connected. Please click 'Connect Telegram' to link your account.", "warning", 4000);
+                                                } else {
+                                                    DevExpress.ui.notify("❌ Telegram Push Failed: " + errMsg, "error", 5000);
+                                                }
                                             }
-                                        },
-                                        error: function(xhr) {
-                                            var errMsg = (xhr && xhr.responseJSON && (xhr.responseJSON.description || xhr.responseJSON.message)) 
-                                                         ? (xhr.responseJSON.description || xhr.responseJSON.message) 
-                                                         : "Could not push notification to Telegram.";
-                                            DevExpress.ui.notify("❌ Telegram Push Failed: " + errMsg, "error", 5000);
-                                        }
+                                        });
                                     });
                                 }
                             });
@@ -2119,6 +2135,45 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         const cfgToken = document.getElementById('cfg_bot_token');
         const cfgUsername = document.getElementById('cfg_bot_username');
         let tgPollTimer = null;
+        let wasConnectingTelegram = false;
+
+        window.checkTelegramConnectionAndExecute = function(onConnected) {
+            return fetch('telegram_settings.php?action=get')
+                .then(function(r) { return r.json(); })
+                .then(function(data) {
+                    if (data && data.success && data.is_connected) {
+                        window.isTelegramConnected = true;
+                        if (typeof onConnected === 'function') {
+                            onConnected();
+                        }
+                    } else {
+                        window.isTelegramConnected = false;
+                        if (typeof fetchTelegramStatus === 'function') {
+                            fetchTelegramStatus();
+                        }
+                        if (typeof loadPushSettings === 'function') {
+                            loadPushSettings();
+                        }
+                        $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                        if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                            DevExpress.ui.notify("⚠️ Telegram is not connected. Please click 'Connect Telegram' to link your account.", "info", 4000);
+                        }
+                    }
+                })
+                .catch(function() {
+                    if (window.isTelegramConnected) {
+                        if (typeof onConnected === 'function') onConnected();
+                    } else {
+                        if (typeof fetchTelegramStatus === 'function') {
+                            fetchTelegramStatus();
+                        }
+                        $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                        if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                            DevExpress.ui.notify("⚠️ Telegram is not connected. Please click 'Connect Telegram' to link your account.", "info", 4000);
+                        }
+                    }
+                });
+        };
 
         function fetchTelegramStatus() {
             const icon = btnRefresh ? btnRefresh.querySelector('i') : null;
@@ -2133,6 +2188,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         if (cfgUsername) cfgUsername.value = data.bot_username || '';
 
                         if (data.is_connected) {
+                            window.isTelegramConnected = true;
                             statusBadge.textContent = 'CONNECTED';
                             statusBadge.style.background = 'rgba(34, 197, 94, 0.2)';
                             statusBadge.style.color = '#86efac';
@@ -2143,11 +2199,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             if (btnDisconnect) btnDisconnect.style.display = 'inline-flex';
                             if (codeBox) codeBox.style.display = 'none';
 
+                            if (wasConnectingTelegram || tgPollTimer !== null) {
+                                wasConnectingTelegram = false;
+                                if ($("#pushModal").is(":visible")) {
+                                    $("#pushModal").fadeOut(200);
+                                }
+                                if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                                    DevExpress.ui.notify("✅ Telegram account linked successfully!", "success", 4000);
+                                }
+                            }
+
                             if (tgPollTimer) {
                                 clearInterval(tgPollTimer);
                                 tgPollTimer = null;
                             }
                         } else {
+                            window.isTelegramConnected = false;
                             statusBadge.textContent = 'NOT CONNECTED';
                             statusBadge.style.background = 'rgba(239, 68, 68, 0.2)';
                             statusBadge.style.color = '#fca5a5';
@@ -2194,6 +2261,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     .then(data => {
                         btnConnect.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram';
                         if (data.success) {
+                            wasConnectingTelegram = true;
                             codeDisplay.textContent = data.code;
                             deepLinkBtn.href = data.deep_link;
                             codeBox.style.display = 'block';
@@ -2214,6 +2282,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     });
             });
         }
+
+        window.addEventListener('focus', function() {
+            if (wasConnectingTelegram || tgPollTimer !== null) {
+                fetchTelegramStatus();
+            }
+        });
+        document.addEventListener('visibilitychange', function() {
+            if (!document.hidden && (wasConnectingTelegram || tgPollTimer !== null)) {
+                fetchTelegramStatus();
+            }
+        });
 
         if (btnDisconnect) {
             btnDisconnect.addEventListener('click', function() {
