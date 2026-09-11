@@ -37,8 +37,8 @@ switch ($action) {
         $defaultBotUsername = "reportpush_bot";
         $bToken = !empty($row['bot_token']) ? $row['bot_token'] : $defaultBotToken;
 
-        // Auto-poll Telegram API for pending /start commands so web serverless account binding is instant
-        if (empty($row['chat_id']) && function_exists('pollTelegramUpdatesForBot')) {
+        // Auto-poll Telegram API ONLY if chat_id is missing and connection_code is active
+        if (empty($row['chat_id']) && !empty($row['connection_code']) && function_exists('pollTelegramUpdatesForBot')) {
             pollTelegramUpdatesForBot($conn, $bToken);
             $row = getUserBotRow($conn, $userId);
         }

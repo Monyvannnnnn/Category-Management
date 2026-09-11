@@ -47,7 +47,7 @@ if ($driver === 'pgsql') {
             PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
             PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
             PDO::ATTR_EMULATE_PREPARES => true,
-            PDO::ATTR_TIMEOUT => 5
+            PDO::ATTR_TIMEOUT => 3
         ]);
     } catch (PDOException $ex) {
         $lastException = $ex;
@@ -61,7 +61,7 @@ if ($driver === 'pgsql') {
                     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
                     PDO::ATTR_EMULATE_PREPARES => true,
-                    PDO::ATTR_TIMEOUT => 4
+                    PDO::ATTR_TIMEOUT => 2
                 ]);
                 if ($pdo) break;
             } catch (PDOException $e) {

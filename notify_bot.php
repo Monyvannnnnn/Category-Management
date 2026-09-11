@@ -16,7 +16,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
     $result = false;
     $curlError = '';
 
-    // Method 1: Standard cURL
+    // Method 1: Fast Standard cURL
     if (function_exists('curl_init')) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -26,8 +26,8 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
         curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
         if (defined('CURL_IPRESOLVE_V4')) {
@@ -41,9 +41,9 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         curl_close($ch);
     }
 
-    // Method 2: InfinityFree DNS Bypass (If host DNS fails to resolve api.telegram.org)
+    // Method 2: Fast DNS Resolution Bypass
     if (($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) && function_exists('curl_init')) {
-        $telegramIPs = ['149.154.167.220', '149.154.167.198', '91.108.56.160'];
+        $telegramIPs = ['149.154.167.220'];
         foreach ($telegramIPs as $ip) {
             $ch = curl_init();
             curl_setopt($ch, CURLOPT_URL, $url);
@@ -53,8 +53,8 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
             curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-            curl_setopt($ch, CURLOPT_TIMEOUT, 15);
-            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 10);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
             curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
 
             if (defined('CURLOPT_RESOLVE')) {
@@ -71,7 +71,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         }
     }
 
-    // Method 3: Fallback to stream context file_get_contents
+    // Method 3: Fast Fallback Stream Context
     if ($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) {
         $options = [
             'http' => [
@@ -79,7 +79,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
                              "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n",
                 'method'  => 'POST',
                 'content' => http_build_query($data),
-                'timeout' => 15,
+                'timeout' => 3,
                 'ignore_errors' => true
             ],
             'ssl' => [
