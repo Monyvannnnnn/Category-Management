@@ -7,6 +7,13 @@ $(document).ready(function () {
     console.log("Inventory App Initialized");
 });
 
+// Global AJAX error handler to automatically redirect unauthenticated users to login.php
+$(document).ajaxError(function (event, jqXHR) {
+    if (jqXHR && jqXHR.status === 401) {
+        window.location.href = "login.php";
+    }
+});
+
 // Helper: Format DateTime to dd/MM/yyyy HH:mm:ss
 function formatDateTime(date) {
     if (!date) return "-";
