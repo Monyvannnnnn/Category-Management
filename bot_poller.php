@@ -240,7 +240,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     // 2. Access Control Guard & User Bot Lookup
     $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
 
-    // Fallback: If chat_id not explicitly linked, check for user_id = 1 or primary user bot record
+    // Fallback 1: If chat_id not explicitly linked, check user_telegram_bots table
     if (!$userBot || empty($userBot['user_id'])) {
         $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
         if ($stmt) {
@@ -250,7 +250,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             db_stmt_close($stmt);
 
             if ($fRow && !empty($fRow['user_id'])) {
-                // Auto-link chat_id to this primary user bot if chat_id was unlinked
                 if (empty($fRow['chat_id'])) {
                     $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW() WHERE id = ?");
                     if ($upd) {
@@ -261,6 +260,28 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     $fRow['chat_id'] = $chatId;
                 }
                 $userBot = $fRow;
+            }
+        }
+    }
+
+    // Fallback 2: Check primary admin user from users table if user_telegram_bots is unpopulated
+    if (!$userBot || empty($userBot['user_id'])) {
+        $uStmt = db_prepare($conn, "SELECT id FROM users ORDER BY id ASC LIMIT 1");
+        if ($uStmt) {
+            db_stmt_execute($uStmt);
+            $uRes = db_stmt_get_result($uStmt);
+            $uRow = db_fetch_assoc($uRes);
+            db_stmt_close($uStmt);
+            if ($uRow && !empty($uRow['id'])) {
+                $primaryUserId = (int)$uRow['id'];
+                $userBot = ['user_id' => $primaryUserId, 'chat_id' => $chatId];
+                $bTokenSave = !empty($botToken) ? $botToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+                $bindStmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, chat_id, connected_at) VALUES (?, ?, 'reportpush_bot', ?, NOW())");
+                if ($bindStmt) {
+                    db_stmt_bind_param($bindStmt, "iss", $primaryUserId, $bTokenSave, $chatId);
+                    db_stmt_execute($bindStmt);
+                    db_stmt_close($bindStmt);
+                }
             }
         }
     }

@@ -316,3 +316,9 @@ if (!function_exists('db_stmt_get_result')) {
         return mysqli_stmt_get_result($s);
     }
 }
+if (!function_exists('db_stmt_affected_rows')) {
+    function db_stmt_affected_rows($s) {
+        if ($s instanceof PgSqlStmtWrapper) return $s->num_rows();
+        return (is_object($s) || is_resource($s)) ? mysqli_stmt_affected_rows($s) : 1;
+    }
+}

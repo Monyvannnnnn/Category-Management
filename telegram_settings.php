@@ -31,17 +31,9 @@ function getUserBotRow($conn, $userId) {
 
 switch ($action) {
     case 'get':
-        require_once __DIR__ . '/bot_poller.php';
         $row = getUserBotRow($conn, $userId);
         $defaultBotToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
         $defaultBotUsername = "reportpush_bot";
-        $bToken = !empty($row['bot_token']) ? $row['bot_token'] : $defaultBotToken;
-
-        // Auto-poll Telegram API ONLY if chat_id is missing and connection_code is active
-        if (empty($row['chat_id']) && !empty($row['connection_code']) && function_exists('pollTelegramUpdatesForBot')) {
-            pollTelegramUpdatesForBot($conn, $bToken);
-            $row = getUserBotRow($conn, $userId);
-        }
 
         echo json_encode([
             'success' => true,
