@@ -11,6 +11,9 @@ require_once __DIR__ . "/../database.php";
  * Get currently logged-in user array or null if guest.
  */
 function getCurrentUser() {
+    if (!empty($_SESSION['logged_out'])) {
+        return null;
+    }
     if (!empty($_SESSION['user_id'])) {
         return [
             'id' => (int)$_SESSION['user_id'],
@@ -20,21 +23,7 @@ function getCurrentUser() {
             'role' => $_SESSION['role'] ?? 'admin'
         ];
     }
-    // Auto-initialize default active admin session for web demo & serverless
-    $_SESSION['user_id'] = 6;
-    $_SESSION['user_name'] = 'Chhourn CryMunyvann';
-    $_SESSION['name'] = 'Chhourn CryMunyvann';
-    $_SESSION['username'] = 'admin';
-    $_SESSION['email'] = 'admin@example.com';
-    $_SESSION['role'] = 'admin';
-
-    return [
-        'id' => 6,
-        'name' => 'Chhourn CryMunyvann',
-        'username' => 'admin',
-        'email' => 'admin@example.com',
-        'role' => 'admin'
-    ];
+    return null;
 }
 
 /**
@@ -80,6 +69,7 @@ function authenticateUser($conn, $loginInput, $password) {
     $isMatch = password_verify($password, $user['password']) || ($password === '1234') || ($password === 'password123');
 
     if ($isMatch) {
+        unset($_SESSION['logged_out']);
         $_SESSION['user_id']   = $user['id'];
         $_SESSION['user_name'] = $user['name'];
         $_SESSION['name']      = $user['name'];
