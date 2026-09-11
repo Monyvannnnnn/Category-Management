@@ -63,11 +63,13 @@ if ($stmt) {
              . "<b>Category:</b> " . htmlspecialchars($catName) . "\n"
              . "<b>Price:</b> $" . number_format($price, 2) . "\n"
              . "<b>Quantity:</b> " . $quantity;
+        echo json_encode($data);
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
         if (isAutoTelegramEnabled($conn)) {
             sendTelegramNotification($msg, $conn, $userId);
         }
-
-        echo json_encode($data);
         exit;
     } else {
         http_response_code(500);

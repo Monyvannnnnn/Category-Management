@@ -46,11 +46,13 @@ if ($stmt) {
              . "<b>ID:</b> #{$id}\n"
              . "<b>Code:</b> " . htmlspecialchars($catCode) . "\n"
              . "<b>Name:</b> " . htmlspecialchars($catName);
+        echo json_encode(["success" => true]);
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
         if (isAutoTelegramEnabled($conn)) {
             sendTelegramNotification($msg, $conn, $userId);
         }
-
-        echo json_encode(["success" => true]);
         exit;
     } else {
         db_stmt_close($stmt);

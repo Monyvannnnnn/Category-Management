@@ -100,11 +100,13 @@ if ($stmt) {
         $msg = "<b>✏️ Category Updated</b> (ID: #{$id})\n"
              . "<b>Code:</b> " . htmlspecialchars($categoryCode) . "\n"
              . "<b>Name:</b> " . htmlspecialchars($categoryName);
+        echo json_encode(["success" => true]);
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
         if (isAutoTelegramEnabled($conn)) {
             sendTelegramNotification($msg, $conn, $userId);
         }
-
-        echo json_encode(["success" => true]);
         exit;
     } else {
         $errno = db_errno($conn);

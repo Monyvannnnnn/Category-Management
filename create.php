@@ -73,11 +73,13 @@ if ($stmt) {
              . "🆔 <b>ID:</b> #{$newId}\n"
              . "🏷️ <b>Code:</b> <code>" . htmlspecialchars($category_code) . "</code>\n"
              . "📦 <b>Name:</b> <b>" . htmlspecialchars($category_name) . "</b>";
+        echo json_encode($data);
+        if (function_exists('fastcgi_finish_request')) {
+            fastcgi_finish_request();
+        }
         if (isAutoTelegramEnabled($conn)) {
             sendTelegramNotification($msg, $conn, $userId);
         }
-
-        echo json_encode($data);
         exit;
     } else {
         $errno = db_errno($conn);
