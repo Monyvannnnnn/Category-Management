@@ -317,9 +317,28 @@ function setAutoTelegramEnabled($conn, $status) {
     if (!$conn) return false;
     ensureSettingsTableExists($conn);
     $val = ($status === '1' || $status === 1 || $status === true || $status === 'true') ? '1' : '0';
+
+    if ($conn instanceof PgSqlConnWrapper) {
+        $stmt = db_prepare($conn, "INSERT INTO system_settings (setting_key, setting_value) VALUES ('auto_telegram_notify', ?) ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value");
+        if ($stmt) {
+            db_stmt_bind_param($stmt, "s", $val);
+            db_stmt_execute($stmt);
+            db_stmt_close($stmt);
+            return true;
+        }
+    }
+
+    $stmt = db_prepare($conn, "INSERT INTO system_settings (setting_key, setting_value) VALUES ('auto_telegram_notify', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+    if ($stmt) {
+        db_stmt_bind_param($stmt, "s", $val);
+        db_stmt_execute($stmt);
+        db_stmt_close($stmt);
+        return true;
+    }
+
     $valEsc = db_real_escape_string($conn, $val);
-    $res = @db_query($conn, "REPLACE INTO system_settings (setting_key, setting_value) VALUES ('auto_telegram_notify', '$valEsc')");
-    return ($res !== false);
+    @db_query($conn, "UPDATE system_settings SET setting_value = '$valEsc' WHERE setting_key = 'auto_telegram_notify'");
+    return true;
 }
 
 

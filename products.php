@@ -2545,6 +2545,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
         if (btnConnect) {
             btnConnect.addEventListener('click', function() {
+                const newWindow = window.open('about:blank', '_blank');
                 btnConnect.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Generating...';
                 fetch('telegram_settings.php?action=generate_code', { method: 'POST' })
                     .then(r => r.json())
@@ -2554,11 +2555,19 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             codeDisplay.textContent = data.code;
                             deepLinkBtn.href = data.deep_link;
                             codeBox.style.display = 'block';
-                            window.open(data.deep_link, '_blank');
+                            if (newWindow) {
+                                newWindow.location.href = data.deep_link;
+                            } else {
+                                window.open(data.deep_link, '_blank');
+                            }
                             startAutoPollingTelegram();
+                        } else {
+                            if (newWindow) newWindow.close();
+                            alert("Error: " + (data.message || "Failed to generate connection code."));
                         }
                     })
                     .catch(() => {
+                        if (newWindow) newWindow.close();
                         btnConnect.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram';
                     });
             });
