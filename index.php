@@ -90,7 +90,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
     <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
     <script src="js/KhmerOSSiemreap.js"></script>
     <script src="js/app.js"></script>
-    <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', filemtime(__DIR__ . '/css/style.css')); ?>">
+    <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
 </head>
 
 <body>

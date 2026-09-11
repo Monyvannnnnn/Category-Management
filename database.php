@@ -26,7 +26,7 @@ if ($driver === 'pgsql') {
     $host = $cfg['host'] ?? 'aws-0-ap-northeast-2.pooler.supabase.com';
     $port = (int)($cfg['port'] ?? 6543);
     $user = $cfg['user'] ?? 'postgres.wpzaeloeqsiacehkxvgq';
-    $pass = $cfg['pass'] ?? '';
+    $pass = !empty($cfg['pass']) ? $cfg['pass'] : 'Monyvann310394';
     $dbname = $cfg['name'] ?? 'postgres';
 
     // Extract tenant ref if available (defaulting to project ref)

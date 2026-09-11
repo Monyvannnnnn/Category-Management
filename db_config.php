@@ -19,25 +19,30 @@ if (file_exists(__DIR__ . '/.env')) {
 }
 
 // 1. Check if running on Vercel or explicitly requested PostgreSQL
-$driver = getenv('DB_DRIVER');
-$is_vercel = !empty(getenv('VERCEL')) || !empty(getenv('VERCEL_ENV'));
+$driver = getenv('DB_DRIVER') ?: ($_ENV['DB_DRIVER'] ?? ($_SERVER['DB_DRIVER'] ?? ''));
+$host_header = $_SERVER['HTTP_HOST'] ?? '';
+$is_vercel = !empty(getenv('VERCEL')) 
+          || !empty(getenv('VERCEL_ENV')) 
+          || !empty($_ENV['VERCEL']) 
+          || !empty($_SERVER['VERCEL']) 
+          || strpos($host_header, 'vercel.app') !== false;
 
 if ($driver === 'pgsql' || $is_vercel || (getenv('DB_HOST') && strpos(getenv('DB_HOST'), 'supabase') !== false)) {
-    $host = getenv('DB_HOST') ?: "aws-0-ap-northeast-2.pooler.supabase.com";
-    $user = getenv('DB_USER') ?: "postgres.wpzaeloeqsiacehkxvgq";
+    $host = getenv('DB_HOST') ?: ($_ENV['DB_HOST'] ?? ($_SERVER['DB_HOST'] ?? "aws-0-ap-northeast-2.pooler.supabase.com"));
+    $user = getenv('DB_USER') ?: ($_ENV['DB_USER'] ?? ($_SERVER['DB_USER'] ?? "postgres.wpzaeloeqsiacehkxvgq"));
     
     // Ensure pooler username includes the Supabase tenant project ref
     if (strpos($host, 'pooler.supabase.com') !== false && strpos($user, '.') === false) {
         $user = $user . ".wpzaeloeqsiacehkxvgq";
     }
 
-    $pass = getenv('DB_PASS') ?: "Monyvann310394";
+    $pass = getenv('DB_PASS') ?: ($_ENV['DB_PASS'] ?? ($_SERVER['DB_PASS'] ?? "Monyvann310394"));
 
     return [
         "driver"   => "pgsql",
         "host"     => $host,
-        "port"     => (int)(getenv('DB_PORT') ?: 6543),
-        "name"     => getenv('DB_NAME') ?: "postgres",
+        "port"     => (int)(getenv('DB_PORT') ?: ($_ENV['DB_PORT'] ?? ($_SERVER['DB_PORT'] ?? 6543))),
+        "name"     => getenv('DB_NAME') ?: ($_ENV['DB_NAME'] ?? ($_SERVER['DB_NAME'] ?? "postgres")),
         "user"     => $user,
         "pass"     => $pass,
         "url"      => getenv('DATABASE_URL') ?: "postgresql://{$user}:{$pass}@{$host}:6543/postgres"
