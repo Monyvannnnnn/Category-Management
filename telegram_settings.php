@@ -100,6 +100,23 @@ switch ($action) {
             db_stmt_close($stmt);
         }
 
+        // Auto-register current Vercel domain Webhook with Telegram API
+        $host = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+        $webhookUrl = "{$scheme}://{$host}/set_commands.php";
+        $bToken = !empty($existing['bot_token']) ? $existing['bot_token'] : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+
+        if (function_exists('curl_init') && strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false) {
+            $whApiUrl = "https://api.telegram.org/bot{$bToken}/setWebhook?url=" . urlencode($webhookUrl);
+            $ch = curl_init($whApiUrl);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+            @curl_exec($ch);
+            @curl_close($ch);
+        }
+
         $botUsername = $existing['bot_username'] ?? "reportpush_bot";
         if (empty($botUsername)) $botUsername = "reportpush_bot";
 
