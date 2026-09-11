@@ -14,12 +14,24 @@ $defaultBotToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
 function registerBotCommands($botToken) {
     $url = "https://api.telegram.org/bot{$botToken}/setMyCommands";
     $commands = [
-        ['command' => 'search',     'description' => '🔍 Search product by name or code (/search <keyword>)'],
-        ['command' => 'categories', 'description' => '🏷️ View all item categories'],
-        ['command' => 'summary',    'description' => '📊 Real-time total categories, products, & valuation'],
-        ['command' => 'lowstock',   'description' => '⚠️ List critical items with stock <= 5'],
-        ['command' => 'start',      'description' => '🚀 Welcome & Account Binding (/start <code>)'],
-        ['command' => 'help',       'description' => '❓ Show all command usage and examples']
+        ['command' => 'search',     'description' => '🔍 Search product (/search <keyword>)'],
+        ['command' => 'searchall',  'description' => '🔍 Search all records (/searchall <keyword>)'],
+        ['command' => 'categories', 'description' => '🏷 List all categories'],
+        ['command' => 'category',   'description' => '🏷 Category info (/category <code|name>)'],
+        ['command' => 'sort',       'description' => '↕️ Sort items (/sort price|stock|date)'],
+        ['command' => 'lowstock',   'description' => '⚠️ Low stock items (<= 5)'],
+        ['command' => 'topstock',   'description' => '📊 Top 10 highest stock'],
+        ['command' => 'product',    'description' => '📦 Product info (/product <code|name>)'],
+        ['command' => 'outofstock', 'description' => '🚫 Out of stock items'],
+        ['command' => 'summary',    'description' => '📊 Live inventory summary'],
+        ['command' => 'valuation',  'description' => '💎 Financial report'],
+        ['command' => 'added',      'description' => '🆕 Recently added items'],
+        ['command' => 'updated',    'description' => '✏️ Recently modified items'],
+        ['command' => 'history',    'description' => '📜 Activity log'],
+        ['command' => 'today',      'description' => '📅 Today\'s activity'],
+        ['command' => 'push',       'description' => '📤 Send to Telegram (/push <message>)'],
+        ['command' => 'toggle',     'description' => '🔔 Toggle auto-notify'],
+        ['command' => 'help',       'description' => '❓ View all commands']
     ];
 
     $ch = curl_init($url);
@@ -29,8 +41,9 @@ function registerBotCommands($botToken) {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_exec($ch);
+    $res = curl_exec($ch);
     curl_close($ch);
+    return $res;
 }
 
 function sendTelegramMessage($chatId, $text, $botToken) {
@@ -257,102 +270,25 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
-        case '/report':
-        case '/summary':
-            $catStmt = db_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
-            db_stmt_bind_param($catStmt, "i", $userId);
-            db_stmt_execute($catStmt);
-            $catRes = db_stmt_get_result($catStmt);
-            $catCnt = ($r = db_fetch_assoc($catRes)) ? (int)$r['cat_cnt'] : 0;
-            db_stmt_close($catStmt);
-
-            $prodStmt = db_prepare($conn, "SELECT COUNT(*) as prod_cnt, COALESCE(SUM(quantity), 0) as total_qty, COALESCE(SUM(price * quantity), 0) as total_val FROM product WHERE user_id = ?");
-            db_stmt_bind_param($prodStmt, "i", $userId);
-            db_stmt_execute($prodStmt);
-            $prodRes = db_stmt_get_result($prodStmt);
-            $pData = db_fetch_assoc($prodRes);
-            $prodCnt = (int)($pData['prod_cnt'] ?? 0);
-            $totalQty = (int)($pData['total_qty'] ?? 0);
-            $totalVal = number_format((float)($pData['total_val'] ?? 0), 2);
-            db_stmt_close($prodStmt);
-
-            $msg = "📊 <b>YOUR REAL-TIME INVENTORY REPORT</b>\n"
-                 . "═════════════════════════════\n"
-                 . "🏷️ Total Categories: <b>{$catCnt}</b>\n"
-                 . "📦 Total Products: <b>{$prodCnt}</b>\n"
-                 . "🔢 Total Items In Stock: <b>{$totalQty} units</b>\n"
-                 . "💵 Total Asset Valuation: <b>\${$totalVal}</b>\n";
-            sendTelegramMessage($chatId, $msg, $botToken);
-            break;
-
-        case '/orders':
-        case '/products':
-        case '/product':
-            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
-            db_stmt_bind_param($stmt, "i", $userId);
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-
-            if ($res && db_num_rows($res) > 0) {
-                $msg = "📦 <b>YOUR ORDERS & PRODUCTS OVERVIEW</b>\n"
-                     . "═════════════════════════════\n\n";
-                while ($r = db_fetch_assoc($res)) {
-                    $code  = htmlspecialchars($r['product_code']);
-                    $name  = htmlspecialchars($r['product_name']);
-                    $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
-                    $price = number_format((float)$r['price'], 2);
-                    $qty   = (int)$r['quantity'];
-                    $msg  .= "📦 <b>{$name}</b>\n"
-                          . "├ 🆔 Code: <code>{$code}</code>\n"
-                          . "├ 🏷️ Category: <code>{$cat}</code>\n"
-                          . "├ 💰 Price: <b>\${$price}</b>\n"
-                          . "└ 🔢 Stock: <b>{$qty} units</b>\n\n";
-                }
-            } else {
-                $msg = "📦 <b>NO PRODUCTS / ORDERS FOUND</b>";
-            }
-            db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
-            break;
-
-        case '/settings':
-            $stmt = db_prepare($conn, "SELECT name, email, username FROM users WHERE id = ?");
-            db_stmt_bind_param($stmt, "i", $userId);
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-            $uRow = db_fetch_assoc($res);
-            db_stmt_close($stmt);
-
-            $uName = htmlspecialchars($uRow['name'] ?? 'User #' . $userId);
-            $uEmail = htmlspecialchars($uRow['email'] ?? 'N/A');
-
-            $msg = "⚙️ <b>ACCOUNT SETTINGS & CONNECTION INFO</b>\n"
-                 . "═════════════════════════════\n"
-                 . "👤 <b>User:</b> {$uName}\n"
-                 . "📧 <b>Email:</b> {$uEmail}\n"
-                 . "🆔 <b>User ID:</b> <code>#{$userId}</code>\n"
-                 . "📱 <b>Telegram Chat ID:</b> <code>{$chatId}</code>\n"
-                 . "Status: <b>Connected ✅</b>";
-            sendTelegramMessage($chatId, $msg, $botToken);
-            break;
-
+        // 1. /search <keyword>
         case '/search':
             if (empty($arg)) {
-                $msg = "⚠️ <b>INVALID SEARCH FORMAT</b>\n"
+                $msg = "🔍 <b>SEARCH PRODUCT</b>\n"
+                     . "═════════════════════════════\n"
                      . "Usage: <code>/search &lt;keyword&gt;</code>\n"
-                     . "Example: <code>/search Mouse</code>";
+                     . "Example: <code>/search laptop</code>";
                 sendTelegramMessage($chatId, $msg, $botToken);
                 break;
             }
-            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND (p.product_name LIKE ? OR p.product_code LIKE ? OR c.category_name LIKE ?) LIMIT 5");
+            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND (p.product_name LIKE ? OR p.product_code LIKE ?) ORDER BY p.id DESC LIMIT 10");
             $searchArg = "%" . $arg . "%";
-            db_stmt_bind_param($stmt, "isss", $userId, $searchArg, $searchArg, $searchArg);
+            db_stmt_bind_param($stmt, "iss", $userId, $searchArg, $searchArg);
             db_stmt_execute($stmt);
             $result = db_stmt_get_result($stmt);
 
             if ($result && db_num_rows($result) > 0) {
-                $msg = "🔍 <b>YOUR PRODUCT SEARCH DIRECTORY</b>\n"
-                     . "<i>Query: '<b>" . htmlspecialchars($arg) . "</b>'</i>\n"
+                $msg = "🔍 <b>PRODUCT SEARCH RESULTS</b>\n"
+                     . "<i>Query: '<b>" . htmlspecialchars($rawArg) . "</b>'</i>\n"
                      . "═════════════════════════════\n\n";
                 while ($r = db_fetch_assoc($result)) {
                     $code  = htmlspecialchars($r['product_code']);
@@ -367,43 +303,65 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                           . "└ 🔢 Stock: <b>{$qty} units</b>\n\n";
                 }
             } else {
-                $msg = "❌ <b>NO MATCHES FOUND</b> for '<b>" . htmlspecialchars($arg) . "</b>'";
+                $msg = "❌ <b>NO MATCHES FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
             }
             db_stmt_close($stmt);
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
-        case '/categories':
-        case '/category':
-            if (!empty($rawArg)) {
-                $stmt = db_prepare($conn, "SELECT c.id, c.category_code, c.category_name, c.created_at, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? AND (UPPER(c.category_code) = UPPER(?) OR c.id = ? OR UPPER(c.category_name) LIKE UPPER(?)) GROUP BY c.id LIMIT 1");
-                $catIdArg = (int)$rawArg;
-                $catLikeArg = "%" . $rawArg . "%";
-                db_stmt_bind_param($stmt, "isis", $userId, $rawArg, $catIdArg, $catLikeArg);
-                db_stmt_execute($stmt);
-                $res = db_stmt_get_result($stmt);
-
-                if ($res && $r = db_fetch_assoc($res)) {
-                    $cId   = (int)$r['id'];
-                    $cCode = htmlspecialchars($r['category_code']);
-                    $cName = htmlspecialchars($r['category_name']);
-                    $cnt   = (int)$r['prod_count'];
-                    $qty   = (int)$r['total_qty'];
-                    $msg = "🏷️ <b>SINGLE CATEGORY DETAILS</b>\n"
-                         . "═════════════════════════════\n"
-                         . "<b>ID:</b> #{$cId}\n"
-                         . "<b>Code:</b> <code>{$cCode}</code>\n"
-                         . "<b>Name:</b> {$cName}\n"
-                         . "<b>Associated Products:</b> {$cnt} items\n"
-                         . "<b>Total Stock Qty:</b> {$qty} units";
-                } else {
-                    $msg = "❌ <b>CATEGORY NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
-                }
-                db_stmt_close($stmt);
+        // 2. /searchall <keyword>
+        case '/searchall':
+            if (empty($arg)) {
+                $msg = "🔍 <b>SEARCH ALL RECORDS</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/searchall &lt;keyword&gt;</code>\n"
+                     . "Example: <code>/searchall electronic</code>";
                 sendTelegramMessage($chatId, $msg, $botToken);
                 break;
             }
+            $searchArg = "%" . $arg . "%";
+            $pStmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity FROM product p WHERE p.user_id = ? AND (p.product_name LIKE ? OR p.product_code LIKE ?) LIMIT 5");
+            db_stmt_bind_param($pStmt, "iss", $userId, $searchArg, $searchArg);
+            db_stmt_execute($pStmt);
+            $pRes = db_stmt_get_result($pStmt);
 
+            $cStmt = db_prepare($conn, "SELECT category_code, category_name FROM category WHERE user_id = ? AND (category_name LIKE ? OR category_code LIKE ?) LIMIT 5");
+            db_stmt_bind_param($cStmt, "iss", $userId, $searchArg, $searchArg);
+            db_stmt_execute($cStmt);
+            $cRes = db_stmt_get_result($cStmt);
+
+            $msg = "🔍 <b>ALL MATCHING RECORDS</b>\n"
+                 . "<i>Query: '<b>" . htmlspecialchars($rawArg) . "</b>'</i>\n"
+                 . "═════════════════════════════\n\n";
+            $hasContent = false;
+
+            if ($pRes && db_num_rows($pRes) > 0) {
+                $hasContent = true;
+                $msg .= "📦 <b>Matching Products:</b>\n";
+                while ($r = db_fetch_assoc($pRes)) {
+                    $msg .= "• <b>" . htmlspecialchars($r['product_name']) . "</b> (<code>" . htmlspecialchars($r['product_code']) . "</code>) — Qty: " . (int)$r['quantity'] . "\n";
+                }
+                $msg .= "\n";
+            }
+            db_stmt_close($pStmt);
+
+            if ($cRes && db_num_rows($cRes) > 0) {
+                $hasContent = true;
+                $msg .= "🏷️ <b>Matching Categories:</b>\n";
+                while ($r = db_fetch_assoc($cRes)) {
+                    $msg .= "• <b>" . htmlspecialchars($r['category_name']) . "</b> (<code>" . htmlspecialchars($r['category_code']) . "</code>)\n";
+                }
+            }
+            db_stmt_close($cStmt);
+
+            if (!$hasContent) {
+                $msg = "❌ <b>NO RECORDS FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
+            }
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 3. /categories
+        case '/categories':
             $stmt = db_prepare($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? GROUP BY c.id ORDER BY c.category_name ASC");
             db_stmt_bind_param($stmt, "i", $userId);
             db_stmt_execute($stmt);
@@ -431,6 +389,89 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
+        // 4. /category <code|name>
+        case '/category':
+            if (empty($rawArg)) {
+                // If no arg, list categories
+                $stmt = db_prepare($conn, "SELECT c.category_code, c.category_name, COUNT(p.id) AS prod_count FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? GROUP BY c.id ORDER BY c.category_name ASC");
+                db_stmt_bind_param($stmt, "i", $userId);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
+                if ($res && db_num_rows($res) > 0) {
+                    $msg = "🏷️ <b>CATEGORY DIRECTORY</b>\n"
+                         . "═════════════════════════════\n\n";
+                    while ($r = db_fetch_assoc($res)) {
+                        $msg .= "• <b>" . htmlspecialchars($r['category_name']) . "</b> (<code>" . htmlspecialchars($r['category_code']) . "</code>) — " . (int)$r['prod_count'] . " items\n";
+                    }
+                    $msg .= "\n💡 <i>Use <code>/category &lt;code&gt;</code> for detailed category info.</i>";
+                } else {
+                    $msg = "📂 <b>NO CATEGORIES FOUND</b>";
+                }
+                db_stmt_close($stmt);
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $stmt = db_prepare($conn, "SELECT c.id, c.category_code, c.category_name, COUNT(p.id) AS prod_count, COALESCE(SUM(p.quantity), 0) AS total_qty FROM category c LEFT JOIN product p ON c.id = p.category_id WHERE c.user_id = ? AND (UPPER(c.category_code) = UPPER(?) OR c.id = ? OR UPPER(c.category_name) LIKE UPPER(?)) GROUP BY c.id LIMIT 1");
+            $catIdArg = (int)$rawArg;
+            $catLikeArg = "%" . $rawArg . "%";
+            db_stmt_bind_param($stmt, "isis", $userId, $rawArg, $catIdArg, $catLikeArg);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            if ($res && $r = db_fetch_assoc($res)) {
+                $cId   = (int)$r['id'];
+                $cCode = htmlspecialchars($r['category_code']);
+                $cName = htmlspecialchars($r['category_name']);
+                $cnt   = (int)$r['prod_count'];
+                $qty   = (int)$r['total_qty'];
+                $msg = "🏷️ <b>CATEGORY DETAILS</b>\n"
+                     . "═════════════════════════════\n"
+                     . "<b>ID:</b> #{$cId}\n"
+                     . "<b>Code:</b> <code>{$cCode}</code>\n"
+                     . "<b>Name:</b> {$cName}\n"
+                     . "<b>Associated Products:</b> {$cnt} items\n"
+                     . "<b>Total Stock Qty:</b> {$qty} units";
+            } else {
+                $msg = "❌ <b>CATEGORY NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 5. /sort [price|stock|date]
+        case '/sort':
+            $sortField = 'p.quantity DESC';
+            $sortLabel = 'Stock Quantity (High to Low)';
+            if ($arg === 'price') {
+                $sortField = 'p.price DESC';
+                $sortLabel = 'Price (High to Low)';
+            } elseif ($arg === 'date') {
+                $sortField = 'p.id DESC';
+                $sortLabel = 'Date Added (Newest)';
+            }
+
+            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity FROM product p WHERE p.user_id = ? ORDER BY {$sortField} LIMIT 10");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            if ($res && db_num_rows($res) > 0) {
+                $msg = "↕️ <b>SORTED PRODUCT LIST</b>\n"
+                     . "<i>Sorted by: <b>{$sortLabel}</b></i>\n"
+                     . "═════════════════════════════\n\n";
+                while ($r = db_fetch_assoc($res)) {
+                    $msg .= "• <b>" . htmlspecialchars($r['product_name']) . "</b> (<code>" . htmlspecialchars($r['product_code']) . "</code>)\n"
+                         . "   └ Stock: <b>" . (int)$r['quantity'] . "</b> | $" . number_format((float)$r['price'], 2) . "\n";
+                }
+            } else {
+                $msg = "📦 <b>NO PRODUCTS FOUND TO SORT</b>";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 6. /lowstock
         case '/lowstock':
             $stmt = db_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? AND quantity <= 5 ORDER BY quantity ASC");
             db_stmt_bind_param($stmt, "i", $userId);
@@ -455,17 +496,359 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
+        // 7. /topstock
+        case '/topstock':
+            $stmt = db_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? ORDER BY quantity DESC LIMIT 10");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            if ($res && db_num_rows($res) > 0) {
+                $msg = "📊 <b>TOP 10 HIGHEST STOCK ITEMS</b>\n"
+                     . "═════════════════════════════\n\n";
+                while ($r = db_fetch_assoc($res)) {
+                    $code = htmlspecialchars($r['product_code']);
+                    $name = htmlspecialchars($r['product_name']);
+                    $qty  = (int)$r['quantity'];
+                    $price = number_format((float)$r['price'], 2);
+                    $msg .= "🏆 <b>{$name}</b> (<code>{$code}</code>)\n"
+                          . "   └ Stock: <b>{$qty} units</b> | \${$price}\n";
+                }
+            } else {
+                $msg = "📦 <b>NO PRODUCTS FOUND</b>";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 8. /product <code|name>
+        case '/product':
+        case '/products':
+        case '/orders':
+            if (empty($rawArg)) {
+                $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
+                db_stmt_bind_param($stmt, "i", $userId);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
+
+                if ($res && db_num_rows($res) > 0) {
+                    $msg = "📦 <b>YOUR PRODUCTS OVERVIEW</b>\n"
+                         . "═════════════════════════════\n\n";
+                    while ($r = db_fetch_assoc($res)) {
+                        $code  = htmlspecialchars($r['product_code']);
+                        $name  = htmlspecialchars($r['product_name']);
+                        $cat   = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                        $price = number_format((float)$r['price'], 2);
+                        $qty   = (int)$r['quantity'];
+                        $msg  .= "📦 <b>{$name}</b>\n"
+                              . "├ 🆔 Code: <code>{$code}</code>\n"
+                              . "├ 🏷️ Category: <code>{$cat}</code>\n"
+                              . "├ 💰 Price: <b>\${$price}</b>\n"
+                              . "└ 🔢 Stock: <b>{$qty} units</b>\n\n";
+                    }
+                } else {
+                    $msg = "📦 <b>NO PRODUCTS FOUND</b>";
+                }
+                db_stmt_close($stmt);
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+
+            $stmt = db_prepare($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND (UPPER(p.product_code) = UPPER(?) OR p.id = ? OR UPPER(p.product_name) LIKE UPPER(?)) LIMIT 1");
+            $pIdArg = (int)$rawArg;
+            $pLikeArg = "%" . $rawArg . "%";
+            db_stmt_bind_param($stmt, "isis", $userId, $rawArg, $pIdArg, $pLikeArg);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            if ($res && $r = db_fetch_assoc($res)) {
+                $pId   = (int)$r['id'];
+                $pCode = htmlspecialchars($r['product_code']);
+                $pName = htmlspecialchars($r['product_name']);
+                $cName = htmlspecialchars($r['category_name'] ?? 'Unassigned');
+                $price = number_format((float)$r['price'], 2);
+                $qty   = (int)$r['quantity'];
+                $val   = number_format((float)$r['price'] * $qty, 2);
+                $msg = "📦 <b>PRODUCT DETAILS</b>\n"
+                     . "═════════════════════════════\n"
+                     . "<b>ID:</b> #{$pId}\n"
+                     . "<b>Code:</b> <code>{$pCode}</code>\n"
+                     . "<b>Name:</b> {$pName}\n"
+                     . "<b>Category:</b> {$cName}\n"
+                     . "<b>Price:</b> \${$price}\n"
+                     . "<b>Stock Qty:</b> {$qty} units\n"
+                     . "<b>Inventory Value:</b> \${$val}";
+            } else {
+                $msg = "❌ <b>PRODUCT NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 9. /outofstock
+        case '/outofstock':
+            $stmt = db_prepare($conn, "SELECT product_code, product_name, price FROM product WHERE user_id = ? AND quantity = 0 ORDER BY product_name ASC");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            if ($res && db_num_rows($res) > 0) {
+                $msg = "🚫 <b>OUT OF STOCK ITEMS (0 units)</b>\n"
+                     . "═════════════════════════════\n\n";
+                while ($r = db_fetch_assoc($res)) {
+                    $code = htmlspecialchars($r['product_code']);
+                    $name = htmlspecialchars($r['product_name']);
+                    $price = number_format((float)$r['price'], 2);
+                    $msg .= "❌ <b>{$name}</b> (<code>{$code}</code>) — \${$price}\n";
+                }
+            } else {
+                $msg = "✅ <b>GREAT!</b> All products are currently in stock.";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 10. /summary & /report
+        case '/report':
+        case '/summary':
+            $catStmt = db_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
+            db_stmt_bind_param($catStmt, "i", $userId);
+            db_stmt_execute($catStmt);
+            $catRes = db_stmt_get_result($catStmt);
+            $catCnt = ($r = db_fetch_assoc($catRes)) ? (int)$r['cat_cnt'] : 0;
+            db_stmt_close($catStmt);
+
+            $prodStmt = db_prepare($conn, "SELECT COUNT(*) as prod_cnt, COALESCE(SUM(quantity), 0) as total_qty, COALESCE(SUM(price * quantity), 0) as total_val FROM product WHERE user_id = ?");
+            db_stmt_bind_param($prodStmt, "i", $userId);
+            db_stmt_execute($prodStmt);
+            $prodRes = db_stmt_get_result($prodStmt);
+            $pData = db_fetch_assoc($prodRes);
+            $prodCnt = (int)($pData['prod_cnt'] ?? 0);
+            $totalQty = (int)($pData['total_qty'] ?? 0);
+            $totalVal = number_format((float)($pData['total_val'] ?? 0), 2);
+            db_stmt_close($prodStmt);
+
+            $msg = "📊 <b>LIVE INVENTORY SUMMARY REPORT</b>\n"
+                 . "═════════════════════════════\n"
+                 . "🏷️ Total Categories: <b>{$catCnt}</b>\n"
+                 . "📦 Total Products: <b>{$prodCnt}</b>\n"
+                 . "🔢 Total Items In Stock: <b>{$totalQty} units</b>\n"
+                 . "💵 Total Asset Valuation: <b>\${$totalVal}</b>\n";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 11. /valuation
+        case '/valuation':
+            $stmt = db_prepare($conn, "SELECT COUNT(*) as total_prods, COALESCE(SUM(quantity), 0) as total_stock, COALESCE(SUM(price * quantity), 0) as total_val, COALESCE(AVG(price), 0) as avg_price FROM product WHERE user_id = ?");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            if ($res && $r = db_fetch_assoc($res)) {
+                $prods    = number_format((int)$r['total_prods']);
+                $stock    = number_format((int)$r['total_stock']);
+                $avgPrice = number_format((float)$r['avg_price'], 2);
+                $totalVal = number_format((float)$r['total_val'], 2);
+
+                $msg = "💎 <b>FINANCIAL & ASSET VALUATION REPORT</b>\n"
+                     . "═════════════════════════════\n"
+                     . "📦 Total Products Listed: <b>{$prods}</b>\n"
+                     . "🔢 Total Stock Quantity: <b>{$stock} units</b>\n"
+                     . "💲 Average Unit Price: <b>\${$avgPrice}</b>\n"
+                     . "💵 Total Asset Valuation: <b>\${$totalVal}</b>";
+            } else {
+                $msg = "💎 <b>VALUATION REPORT</b>\nNo inventory data found.";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 12. /added
+        case '/added':
+            $stmt = db_prepare($conn, "SELECT product_code, product_name, price, quantity FROM product WHERE user_id = ? ORDER BY id DESC LIMIT 5");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            $msg = "🆕 <b>RECENTLY ADDED PRODUCTS</b>\n"
+                 . "═════════════════════════════\n\n";
+            if ($res && db_num_rows($res) > 0) {
+                while ($r = db_fetch_assoc($res)) {
+                    $msg .= "📦 <b>" . htmlspecialchars($r['product_name']) . "</b> (<code>" . htmlspecialchars($r['product_code']) . "</code>)\n"
+                         . "   └ Stock: " . (int)$r['quantity'] . " | $" . number_format((float)$r['price'], 2) . "\n";
+                }
+            } else {
+                $msg .= "<i>No recent items found.</i>";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 13. /updated
+        case '/updated':
+            $stmt = db_prepare($conn, "SELECT product_code, product_name, price, quantity, lastupdate FROM product WHERE user_id = ? ORDER BY lastupdate DESC LIMIT 5");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+
+            $msg = "✏️ <b>RECENTLY MODIFIED PRODUCTS</b>\n"
+                 . "═════════════════════════════\n\n";
+            if ($res && db_num_rows($res) > 0) {
+                while ($r = db_fetch_assoc($res)) {
+                    $msg .= "✏️ <b>" . htmlspecialchars($r['product_name']) . "</b> (<code>" . htmlspecialchars($r['product_code']) . "</code>)\n"
+                         . "   └ Qty: " . (int)$r['quantity'] . " | $" . number_format((float)$r['price'], 2) . " <i>(" . htmlspecialchars($r['lastupdate']) . ")</i>\n";
+                }
+            } else {
+                $msg .= "<i>No recent updates recorded.</i>";
+            }
+            db_stmt_close($stmt);
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 14. /history
+        case '/history':
+            $pStmt = db_prepare($conn, "SELECT product_code, product_name, lastupdate FROM product WHERE user_id = ? ORDER BY lastupdate DESC LIMIT 5");
+            db_stmt_bind_param($pStmt, "i", $userId);
+            db_stmt_execute($pStmt);
+            $pRes = db_stmt_get_result($pStmt);
+
+            $cStmt = db_prepare($conn, "SELECT category_code, category_name, lastupdate FROM category WHERE user_id = ? ORDER BY lastupdate DESC LIMIT 5");
+            db_stmt_bind_param($cStmt, "i", $userId);
+            db_stmt_execute($cStmt);
+            $cRes = db_stmt_get_result($cStmt);
+
+            $msg = "📜 <b>RECENT ACTIVITY LOG</b>\n"
+                 . "═════════════════════════════\n\n";
+
+            if ($pRes && db_num_rows($pRes) > 0) {
+                $msg .= "📦 <b>Product Activity:</b>\n";
+                while ($r = db_fetch_assoc($pRes)) {
+                    $msg .= "• <b>" . htmlspecialchars($r['product_name']) . "</b> (<code>" . htmlspecialchars($r['product_code']) . "</code>) — <i>" . htmlspecialchars($r['lastupdate']) . "</i>\n";
+                }
+                $msg .= "\n";
+            }
+            db_stmt_close($pStmt);
+
+            if ($cRes && db_num_rows($cRes) > 0) {
+                $msg .= "🏷️ <b>Category Activity:</b>\n";
+                while ($r = db_fetch_assoc($cRes)) {
+                    $msg .= "• <b>" . htmlspecialchars($r['category_name']) . "</b> (<code>" . htmlspecialchars($r['category_code']) . "</code>) — <i>" . htmlspecialchars($r['lastupdate']) . "</i>\n";
+                }
+            }
+            db_stmt_close($cStmt);
+
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 15. /today
+        case '/today':
+            $today = date('Y-m-d');
+            $pStmt = db_prepare($conn, "SELECT COUNT(*) as cnt FROM product WHERE user_id = ? AND DATE(created_at) = ?");
+            db_stmt_bind_param($pStmt, "is", $userId, $today);
+            db_stmt_execute($pStmt);
+            $pRes = db_stmt_get_result($pStmt);
+            $pCnt = ($r = db_fetch_assoc($pRes)) ? (int)$r['cnt'] : 0;
+            db_stmt_close($pStmt);
+
+            $cStmt = db_prepare($conn, "SELECT COUNT(*) as cnt FROM category WHERE user_id = ? AND DATE(created_at) = ?");
+            db_stmt_bind_param($cStmt, "is", $userId, $today);
+            db_stmt_execute($cStmt);
+            $cRes = db_stmt_get_result($cStmt);
+            $cCnt = ($r = db_fetch_assoc($cRes)) ? (int)$r['cnt'] : 0;
+            db_stmt_close($cStmt);
+
+            $msg = "📅 <b>TODAY'S ACTIVITY SUMMARY</b>\n"
+                 . "<i>Date: " . date('d/m/Y') . "</i>\n"
+                 . "═════════════════════════════\n\n"
+                 . "📦 <b>Products Added Today:</b> <b>{$pCnt}</b>\n"
+                 . "🏷️ <b>Categories Added Today:</b> <b>{$cCnt}</b>\n\n"
+                 . "📊 Total Records Created Today: <b>" . ($pCnt + $cCnt) . "</b>";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 16. /push <message>
+        case '/push':
+            if (empty($rawArg)) {
+                $msg = "📤 <b>SEND PUSH NOTIFICATION</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Usage: <code>/push &lt;your message&gt;</code>\n"
+                     . "Example: <code>/push Inventory audit completed!</code>";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                break;
+            }
+            $nowStr = date('Y-m-d H:i:s');
+            $msg = "📢 <b>MANUAL TELEGRAM PUSH</b>\n"
+                 . "<i>Pushed: {$nowStr}</i>\n"
+                 . "───────────────────────\n"
+                 . htmlspecialchars($rawArg) . "\n"
+                 . "───────────────────────\n"
+                 . "<i>Sent via Telegram Command</i>";
+            sendSingleTelegramNotification($chatId, $msg, $botToken);
+            break;
+
+        // 17. /toggle
+        case '/toggle':
+            $status = isAutoTelegramEnabled($conn);
+            $newStatus = $status ? "0" : "1";
+            setAutoTelegramEnabled($conn, $newStatus);
+
+            if ($newStatus === "1") {
+                $msg = "🔔 <b>AUTO-NOTIFICATIONS ENABLED</b>\n"
+                     . "Automatic Telegram notifications are now <b>ON</b>.";
+            } else {
+                $msg = "🔕 <b>AUTO-NOTIFICATIONS DISABLED</b>\n"
+                     . "Automatic Telegram notifications are now <b>OFF</b>.";
+            }
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 18. /settings
+        case '/settings':
+            $stmt = db_prepare($conn, "SELECT name, email, username FROM users WHERE id = ?");
+            db_stmt_bind_param($stmt, "i", $userId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $uRow = db_fetch_assoc($res);
+            db_stmt_close($stmt);
+
+            $uName = htmlspecialchars($uRow['name'] ?? 'User #' . $userId);
+            $uEmail = htmlspecialchars($uRow['email'] ?? 'N/A');
+
+            $msg = "⚙️ <b>ACCOUNT SETTINGS & CONNECTION INFO</b>\n"
+                 . "═════════════════════════════\n"
+                 . "👤 <b>User:</b> {$uName}\n"
+                 . "📧 <b>Email:</b> {$uEmail}\n"
+                 . "🆔 <b>User ID:</b> <code>#{$userId}</code>\n"
+                 . "📱 <b>Telegram Chat ID:</b> <code>{$chatId}</code>\n"
+                 . "Status: <b>Connected ✅</b>";
+            sendTelegramMessage($chatId, $msg, $botToken);
+            break;
+
+        // 19. /help
         case '/help':
         default:
-            $msg = "ℹ️ <b>AVAILABLE COMMANDS</b>\n"
-                 . "═════════════════════════════\n"
-                 . "📊 <code>/report</code> - Inventory report & valuation\n"
-                 . "📦 <code>/orders</code> - Recent orders & products\n"
-                 . "⚙️ <code>/settings</code> - Account settings & connection\n"
-                 . "🏷️ <code>/categories</code> - Category overview\n"
-                 . "🔍 <code>/search &lt;keyword&gt;</code> - Search products\n"
-                 . "⚠️ <code>/lowstock</code> - View low stock items\n"
-                 . "🚀 <code>/start</code> - Connection status";
+            $msg = "🤖 <b>INVENTORY BOT COMMAND CENTER</b>\n"
+                 . "<i>All Available Bot Commands</i>\n"
+                 . "═════════════════════════════\n\n"
+                 . "🔍 <code>/search &lt;keyword&gt;</code> — Search product\n"
+                 . "🔍 <code>/searchall &lt;keyword&gt;</code> — Search all records\n"
+                 . "🏷️ <code>/categories</code> — List all categories\n"
+                 . "🏷️ <code>/category &lt;code&gt;</code> — Category info\n"
+                 . "↕️ <code>/sort [price|stock|date]</code> — Sort items\n"
+                 . "⚠️ <code>/lowstock</code> — Low stock items (≤ 5)\n"
+                 . "📊 <code>/topstock</code> — Top 10 highest stock\n"
+                 . "📦 <code>/product &lt;code&gt;</code> — Product info\n"
+                 . "🚫 <code>/outofstock</code> — Out of stock items\n"
+                 . "📊 <code>/summary</code> — Live inventory summary\n"
+                 . "💎 <code>/valuation</code> — Financial report\n"
+                 . "🆕 <code>/added</code> — Recently added items\n"
+                 . "✏️ <code>/updated</code> — Recently modified items\n"
+                 . "📜 <code>/history</code> — Activity log\n"
+                 . "📅 <code>/today</code> — Today's activity\n"
+                 . "📤 <code>/push &lt;msg&gt;</code> — Send to Telegram\n"
+                 . "🔔 <code>/toggle</code> — Toggle auto-notify\n"
+                 . "❓ <code>/help</code> — View all commands\n\n"
+                 . "─────────────────────────────\n"
+                 . "<i>Tap any command above to run it instantly!</i>";
             sendTelegramMessage($chatId, $msg, $botToken);
             break;
     }

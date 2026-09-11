@@ -11,7 +11,19 @@ require_once __DIR__ . '/bot_poller.php';
 
 $botToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
 
-// Read incoming Telegram update
+// If accessed via GET browser request, register all 18 commands with Telegram BotFather API
+if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_GET['action'])) {
+    header("Content-Type: application/json; charset=utf-8");
+    $res = registerBotCommands($botToken);
+    echo json_encode([
+        "ok" => true,
+        "message" => "All 18 Telegram Bot commands registered successfully with BotFather API!",
+        "telegram_response" => json_decode($res, true)
+    ]);
+    exit;
+}
+
+// Read incoming Telegram update (Webhook mode)
 $content = file_get_contents("php://input");
 $update  = json_decode($content, true);
 
