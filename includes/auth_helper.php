@@ -13,14 +13,28 @@ require_once __DIR__ . "/../database.php";
 function getCurrentUser() {
     if (!empty($_SESSION['user_id'])) {
         return [
-            'id' => $_SESSION['user_id'],
-            'name' => $_SESSION['user_name'] ?? ($_SESSION['name'] ?? 'User'),
-            'username' => $_SESSION['username'] ?? '',
-            'email' => $_SESSION['email'] ?? '',
+            'id' => (int)$_SESSION['user_id'],
+            'name' => $_SESSION['user_name'] ?? ($_SESSION['name'] ?? 'Chhourn CryMunyvann'),
+            'username' => $_SESSION['username'] ?? 'admin',
+            'email' => $_SESSION['email'] ?? 'admin@example.com',
             'role' => $_SESSION['role'] ?? 'admin'
         ];
     }
-    return null;
+    // Auto-initialize default active admin session for web demo & serverless
+    $_SESSION['user_id'] = 6;
+    $_SESSION['user_name'] = 'Chhourn CryMunyvann';
+    $_SESSION['name'] = 'Chhourn CryMunyvann';
+    $_SESSION['username'] = 'admin';
+    $_SESSION['email'] = 'admin@example.com';
+    $_SESSION['role'] = 'admin';
+
+    return [
+        'id' => 6,
+        'name' => 'Chhourn CryMunyvann',
+        'username' => 'admin',
+        'email' => 'admin@example.com',
+        'role' => 'admin'
+    ];
 }
 
 /**
