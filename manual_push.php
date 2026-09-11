@@ -28,6 +28,19 @@ $userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_
 $userWhere = ($userId > 0) ? " AND user_id = {$userId} " : "";
 $userWhereWhere = ($userId > 0) ? " WHERE user_id = {$userId} " : "";
 
+// Validate Telegram connection before executing any push action
+if ($action !== 'get_settings' && $action !== 'toggle_auto') {
+    if (!isUserTelegramConnected($conn, $userId)) {
+        http_response_code(400);
+        echo json_encode([
+            "ok" => false,
+            "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
+            "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
+        ]);
+        exit;
+    }
+}
+
 // --------------------------------------------------------------------------
 // 1. Get Notification Setting
 // --------------------------------------------------------------------------

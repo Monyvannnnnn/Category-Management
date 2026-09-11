@@ -170,6 +170,43 @@ function getSubscriberChatIds($conn = null) {
 }
 
 /**
+ * Helper to check if a specific user is currently connected to Telegram
+ */
+function isUserTelegramConnected($conn = null, $userId = null) {
+    if (!$conn) {
+        global $conn;
+    }
+    if ($userId === null || (int)$userId <= 0) {
+        if (function_exists('getCurrentUser')) {
+            $u = getCurrentUser();
+            if (!empty($u['id'])) {
+                $userId = (int)$u['id'];
+            }
+        }
+        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
+            $userId = (int)$_SESSION['user_id'];
+        }
+    }
+    if ($userId !== null && (int)$userId > 0) {
+        $uId = (int)$userId;
+        if ($conn) {
+            $stmt = db_prepare($conn, "SELECT chat_id FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+            if ($stmt) {
+                db_stmt_bind_param($stmt, "i", $uId);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
+                $row = db_fetch_assoc($res);
+                db_stmt_close($stmt);
+                if ($row && !empty(trim($row['chat_id']))) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/**
  * Send notification to specific user (or auto-detect logged-in user for per-user isolation)
  */
 function sendTelegramNotification($message, $conn = null, $userId = null) {
@@ -202,12 +239,19 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
                 $row = db_fetch_assoc($res);
                 db_stmt_close($stmt);
 
-                if ($row && !empty($row['chat_id'])) {
-                    $bToken = !empty($row['bot_token']) ? $row['bot_token'] : null;
-                    return sendSingleTelegramNotification($row['chat_id'], $message, $bToken);
+                if ($row && !empty(trim($row['chat_id']))) {
+                    $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
+                    return sendSingleTelegramNotification(trim($row['chat_id']), $message, $bToken);
                 }
             }
         }
+
+        // If user is specified/logged-in but has not connected to Telegram, return failure
+        return json_encode([
+            "ok" => false, 
+            "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
+            "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
+        ]);
     }
 
     // Broadcast Mode / Fallback: Send to ALL connected Telegram users & subscribers
@@ -217,6 +261,7 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
         $uInfo = ($userId !== null && (int)$userId > 0) ? " for User ID {$userId}" : "";
         return json_encode([
             "ok" => false, 
+            "message" => "No connected Telegram account found{$uInfo}. Please connect your Telegram bot in Settings.",
             "description" => "No connected Telegram account found{$uInfo}. Please connect your Telegram bot in Settings."
         ]);
     }
