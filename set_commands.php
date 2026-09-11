@@ -11,14 +11,29 @@ require_once __DIR__ . '/bot_poller.php';
 
 $botToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
 
-// If accessed via GET browser request, register all 18 commands with Telegram BotFather API
+// If accessed via GET browser request, register Webhook and all 18 commands with Telegram BotFather API
 if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_GET['action'])) {
     header("Content-Type: application/json; charset=utf-8");
-    $res = registerBotCommands($botToken);
+    $host = $_SERVER['HTTP_HOST'] ?? 'report-push-v2-git-main-monyvans-projects.vercel.app';
+    $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+    $webhookUrl = "{$scheme}://{$host}/set_commands.php";
+
+    $whApiUrl = "https://api.telegram.org/bot{$botToken}/setWebhook?url=" . urlencode($webhookUrl);
+    $ch = curl_init($whApiUrl);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    $whRes = curl_exec($ch);
+    curl_close($ch);
+
+    $cmdRes = registerBotCommands($botToken);
+
     echo json_encode([
         "ok" => true,
-        "message" => "All 18 Telegram Bot commands registered successfully with BotFather API!",
-        "telegram_response" => json_decode($res, true)
+        "message" => "Telegram Bot Webhook and all 18 commands registered successfully!",
+        "webhook_url" => $webhookUrl,
+        "webhook_response" => json_decode($whRes, true),
+        "commands_response" => json_decode($cmdRes, true)
     ]);
     exit;
 }

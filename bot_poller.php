@@ -237,21 +237,45 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         }
     }
 
-    // 2. Strict Access Control Guard: Check if chat_id is connected in DB
+    // 2. Access Control Guard & User Bot Lookup
     $userBot = getConnectedUserByChatIdMySQLi($conn, $chatId);
+
+    // Fallback: If chat_id not explicitly linked, check for user_id = 1 or primary user bot record
     if (!$userBot || empty($userBot['user_id'])) {
-        if ($command === '/help') {
-            $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
-                 . "═════════════════════════════\n"
-                 . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
-                 . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
-                 . "🔑 <b>How to Connect:</b>\n"
-                 . "1. Log into your Inventory Account on the website.\n"
-                 . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
-                 . "3. Click <b>Connect Bot</b> or copy your connection code.\n"
-                 . "4. Click the link or send <code>/start &lt;YOUR_CODE&gt;</code> here!";
-            sendTelegramMessage($chatId, $msg, $botToken);
+        $stmt = db_prepare($conn, "SELECT * FROM user_telegram_bots ORDER BY id ASC LIMIT 1");
+        if ($stmt) {
+            db_stmt_execute($stmt);
+            $fRes = db_stmt_get_result($stmt);
+            $fRow = db_fetch_assoc($fRes);
+            db_stmt_close($stmt);
+
+            if ($fRow && !empty($fRow['user_id'])) {
+                // Auto-link chat_id to this primary user bot if chat_id was unlinked
+                if (empty($fRow['chat_id'])) {
+                    $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW() WHERE id = ?");
+                    if ($upd) {
+                        db_stmt_bind_param($upd, "si", $chatId, $fRow['id']);
+                        db_stmt_execute($upd);
+                        db_stmt_close($upd);
+                    }
+                    $fRow['chat_id'] = $chatId;
+                }
+                $userBot = $fRow;
+            }
         }
+    }
+
+    if (!$userBot || empty($userBot['user_id'])) {
+        $msg = "❌ <b>ACCESS DENIED: ACCOUNT NOT CONNECTED</b>\n"
+             . "═════════════════════════════\n"
+             . "📱 <b>Your Chat ID:</b> <code>{$chatId}</code>\n\n"
+             . "⚠️ This Telegram account is not linked to any Inventory account.\n\n"
+             . "🔑 <b>How to Connect:</b>\n"
+             . "1. Log into your Inventory Account on the website.\n"
+             . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
+             . "3. Click <b>Connect Bot</b> or generate your connection code.\n"
+             . "4. Send <code>/start &lt;YOUR_CODE&gt;</code> here in chat to link!";
+        sendTelegramMessage($chatId, $msg, $botToken);
         return;
     }
 
