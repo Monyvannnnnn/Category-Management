@@ -1,6 +1,10 @@
 <?php
 // telegram_settings.php - API Handler for User-Specific Telegram Bot Configuration
 header("Content-Type: application/json; charset=utf-8");
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
 require_once __DIR__ . "/includes/auth_helper.php";
 
 $user = getCurrentUser();
@@ -87,15 +91,15 @@ switch ($action) {
 
         $existing = getUserBotRow($conn, $userId);
         if ($existing) {
-            $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = DATE_ADD(NOW(), INTERVAL 30 MINUTE) WHERE user_id = ?");
-            db_stmt_bind_param($stmt, "si", $code, $userId);
+            $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = ? WHERE user_id = ?");
+            db_stmt_bind_param($stmt, "ssi", $code, $expiresAt, $userId);
             db_stmt_execute($stmt);
             db_stmt_close($stmt);
         } else {
             $defaultToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
             $defaultUsername = "reportpush_bot";
-            $stmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, DATE_ADD(NOW(), INTERVAL 30 MINUTE))");
-            db_stmt_bind_param($stmt, "isss", $userId, $defaultToken, $defaultUsername, $code);
+            $stmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, ?)");
+            db_stmt_bind_param($stmt, "issss", $userId, $defaultToken, $defaultUsername, $code, $expiresAt);
             db_stmt_execute($stmt);
             db_stmt_close($stmt);
         }
@@ -112,7 +116,7 @@ switch ($action) {
             curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
             curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
             curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-            curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
             @curl_exec($ch);
             @curl_close($ch);
         }

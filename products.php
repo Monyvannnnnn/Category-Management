@@ -2498,7 +2498,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         let wasConnectingTelegram = false;
 
         window.checkTelegramConnectionAndExecute = function(onConnected) {
-            return fetch('telegram_settings.php?action=get')
+            return fetch('telegram_settings.php?action=get&_t=' + Date.now())
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data && data.success && data.is_connected) {
@@ -2539,7 +2539,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             const icon = btnRefresh ? btnRefresh.querySelector('i') : null;
             if (icon) icon.classList.add('fa-spin');
 
-            return fetch('telegram_settings.php?action=get')
+            return fetch('telegram_settings.php?action=get&_t=' + Date.now())
                 .then(r => r.json())
                 .then(data => {
                     if (icon) icon.classList.remove('fa-spin');

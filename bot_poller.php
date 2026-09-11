@@ -79,8 +79,8 @@ function handleCodeBinding($conn, $chatId, $code) {
     $userBot = null;
     $isFreshBind = false;
 
-    // 1. Try exact connection code match for valid website user account (must be unexpired)
-    $stmt = db_prepare($conn, "SELECT b.* FROM user_telegram_bots b JOIN users u ON b.user_id = u.id WHERE UPPER(TRIM(b.connection_code)) = UPPER(TRIM(?)) AND (b.code_expires_at IS NULL OR b.code_expires_at >= NOW()) LIMIT 1");
+    // 1. Try exact connection code match for valid website user account
+    $stmt = db_prepare($conn, "SELECT b.* FROM user_telegram_bots b JOIN users u ON b.user_id = u.id WHERE UPPER(TRIM(b.connection_code)) = UPPER(TRIM(?)) LIMIT 1");
     if ($stmt) {
         db_stmt_bind_param($stmt, "s", $code);
         db_stmt_execute($stmt);
@@ -92,14 +92,15 @@ function handleCodeBinding($conn, $chatId, $code) {
 
     // Bind chat_id & clear connection_code for matched userBot
     if ($userBot) {
-        $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = NOW(), connection_code = NULL, code_expires_at = NULL WHERE id = ?");
+        $nowStr = date('Y-m-d H:i:s');
+        $upd = db_prepare($conn, "UPDATE user_telegram_bots SET chat_id = ?, connected_at = ?, connection_code = NULL, code_expires_at = NULL WHERE id = ?");
         if ($upd) {
-            db_stmt_bind_param($upd, "si", $chatId, $userBot['id']);
+            db_stmt_bind_param($upd, "ssi", $chatId, $nowStr, $userBot['id']);
             db_stmt_execute($upd);
             db_stmt_close($upd);
         }
         $userBot['chat_id'] = $chatId;
-        $userBot['connected_at'] = date('Y-m-d H:i:s');
+        $userBot['connected_at'] = $nowStr;
         $userBot['is_fresh_bind'] = true;
         return $userBot;
     }
@@ -137,7 +138,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         );");
 
         // Clean up overflow / old entries
-        @db_query($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < DATE_SUB(NOW(), INTERVAL 1 HOUR)");
+        $oneHourAgo = date('Y-m-d H:i:s', strtotime('-1 hour'));
+        $delStmt = db_prepare($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < ?");
+        if ($delStmt) {
+            db_stmt_bind_param($delStmt, "s", $oneHourAgo);
+            db_stmt_execute($delStmt);
+            db_stmt_close($delStmt);
+        }
 
         $updateIdStr = (string)$updateId;
         $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
