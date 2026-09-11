@@ -470,3 +470,42 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             break;
     }
 }
+
+/**
+ * Poll pending Telegram updates for a specific bot token on demand (web serverless compatible)
+ */
+function pollTelegramUpdatesForBot($conn, $botToken) {
+    if (empty($botToken)) return;
+    $offsetFile = __DIR__ . '/telegram_offset.txt';
+    $offset = file_exists($offsetFile) ? (int)file_get_contents($offsetFile) : 0;
+
+    $url = "https://api.telegram.org/bot{$botToken}/getUpdates?offset={$offset}&timeout=2";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if ($response !== false) {
+        $data = json_decode($response, true);
+        if ($data && isset($data['result']) && is_array($data['result'])) {
+            foreach ($data['result'] as $update) {
+                $updateId = $update['update_id'] ?? 0;
+                $newOffset = $updateId + 1;
+                @file_put_contents($offsetFile, $newOffset);
+
+                if (isset($update['message'])) {
+                    $msgObj = $update['message'];
+                    $chatId = $msgObj['chat']['id'] ?? '';
+                    $text   = trim($msgObj['text'] ?? '');
+                    if (!empty($chatId) && !empty($text)) {
+                        processTelegramCommand($conn, $chatId, $text, $botToken, 1, $updateId);
+                    }
+                }
+            }
+        }
+    }
+}
