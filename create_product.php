@@ -89,10 +89,14 @@ if ($stmt) {
             fastcgi_finish_request();
         }
         if (isAutoTelegramEnabled($conn)) {
-            if (!empty($imageUrl)) {
-                sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
-            } else {
-                sendTelegramNotification($msg, $conn, $userId);
+            try {
+                if (!empty($imageUrl)) {
+                    sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
+                } else {
+                    sendTelegramNotification($msg, $conn, $userId);
+                }
+            } catch (Exception $e) {
+                // Ignore background notification error
             }
         }
         exit;

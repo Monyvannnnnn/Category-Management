@@ -116,15 +116,28 @@ if ($stmt) {
         $data = db_fetch_assoc($row);
         db_stmt_close($sel);
 
+        $catName = $data['category_name'] ?? 'N/A';
+        $msg = "<b>✏️ Product Updated</b>\n"
+             . "<b>ID:</b> #{$id}\n"
+             . "<b>Code:</b> " . htmlspecialchars($productCode) . "\n"
+             . "<b>Name:</b> " . htmlspecialchars($productName) . "\n"
+             . "<b>Category:</b> " . htmlspecialchars($catName) . "\n"
+             . "<b>Price:</b> $" . number_format($price, 2) . "\n"
+             . "<b>Quantity:</b> " . $quantity;
+
         echo json_encode($data ?: ["success" => true]);
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
         if (isAutoTelegramEnabled($conn)) {
-            if (!empty($imageUrl)) {
-                sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
-            } else {
-                sendTelegramNotification($msg, $conn, $userId);
+            try {
+                if (!empty($imageUrl)) {
+                    sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
+                } else {
+                    sendTelegramNotification($msg, $conn, $userId);
+                }
+            } catch (Exception $e) {
+                // Ignore background notification error
             }
         }
         exit;
