@@ -668,6 +668,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             .on("click", function(e) {
                                 e.preventDefault();
                                 if (options.data && options.data.id) {
+                                    var $btn = $(this);
+                                    if ($btn.data("loading")) return;
+                                    var $icon = $btn.find("i");
+                                    $btn.data("loading", true);
+                                    $icon.removeClass("fa-paper-plane").addClass("fa-spinner fa-spin");
+
+                                    function resetBtn() {
+                                        $btn.data("loading", false);
+                                        $icon.removeClass("fa-spinner fa-spin").addClass("fa-paper-plane");
+                                    }
+
                                     window.checkTelegramConnectionAndExecute(function() {
                                         $.ajax({
                                             url: "manual_push.php",
@@ -701,9 +712,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                                                 } else {
                                                     DevExpress.ui.notify("❌ Telegram Push Failed: " + errMsg, "error", 5000);
                                                 }
-                                            }
+                                            },
+                                            complete: resetBtn
                                         });
-                                    });
+                                    }, resetBtn);
                                 }
                             });
 
@@ -2093,6 +2105,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 errDiv.style.display = 'none';
                 succDiv.style.display = 'none';
 
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const origHtml = submitBtn ? submitBtn.innerHTML : '';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving...';
+                }
+
                 const formData = new FormData(form);
                 fetch('create_user.php', {
                     method: 'POST',
@@ -2118,6 +2137,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                 .catch(err => {
                     errDiv.textContent = 'Server error or invalid response.';
                     errDiv.style.display = 'block';
+                })
+                .finally(() => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origHtml;
+                    }
                 });
             });
         }
@@ -2137,7 +2162,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
         let tgPollTimer = null;
         let wasConnectingTelegram = false;
 
-        window.checkTelegramConnectionAndExecute = function(onConnected) {
+        window.checkTelegramConnectionAndExecute = function(onConnected, onNotConnected) {
             return fetch('telegram_settings.php?action=get&_t=' + Date.now())
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -2148,6 +2173,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         }
                     } else {
                         window.isTelegramConnected = false;
+                        if (typeof onNotConnected === 'function') {
+                            onNotConnected();
+                        }
                         if (typeof fetchTelegramStatus === 'function') {
                             fetchTelegramStatus();
                         }
@@ -2164,6 +2192,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     if (window.isTelegramConnected) {
                         if (typeof onConnected === 'function') onConnected();
                     } else {
+                        window.isTelegramConnected = false;
+                        if (typeof onNotConnected === 'function') {
+                            onNotConnected();
+                        }
                         if (typeof fetchTelegramStatus === 'function') {
                             fetchTelegramStatus();
                         }

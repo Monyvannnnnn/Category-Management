@@ -3,6 +3,7 @@
 require_once "database.php";
 require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
+require_once "supabase_storage.php";
 
 header("Content-Type: application/json");
 
@@ -42,9 +43,29 @@ if ($check_code_stmt) {
     db_stmt_close($check_code_stmt);
 }
 
-$stmt = db_prepare($conn, "INSERT INTO product (user_id, product_code, product_name, category_id, price, quantity) VALUES (?, ?, ?, ?, ?, ?)");
+// Handle Image Upload to Supabase Storage
+$imageUrl = null;
+if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+    try {
+        validateUploadedFile($_FILES['product_image']);
+        $ext = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
+        $uniqueName = uniqid() . '_' . time() . '.' . $ext;
+        $imageUrl = uploadToSupabase($_FILES['product_image']['tmp_name'], $uniqueName);
+        if (!$imageUrl) {
+            http_response_code(500);
+            echo json_encode(["message" => "Failed to upload product image to Supabase Storage."]);
+            exit;
+        }
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(["message" => $e->getMessage()]);
+        exit;
+    }
+}
+
+$stmt = db_prepare($conn, "INSERT INTO product (user_id, product_code, product_name, category_id, price, quantity, image) VALUES (?, ?, ?, ?, ?, ?, ?)");
 if ($stmt) {
-    db_stmt_bind_param($stmt, "issidi", $userId, $product_code, $product_name, $category_id, $price, $quantity);
+    db_stmt_bind_param($stmt, "issidis", $userId, $product_code, $product_name, $category_id, $price, $quantity, $imageUrl);
     if (db_stmt_execute($stmt)) {
         $newId = db_insert_id($conn);
         db_stmt_close($stmt);
@@ -68,7 +89,11 @@ if ($stmt) {
             fastcgi_finish_request();
         }
         if (isAutoTelegramEnabled($conn)) {
-            sendTelegramNotification($msg, $conn, $userId);
+            if (!empty($imageUrl)) {
+                sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
+            } else {
+                sendTelegramNotification($msg, $conn, $userId);
+            }
         }
         exit;
     } else {

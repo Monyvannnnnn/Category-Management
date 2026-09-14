@@ -1,6 +1,12 @@
 <?php
 // database.php - Dual MySQL / PostgreSQL Database Connection Layer
 
+// Supabase Storage Configuration
+if (!defined('SUPABASE_URL')) define('SUPABASE_URL', getenv('SUPABASE_URL') ?: 'https://wpzaeloeqsiacehkxvgq.supabase.co');
+if (!defined('SUPABASE_ANON_KEY')) define('SUPABASE_ANON_KEY', getenv('SUPABASE_ANON_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemFlbG9lcXNpYWNlaGt4dmdxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODkwNDE1MjksImV4cCI6MjEwNDYxNzUyOX0.crMP8iSeQNT2DnFCXDueRp3SHN3XezcraFp5QitfECQ');
+if (!defined('SUPABASE_SERVICE_KEY')) define('SUPABASE_SERVICE_KEY', getenv('SUPABASE_SERVICE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemFlbG9lcXNpYWNlaGt4dmdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTA0MTUyOSwiZXhwIjoyMTA0NjE3NTI5fQ.nJnwkopTUSnNBXtMCD_m-Fuj-vCumPnRfIjh7FhLejA');
+if (!defined('SUPABASE_BUCKET')) define('SUPABASE_BUCKET', getenv('SUPABASE_BUCKET') ?: 'products-img');
+
 if (file_exists(__DIR__ . "/db_config.php")) {
     $cfg = require __DIR__ . "/db_config.php";
 } else {

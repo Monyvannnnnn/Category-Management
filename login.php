@@ -289,12 +289,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             text-decoration: none;
             font-weight: 600;
             margin-left: 4px;
-            transition: color 0.2s;
-        }
-
         .auth-footer a:hover {
             color: #a78bfa;
             text-decoration: underline;
+        }
+
+        .btn-submit:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
     </style>
 </head>
@@ -365,6 +369,17 @@ document.addEventListener('DOMContentLoaded', function() {
             passwordInput.setAttribute('type', type);
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
+        });
+    }
+
+    const loginForm = document.getElementById('loginForm');
+    if (loginForm) {
+        loginForm.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('.btn-submit');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Signing In...';
+            }
         });
     }
 });

@@ -302,7 +302,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <input type="text" class="form-control-custom" id="name" name="name" 
                            placeholder="e.g. John Doe" required 
                            value="<?= htmlspecialchars($_POST['name'] ?? '') ?>">
-                    <i class="fa-solid fa-id-card input-icon"></i>
+                    <i class="fa-solid fa-user-gear input-icon"></i>
                 </div>
             </div>
 
@@ -312,7 +312,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <input type="text" class="form-control-custom" id="username" name="username" 
                            placeholder="e.g. johndoe" required 
                            value="<?= htmlspecialchars($_POST['username'] ?? '') ?>">
-                    <i class="fa-solid fa-user input-icon"></i>
+                    <i class="fa-solid fa-at input-icon"></i>
                 </div>
             </div>
 
@@ -358,6 +358,17 @@ document.addEventListener('DOMContentLoaded', function() {
             passwordInput.setAttribute('type', type);
             this.classList.toggle('fa-eye');
             this.classList.toggle('fa-eye-slash');
+        });
+    }
+
+    const registerForm = document.getElementById('registerForm');
+    if (registerForm) {
+        registerForm.addEventListener('submit', function() {
+            const submitBtn = this.querySelector('.btn-submit');
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Registering...';
+            }
         });
     }
 });

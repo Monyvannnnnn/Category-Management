@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Table with Images</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #161d2a;
+            --border-color: #2f3e57;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .page-title i {
+            color: var(--accent);
+            margin-right: 10px;
+        }
+
+        .btn-add {
+            background: var(--accent);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-add:hover {
+            background: var(--accent-hover);
+            transform: translateY(-1px);
+        }
+
+        .table-container {
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 0;
+        }
+
+        .table thead {
+            background: var(--bg-secondary);
+        }
+
+        .table thead th {
+            padding: 14px 16px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .table tbody tr {
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.15s;
+        }
+
+        .table tbody tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+
+        .table tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        .table tbody td {
+            padding: 12px 16px;
+            vertical-align: middle;
+            font-size: 13px;
+        }
+
+        /* Product Image */
+        .product-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid var(--border-color);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .product-img:hover {
+            transform: scale(1.1);
+        }
+
+        .no-img {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background: var(--bg-secondary);
+            border: 1px dashed var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            font-size: 11px;
+        }
+
+        /* Product Info */
+        .product-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .product-details h4 {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 2px;
+        }
+
+        .product-details span {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        /* Price */
+        .price {
+            font-weight: 600;
+            color: #34d399;
+        }
+
+        /* Stock Badge */
+        .stock-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .stock-high {
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+
+        .stock-low {
+            background: rgba(245, 158, 11, 0.15);
+            color: #fbbf24;
+        }
+
+        .stock-out {
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        /* Actions */
+        .action-btns {
+            display: flex;
+            gap: 6px;
+        }
+
+        .btn-action {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            border: 1px solid var(--border-color);
+            background: var(--bg-secondary);
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.15s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .btn-action:hover {
+            color: var(--text-primary);
+            border-color: var(--accent);
+        }
+
+        .btn-view:hover {
+            color: #34d399;
+            border-color: #34d399;
+        }
+
+        .btn-edit:hover {
+            color: #fbbf24;
+            border-color: #fbbf24;
+        }
+
+        .btn-delete:hover {
+            color: #f87171;
+            border-color: #f87171;
+        }
+
+        .btn-push:hover {
+            color: #38bdf8;
+            border-color: #38bdf8;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .table-container {
+                overflow-x: auto;
+            }
+
+            .table {
+                min-width: 700px;
+            }
+
+            .page-header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Page Header -->
+        <div class="page-header">
+            <h1 class="page-title">
+                <i class="fa-solid fa-box"></i>
+                Products
+            </h1>
+            <button class="btn-add">
+                <i class="fa-solid fa-plus"></i> Add Product
+            </button>
+        </div>
+
+        <!-- Table -->
+        <div class="table-container">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Image</th>
+                        <th>Product</th>
+                        <th>Category</th>
+                        <th>Price</th>
+                        <th>Stock</th>
+                        <th>Value</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Row 1 - With Image -->
+                    <tr>
+                        <td>
+                            <img src="https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=100&h=100&fit=crop" 
+                                 alt="LED Flashlight" 
+                                 class="product-img"
+                                 onclick="window.open(this.src, '_blank')">
+                        </td>
+                        <td>
+                            <div class="product-details">
+                                <h4>LED Flashlight</h4>
+                                <span>PRD063</span>
+                            </div>
+                        </td>
+                        <td>Electronics</td>
+                        <td class="price">$18.50</td>
+                        <td><span class="stock-badge stock-high">50 units</span></td>
+                        <td>$925.00</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action btn-view" title="View">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-action btn-edit" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-action btn-push" title="Push to Telegram">
+                                    <i class="fa-brands fa-telegram"></i>
+                                </button>
+                                <button class="btn-action btn-delete" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Row 2 - With Image -->
+                    <tr>
+                        <td>
+                            <img src="https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=100&h=100&fit=crop" 
+                                 alt="Smart Watch" 
+                                 class="product-img"
+                                 onclick="window.open(this.src, '_blank')">
+                        </td>
+                        <td>
+                            <div class="product-details">
+                                <h4>Smart Watch Pro</h4>
+                                <span>PRD064</span>
+                            </div>
+                        </td>
+                        <td>Electronics</td>
+                        <td class="price">$299.99</td>
+                        <td><span class="stock-badge stock-low">3 units</span></td>
+                        <td>$899.97</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action btn-view" title="View">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-action btn-edit" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-action btn-push" title="Push to Telegram">
+                                    <i class="fa-brands fa-telegram"></i>
+                                </button>
+                                <button class="btn-action btn-delete" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Row 3 - No Image -->
+                    <tr>
+                        <td>
+                            <div class="no-img">No img</div>
+                        </td>
+                        <td>
+                            <div class="product-details">
+                                <h4>Wireless Earbuds</h4>
+                                <span>PRD065</span>
+                            </div>
+                        </td>
+                        <td>Audio</td>
+                        <td class="price">$79.99</td>
+                        <td><span class="stock-badge stock-out">Out of stock</span></td>
+                        <td>$0.00</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action btn-view" title="View">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-action btn-edit" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-action btn-push" title="Push to Telegram">
+                                    <i class="fa-brands fa-telegram"></i>
+                                </button>
+                                <button class="btn-action btn-delete" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Row 4 - With Image -->
+                    <tr>
+                        <td>
+                            <img src="https://images.unsplash.com/photo-1585386959984-a4155224a1ad?w=100&h=100&fit=crop" 
+                                 alt="Coffee Maker" 
+                                 class="product-img"
+                                 onclick="window.open(this.src, '_blank')">
+                        </td>
+                        <td>
+                            <div class="product-details">
+                                <h4>Coffee Maker</h4>
+                                <span>PRD066</span>
+                            </div>
+                        </td>
+                        <td>Kitchen</td>
+                        <td class="price">$149.00</td>
+                        <td><span class="stock-badge stock-high">25 units</span></td>
+                        <td>$3,725.00</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action btn-view" title="View">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-action btn-edit" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-action btn-push" title="Push to Telegram">
+                                    <i class="fa-brands fa-telegram"></i>
+                                </button>
+                                <button class="btn-action btn-delete" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Row 5 - With Image -->
+                    <tr>
+                        <td>
+                            <img src="https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=100&h=100&fit=crop" 
+                                 alt="Running Shoes" 
+                                 class="product-img"
+                                 onclick="window.open(this.src, '_blank')">
+                        </td>
+                        <td>
+                            <div class="product-details">
+                                <h4>Running Shoes</h4>
+                                <span>PRD067</span>
+                            </div>
+                        </td>
+                        <td>Sports</td>
+                        <td class="price">$129.99</td>
+                        <td><span class="stock-badge stock-high">100 units</span></td>
+                        <td>$12,999.00</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="btn-action btn-view" title="View">
+                                    <i class="fa-solid fa-eye"></i>
+                                </button>
+                                <button class="btn-action btn-edit" title="Edit">
+                                    <i class="fa-solid fa-pen"></i>
+                                </button>
+                                <button class="btn-action btn-push" title="Push to Telegram">
+                                    <i class="fa-brands fa-telegram"></i>
+                                </button>
+                                <button class="btn-action btn-delete" title="Delete">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

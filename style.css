@@ -2016,135 +2016,135 @@ label,
 /* ==========================================================================
    GLOBAL MODALS & DEVEXTREME OVERLAY STYLING (DESKTOP & MOBILE)
    ========================================================================== */
-  .modern-chooser,
-  #colChooserMenu {
-    width: calc(100vw - 20px) !important;
-    max-width: 100% !important;
-    max-height: 85vh !important;
-    padding: 16px !important;
-  }
+.modern-chooser,
+#colChooserMenu {
+  width: calc(100vw - 20px) !important;
+  max-width: 100% !important;
+  max-height: 85vh !important;
+  padding: 16px !important;
+}
 
-  .modern-chooser .fc-pill {
-    padding: 6px 10px !important;
-    font-size: 11px !important;
-  }
+.modern-chooser .fc-pill {
+  padding: 6px 10px !important;
+  font-size: 11px !important;
+}
 
-  /* DevExtreme Popup & Advanced Search Form Mobile Optimization */
-  .dark-popup.dx-popup-wrapper .dx-overlay-content,
-  .dx-popup-wrapper .dx-overlay-content {
-    width: min(480px, calc(100vw - 20px)) !important;
-    max-width: 480px !important;
-    max-height: calc(100vh - 24px) !important;
-    left: 50% !important;
-    top: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    margin: auto !important;
-    border-radius: 16px !important;
-    background: #0f172a !important;
-    border: 1px solid rgba(255, 255, 255, 0.12) !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 100vw rgba(15, 23, 42, 0.75) !important;
-  }
+/* DevExtreme Popup & Advanced Search Form Mobile Optimization */
+.dark-popup.dx-popup-wrapper .dx-overlay-content,
+.dx-popup-wrapper .dx-overlay-content {
+  width: min(480px, calc(100vw - 20px)) !important;
+  max-width: 480px !important;
+  max-height: calc(100vh - 24px) !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: auto !important;
+  border-radius: 16px !important;
+  background: #0f172a !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8), 0 0 0 100vw rgba(15, 23, 42, 0.75) !important;
+}
 
-  .dark-popup .dx-popup-title {
-    padding: 14px 18px !important;
-    background: rgba(15, 23, 42, 0.98) !important;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
-  }
+.dark-popup .dx-popup-title {
+  padding: 14px 18px !important;
+  background: rgba(15, 23, 42, 0.98) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
 
-  .dark-popup .dx-popup-title .dx-toolbar-label {
-    font-size: 15px !important;
-    font-weight: 700 !important;
-    color: #ffffff !important;
-  }
+.dark-popup .dx-popup-title .dx-toolbar-label {
+  font-size: 15px !important;
+  font-weight: 700 !important;
+  color: #ffffff !important;
+}
 
-  .dark-popup .dx-popup-content {
-    padding: 16px 18px 18px 18px !important;
-    max-height: calc(100vh - 90px) !important;
-    overflow-y: auto !important;
-  }
+.dark-popup .dx-popup-content {
+  padding: 16px 18px 18px 18px !important;
+  max-height: calc(100vh - 90px) !important;
+  overflow-y: auto !important;
+}
 
-  /* Full Width Single Column Layout for Search Fields */
-  #advancedSearchForm,
-  #advancedSearchForm .dx-form,
-  #advancedSearchForm .dx-layout-manager,
-  #advancedSearchForm .dx-form-group,
-  #advancedSearchForm .dx-form-group-content,
-  #advancedSearchForm .dx-box,
-  #advancedSearchForm .dx-box-container {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    box-sizing: border-box !important;
-    position: relative !important;
-  }
+/* Full Width Single Column Layout for Search Fields */
+#advancedSearchForm,
+#advancedSearchForm .dx-form,
+#advancedSearchForm .dx-layout-manager,
+#advancedSearchForm .dx-form-group,
+#advancedSearchForm .dx-form-group-content,
+#advancedSearchForm .dx-box,
+#advancedSearchForm .dx-box-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  box-sizing: border-box !important;
+  position: relative !important;
+}
 
-  #advancedSearchForm .dx-box-item,
-  #advancedSearchForm .dx-field-item-wrapper,
-  #advancedSearchForm .dx-field-item {
-    width: 100% !important;
-    max-width: 100% !important;
-    min-width: 100% !important;
-    flex: 0 0 100% !important;
-    box-sizing: border-box !important;
-    padding: 0 0 10px 0 !important;
-    margin: 0 !important;
-  }
+#advancedSearchForm .dx-box-item,
+#advancedSearchForm .dx-field-item-wrapper,
+#advancedSearchForm .dx-field-item {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 100% !important;
+  flex: 0 0 100% !important;
+  box-sizing: border-box !important;
+  padding: 0 0 10px 0 !important;
+  margin: 0 !important;
+}
 
-  #advancedSearchForm .dx-field-item-label,
-  #advancedSearchForm .dx-field-label {
-    font-size: 13px !important;
-    min-width: auto !important;
-    padding: 0 0 4px 0 !important;
-    color: #e2e8f0 !important;
-    font-weight: 600 !important;
-  }
+#advancedSearchForm .dx-field-item-label,
+#advancedSearchForm .dx-field-label {
+  font-size: 13px !important;
+  min-width: auto !important;
+  padding: 0 0 4px 0 !important;
+  color: #e2e8f0 !important;
+  font-weight: 600 !important;
+}
 
-  #advancedSearchForm .dx-texteditor {
-    height: 42px !important;
-    border-radius: 10px !important;
-    background: #1e293b !important;
-    border: 1px solid #334155 !important;
-    color: #f8fafc !important;
-    box-sizing: border-box !important;
-  }
+#advancedSearchForm .dx-texteditor {
+  height: 42px !important;
+  border-radius: 10px !important;
+  background: #1e293b !important;
+  border: 1px solid #334155 !important;
+  color: #f8fafc !important;
+  box-sizing: border-box !important;
+}
 
-  #advancedSearchForm input,
-  #advancedSearchForm .dx-texteditor-input {
-    font-size: 13.5px !important;
-    padding: 10px 12px !important;
-    height: 40px !important;
-    color: #f8fafc !important;
-    background: transparent !important;
-  }
+#advancedSearchForm input,
+#advancedSearchForm .dx-texteditor-input {
+  font-size: 13.5px !important;
+  padding: 10px 12px !important;
+  height: 40px !important;
+  color: #f8fafc !important;
+  background: transparent !important;
+}
 
-  #advancedSearchForm .dx-field-item-content {
-    font-size: 13.5px !important;
-    width: 100% !important;
-  }
+#advancedSearchForm .dx-field-item-content {
+  font-size: 13.5px !important;
+  width: 100% !important;
+}
 
-  #advancedSearchForm .dx-dropdowneditor-icon,
-  #advancedSearchForm .dx-datebox-calendar-icon {
-    font-size: 15px !important;
-    color: #94a3b8 !important;
-    padding: 0 8px !important;
-  }
+#advancedSearchForm .dx-dropdowneditor-icon,
+#advancedSearchForm .dx-datebox-calendar-icon {
+  font-size: 15px !important;
+  color: #94a3b8 !important;
+  padding: 0 8px !important;
+}
 
-  .dark-popup .primary-modal-btn.dx-button,
-  .dark-popup .secondary-modal-btn.dx-button,
-  #advancedSearchForm .dx-popup-bottom .dx-button {
-    height: 40px !important;
-    min-width: 85px !important;
-    font-size: 13px !important;
-    border-radius: 10px !important;
-  }
+.dark-popup .primary-modal-btn.dx-button,
+.dark-popup .secondary-modal-btn.dx-button,
+#advancedSearchForm .dx-popup-bottom .dx-button {
+  height: 40px !important;
+  min-width: 85px !important;
+  font-size: 13px !important;
+  border-radius: 10px !important;
+}
 
-  .dark-popup .primary-modal-btn.dx-button .dx-button-content,
-  .dark-popup .secondary-modal-btn.dx-button .dx-button-content,
-  .dx-popup-bottom .dx-button .dx-button-content {
-    padding: 0 14px !important;
-  }
+.dark-popup .primary-modal-btn.dx-button .dx-button-content,
+.dark-popup .secondary-modal-btn.dx-button .dx-button-content,
+.dx-popup-bottom .dx-button .dx-button-content {
+  padding: 0 14px !important;
+}
 }
 
 @media (max-width: 600px) {
@@ -2554,6 +2554,7 @@ label,
     font-size: 24px;
     box-shadow: 0 4px 16px rgba(0, 136, 204, 0.4);
   }
+
   .floating-telegram-btn .floating-tooltip {
     right: 60px;
     font-size: 12px;
@@ -2651,6 +2652,7 @@ label,
     align-items: flex-start;
     padding: 12px 14px;
   }
+
   .top-telegram-banner-actions {
     width: 100%;
     justify-content: space-between;

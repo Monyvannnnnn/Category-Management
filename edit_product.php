@@ -3,6 +3,7 @@
 require_once "database.php";
 require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
+require_once "supabase_storage.php";
 
 header("Content-Type: application/json");
 
@@ -75,23 +76,56 @@ if (strcasecmp($productCode, $origProductCode) !== 0) {
     }
 }
 
-$stmt = db_prepare($conn, "UPDATE product SET product_code = ?, product_name = ?, category_id = ?, price = ?, quantity = ? WHERE id = ? AND user_id = ?");
+// Handle Image Update/Replacement
+$imageUrl = $product['image'] ?? null;
+if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] !== UPLOAD_ERR_NO_FILE) {
+    try {
+        validateUploadedFile($_FILES['product_image']);
+
+        // Delete old image from Supabase Storage if present
+        if (!empty($product['image'])) {
+            deleteFromSupabase($product['image']);
+        }
+
+        // Upload new image
+        $ext = strtolower(pathinfo($_FILES['product_image']['name'], PATHINFO_EXTENSION));
+        $uniqueName = uniqid() . '_' . time() . '.' . $ext;
+        $imageUrl = uploadToSupabase($_FILES['product_image']['tmp_name'], $uniqueName);
+        if (!$imageUrl) {
+            http_response_code(500);
+            echo json_encode(["message" => "Failed to upload new product image to Supabase Storage."]);
+            exit;
+        }
+    } catch (Exception $e) {
+        http_response_code(400);
+        echo json_encode(["message" => $e->getMessage()]);
+        exit;
+    }
+}
+
+$stmt = db_prepare($conn, "UPDATE product SET product_code = ?, product_name = ?, category_id = ?, price = ?, quantity = ?, image = ? WHERE id = ? AND user_id = ?");
 if ($stmt) {
-    db_stmt_bind_param($stmt, "ssidiii", $productCode, $productName, $categoryId, $price, $quantity, $id, $userId);
+    db_stmt_bind_param($stmt, "ssidisii", $productCode, $productName, $categoryId, $price, $quantity, $imageUrl, $id, $userId);
     if (db_stmt_execute($stmt)) {
         db_stmt_close($stmt);
 
-        $msg = "<b>✏️ Product Updated</b> (ID: #{$id})\n"
-             . "<b>Code:</b> " . htmlspecialchars($productCode) . "\n"
-             . "<b>Name:</b> " . htmlspecialchars($productName) . "\n"
-             . "<b>Price:</b> $" . number_format($price, 2) . "\n"
-             . "<b>Quantity:</b> " . $quantity;
-        echo json_encode(["success" => true]);
+        $sel = db_prepare($conn, "SELECT product.*, category.category_name FROM product LEFT JOIN category ON product.category_id = category.id WHERE product.id = ?");
+        db_stmt_bind_param($sel, "i", $id);
+        db_stmt_execute($sel);
+        $row = db_stmt_get_result($sel);
+        $data = db_fetch_assoc($row);
+        db_stmt_close($sel);
+
+        echo json_encode($data ?: ["success" => true]);
         if (function_exists('fastcgi_finish_request')) {
             fastcgi_finish_request();
         }
         if (isAutoTelegramEnabled($conn)) {
-            sendTelegramNotification($msg, $conn, $userId);
+            if (!empty($imageUrl)) {
+                sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
+            } else {
+                sendTelegramNotification($msg, $conn, $userId);
+            }
         }
         exit;
     } else {

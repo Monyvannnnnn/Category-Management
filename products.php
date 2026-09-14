@@ -114,6 +114,117 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     <script src="js/KhmerOSSiemreap.js"></script>
     <script src="js/app.js"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
+    <style>
+    .img-lightbox-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 999999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .img-lightbox-backdrop {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(15, 23, 42, 0.85);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+    }
+    .img-lightbox-content {
+        position: relative;
+        z-index: 2;
+        background: #1e293b;
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        border-radius: 14px;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6);
+        width: 90%;
+        max-width: 520px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 14px;
+        animation: lightboxZoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .img-lightbox-close {
+        position: absolute;
+        top: 12px;
+        right: 16px;
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        color: #94a3b8;
+        width: 30px;
+        height: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 14px;
+        cursor: pointer;
+        line-height: 1;
+        transition: all 0.15s ease;
+    }
+    .img-lightbox-close:hover {
+        color: #f8fafc;
+        background: rgba(255, 255, 255, 0.15);
+    }
+    .img-lightbox-header {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding-right: 36px;
+    }
+    .img-lightbox-header h4 {
+        margin: 0;
+        color: #f8fafc;
+        font-size: 16px;
+        font-weight: 600;
+    }
+    .img-lightbox-body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: #0f172a;
+        border-radius: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        padding: 12px;
+        max-height: 380px;
+        overflow: hidden;
+    }
+    .img-lightbox-body img {
+        max-width: 100%;
+        max-height: 350px;
+        object-fit: contain;
+        border-radius: 6px;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.4);
+    }
+    .img-lightbox-footer {
+        display: flex;
+        justify-content: flex-end;
+    }
+    .lightbox-btn-tab {
+        color: #38bdf8;
+        text-decoration: none;
+        font-size: 13px;
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        transition: opacity 0.15s;
+    }
+    .lightbox-btn-tab:hover {
+        opacity: 0.8;
+    }
+    @keyframes lightboxZoomIn {
+        from { transform: scale(0.94); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+    }
+    </style>
 </head>
 
 <body>
@@ -248,6 +359,80 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     </div>
 
     <script>
+    function standardizeImageFile(file, callback) {
+        if (!file || !file.type || !file.type.startsWith("image/")) {
+            callback(file, null);
+            return;
+        }
+        var reader = new FileReader();
+        reader.onload = function(e) {
+            var dataUrl = e.target.result;
+            var img = new Image();
+            if (typeof dataUrl === "string" && (dataUrl.startsWith("http://") || dataUrl.startsWith("https://"))) {
+                img.crossOrigin = "Anonymous";
+            }
+            img.onload = function() {
+                try {
+                    var canvas = document.createElement("canvas");
+                    var targetSize = 300; // Fixed 300x300 px compact box size
+                    canvas.width = targetSize;
+                    canvas.height = targetSize;
+                    var ctx = canvas.getContext("2d");
+
+                    // Fill clean white studio canvas background
+                    ctx.fillStyle = "#ffffff";
+                    ctx.fillRect(0, 0, targetSize, targetSize);
+
+                    // Calculate contain scale with 16px padding
+                    var padding = 16;
+                    var maxW = targetSize - (padding * 2);
+                    var maxH = targetSize - (padding * 2);
+
+                    var scale = Math.min(maxW / img.width, maxH / img.height);
+                    var drawW = img.width * scale;
+                    var drawH = img.height * scale;
+                    var drawX = padding + (maxW - drawW) / 2;
+                    var drawY = padding + (maxH - drawH) / 2;
+
+                    // Soft shadow for depth
+                    ctx.save();
+                    ctx.shadowColor = "rgba(0, 0, 0, 0.12)";
+                    ctx.shadowBlur = 8;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 3;
+                    ctx.drawImage(img, drawX, drawY, drawW, drawH);
+                    ctx.restore();
+
+                    // Crisp border frame around canvas box
+                    ctx.strokeStyle = "#cbd5e1"; // Slate 300
+                    ctx.lineWidth = 4;
+                    ctx.strokeRect(2, 2, targetSize - 4, targetSize - 4);
+
+                    var canvasDataUrl = canvas.toDataURL("image/jpeg", 0.90);
+
+                    canvas.toBlob(function(blob) {
+                        if (blob) {
+                            var standardizedFile = new File([blob], "product_" + Date.now() + ".jpg", { type: "image/jpeg" });
+                            callback(standardizedFile, canvasDataUrl);
+                        } else {
+                            callback(file, canvasDataUrl || dataUrl);
+                        }
+                    }, "image/jpeg", 0.90);
+                } catch (err) {
+                    callback(file, dataUrl);
+                }
+            };
+            img.onerror = function() {
+                callback(file, dataUrl);
+            };
+            img.src = dataUrl;
+        };
+        reader.onerror = function() {
+            callback(file, null);
+        };
+        reader.readAsDataURL(file);
+    }
+
     function timeAgo(date) {
         const seconds = Math.floor((new Date() - date) / 1000);
         let interval = Math.floor(seconds / 31536000);
@@ -263,16 +448,51 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         return "just now";
     }
 
-    function formatDateTime(date) {
-        if (!date) return "-";
-        const d = new Date(date);
-        const day = String(d.getDate()).padStart(2, '0');
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const year = d.getFullYear();
-        const hours = String(d.getHours()).padStart(2, '0');
-        const minutes = String(d.getMinutes()).padStart(2, '0');
-        const seconds = String(d.getSeconds()).padStart(2, '0');
-        return `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
+    function showImageLightbox(imgUrl, productName, productCode) {
+        var $modal = $("#imageLightboxModal");
+        if (!$modal.length) {
+            $modal = $(
+                '<div id="imageLightboxModal" class="img-lightbox-modal" style="display: none;">' +
+                    '<div class="img-lightbox-backdrop"></div>' +
+                    '<div class="img-lightbox-content">' +
+                        '<button type="button" class="img-lightbox-close" id="closeLightboxBtn"><i class="fa-solid fa-xmark"></i></button>' +
+                        '<div class="img-lightbox-header">' +
+                            '<h4 id="lightboxTitle">Product Image</h4>' +
+                            '<span id="lightboxBadge" class="category-badge badge-purple" style="font-size: 11px; padding: 2px 8px;"></span>' +
+                        '</div>' +
+                        '<div class="img-lightbox-body">' +
+                            '<img id="lightboxImg" src="" alt="Enlarged Product Image">' +
+                        '</div>' +
+                        '<div class="img-lightbox-footer">' +
+                            '<a id="lightboxOpenTab" href="#" target="_blank" class="lightbox-btn-tab">' +
+                                '<i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Image' +
+                            '</a>' +
+                        '</div>' +
+                    '</div>' +
+                '</div>'
+            ).appendTo("body");
+
+            $modal.on("click", "#closeLightboxBtn, .img-lightbox-backdrop", function() {
+                $modal.fadeOut(150);
+            });
+
+            $(document).on("keydown.lightbox", function(e) {
+                if (e.key === "Escape" && $modal.is(":visible")) {
+                    $modal.fadeOut(150);
+                }
+            });
+        }
+
+        $modal.find("#lightboxTitle").text(productName || "Product Image");
+        if (productCode) {
+            $modal.find("#lightboxBadge").text(productCode).show();
+        } else {
+            $modal.find("#lightboxBadge").hide();
+        }
+        $modal.find("#lightboxImg").attr("src", imgUrl);
+        $modal.find("#lightboxOpenTab").attr("href", imgUrl);
+
+        $modal.fadeIn(180);
     }
 
     $(function() {
@@ -406,9 +626,26 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
         // Clear any STALE saved grid state (old "all rows" view) from a previous
         // stateStoring session, so it can never re-apply after the data loads.
-        try {
-            localStorage.removeItem("categoryGridStateV13");
-        } catch (e) {}
+        function fixFormLabelsAccessibility(e) {
+            var $popup = e && e.component ? $(e.component.content()) : $(document);
+            $popup.find(".dx-field-item").each(function(idx) {
+                var $item = $(this);
+                var $label = $item.find("label.dx-field-item-label, label.dx-field-item-label-text, label");
+                if ($label.length) {
+                    var $input = $item.find("input, select, textarea").first();
+                    if ($input.length) {
+                        var inputId = $input.attr("id");
+                        if (!inputId) {
+                            inputId = "editor_field_" + idx + "_" + Date.now();
+                            $input.attr("id", inputId);
+                        }
+                        $label.attr("for", inputId);
+                    } else {
+                        $label.removeAttr("for");
+                    }
+                }
+            });
+        }
 
         var isMobile = $(window).width() <= 768;
         $("#gridContainer").dxDataGrid({
@@ -456,34 +693,76 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 },
                 insert: function(values) {
                     return new Promise(function(resolve, reject) {
-                        $.post("create_product.php", values)
-                            .done(function(data) {
-                                resolve(data);
-                            })
-                            .fail(function(xhr) {
-                                var msg = "Failed to add product.";
-                                if (xhr.responseJSON && xhr.responseJSON
-                                    .message) {
-                                    msg = xhr.responseJSON.message;
-                                }
-                                reject(new Error(msg));
-                            });
+                        var formData = new FormData();
+                        $.each(values, function(k, v) {
+                            if (k !== 'image' && k !== 'product_image_file' && v !== null && v !== undefined) {
+                                formData.append(k, v);
+                            }
+                        });
+                        if (window._currentSelectedImageFile) {
+                            formData.append('product_image', window._currentSelectedImageFile);
+                        }
+                        $.ajax({
+                            url: "create_product.php",
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "json"
+                        }).done(function(data) {
+                            window._currentSelectedImageFile = null;
+                            window._currentImagePreviewDataUrl = null;
+                            setTimeout(function() {
+                                var grid = $("#gridContainer").dxDataGrid("instance");
+                                if (grid) grid.refresh();
+                            }, 150);
+                            resolve(data);
+                        }).fail(function(xhr) {
+                            window._currentSelectedImageFile = null;
+                            window._currentImagePreviewDataUrl = null;
+                            var msg = "Failed to add product.";
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            reject(new Error(msg));
+                        });
                     });
                 },
                 update: function(key, values) {
                     return new Promise(function(resolve, reject) {
-                        $.post("edit_product.php?id=" + key, values)
-                            .done(function(data) {
-                                resolve(data);
-                            })
-                            .fail(function(xhr) {
-                                var msg = "Failed to update product.";
-                                if (xhr.responseJSON && xhr.responseJSON
-                                    .message) {
-                                    msg = xhr.responseJSON.message;
-                                }
-                                reject(new Error(msg));
-                            });
+                        var formData = new FormData();
+                        $.each(values, function(k, v) {
+                            if (k !== 'image' && k !== 'product_image_file' && v !== null && v !== undefined) {
+                                formData.append(k, v);
+                            }
+                        });
+                        if (window._currentSelectedImageFile) {
+                            formData.append('product_image', window._currentSelectedImageFile);
+                        }
+                        $.ajax({
+                            url: "edit_product.php?id=" + key,
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "json"
+                        }).done(function(data) {
+                            window._currentSelectedImageFile = null;
+                            window._currentImagePreviewDataUrl = null;
+                            setTimeout(function() {
+                                var grid = $("#gridContainer").dxDataGrid("instance");
+                                if (grid) grid.refresh();
+                            }, 150);
+                            resolve(data);
+                        }).fail(function(xhr) {
+                            window._currentSelectedImageFile = null;
+                            window._currentImagePreviewDataUrl = null;
+                            var msg = "Failed to update product.";
+                            if (xhr.responseJSON && xhr.responseJSON.message) {
+                                msg = xhr.responseJSON.message;
+                            }
+                            reject(new Error(msg));
+                        });
                     });
                 },
                 remove: function(key) {
@@ -593,6 +872,47 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         min: 0,
                         message: "Quantity must be 0 or greater"
                     }]
+                },
+                {
+                    name: "image",
+                    dataField: "image",
+                    caption: "Image",
+                    minWidth: isMobile ? 55 : 70,
+                    width: isMobile ? 65 : 80,
+                    allowSorting: false,
+                    allowFiltering: false,
+                    allowHeaderFiltering: false,
+                    cellTemplate: function(container, options) {
+                        if (options.data && options.data.image) {
+                            $("<img>")
+                                .attr("src", options.data.image)
+                                .attr("alt", options.data.product_name || "Product Image")
+                                .css({
+                                    width: "40px",
+                                    height: "40px",
+                                    objectFit: "cover",
+                                    borderRadius: "6px",
+                                    border: "1px solid rgba(255, 255, 255, 0.15)",
+                                    cursor: "pointer",
+                                    verticalAlign: "middle",
+                                    transition: "transform 0.15s ease, border-color 0.15s ease"
+                                })
+                                .hover(
+                                    function() { $(this).css({ transform: "scale(1.1)", borderColor: "#38bdf8" }); },
+                                    function() { $(this).css({ transform: "scale(1)", borderColor: "rgba(255, 255, 255, 0.15)" }); }
+                                )
+                                .on("click", function(e) {
+                                    e.stopPropagation();
+                                    showImageLightbox(options.data.image, options.data.product_name, options.data.product_code);
+                                })
+                                .appendTo(container);
+                        } else {
+                            $("<span>")
+                                .text("No image")
+                                .css({ color: "#94a3b8", fontSize: "11px", fontStyle: "italic" })
+                                .appendTo(container);
+                        }
+                    }
                 },
                 {
                     name: "created_date",
@@ -766,6 +1086,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             .on("click", function(e) {
                                 e.preventDefault();
                                 if (options.data && options.data.id) {
+                                    var $btn = $(this);
+                                    if ($btn.data("loading")) return;
+                                    var $icon = $btn.find("i");
+                                    $btn.data("loading", true);
+                                    $icon.removeClass("fa-paper-plane").addClass("fa-spinner fa-spin");
+
+                                    function resetBtn() {
+                                        $btn.data("loading", false);
+                                        $icon.removeClass("fa-spinner fa-spin").addClass("fa-paper-plane");
+                                    }
+
                                     window.checkTelegramConnectionAndExecute(function() {
                                         $.ajax({
                                             url: "manual_push.php",
@@ -799,9 +1130,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                                 } else {
                                                     DevExpress.ui.notify("❌ Telegram Push Failed: " + errMsg, "error", 5000);
                                                 }
-                                            }
+                                            },
+                                            complete: resetBtn
                                         });
-                                    });
+                                    }, resetBtn);
                                 }
                             });
 
@@ -908,6 +1240,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     height: "auto",
                     wrapperAttr: {
                         class: "dark-popup"
+                    },
+                    onShown: function(e) {
+                        fixFormLabelsAccessibility(e);
                     }
                 },
                 form: {
@@ -916,28 +1251,32 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             dataField: "product_code",
                             editorType: "dxTextBox",
                             editorOptions: {
-                                placeholder: "Enter product code"
+                                placeholder: "Enter product code",
+                                inputAttr: { id: "product_code_input" }
                             }
                         },
                         {
                             dataField: "product_name",
                             editorType: "dxTextBox",
                             editorOptions: {
-                                placeholder: "Enter product name"
+                                placeholder: "Enter product name",
+                                inputAttr: { id: "product_name_input" }
                             }
                         },
                         {
                             dataField: "category_id",
                             editorType: "dxSelectBox",
                             editorOptions: {
-                                placeholder: "Select category"
+                                placeholder: "Select category",
+                                inputAttr: { id: "category_id_input" }
                             }
                         },
                         {
                             dataField: "price",
                             editorType: "dxNumberBox",
                             editorOptions: {
-                                placeholder: "Enter price"
+                                placeholder: "Enter price",
+                                inputAttr: { id: "price_input" }
                             }
                         },
                         {
@@ -947,10 +1286,157 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                 placeholder: "Enter quantity",
                                 format: "#",
                                 min: 0,
-                                showSpinButtons: true
+                                showSpinButtons: true,
+                                inputAttr: { id: "quantity_input" }
+                            }
+                        },
+                        {
+                            dataField: "image",
+                            label: { text: "Product Image" },
+                            template: function(data, itemElement) {
+                                var $container = $("<div>").css({ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" });
+                                var formData = data.component.option("formData") || {};
+                                var currentImg = formData.image;
+
+                                var $prevBox = $("<div>")
+                                    .addClass("form-preview-container")
+                                    .css({ display: "flex", alignItems: "center", gap: "12px", background: "rgba(15, 23, 42, 0.5)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "8px", padding: "8px 12px" });
+
+                                var $statusMsg = $("<div>").css({ fontSize: "11px", display: "none" });
+
+                                if (window._currentImagePreviewDataUrl) {
+                                    var $img = $("<img>").attr("src", window._currentImagePreviewDataUrl).css({
+                                        width: "52px",
+                                        height: "52px",
+                                        objectFit: "contain",
+                                        background: "#ffffff",
+                                        borderRadius: "6px",
+                                        border: "2px solid #34d399",
+                                        padding: "2px",
+                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                    });
+                                    $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">New Image Ready</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>')).show();
+                                    $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
+                                } else if (currentImg && typeof currentImg === "string" && (currentImg.startsWith("http://") || currentImg.startsWith("https://") || currentImg.startsWith("/") || currentImg.startsWith("assets/") || currentImg.startsWith("data:"))) {
+                                    var $img = $("<img>").attr("src", currentImg).css({
+                                        width: "52px",
+                                        height: "52px",
+                                        objectFit: "contain",
+                                        background: "#ffffff",
+                                        borderRadius: "6px",
+                                        border: "2px solid #38bdf8",
+                                        padding: "2px",
+                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                    });
+                                    $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#f8fafc;">Current Image</div><div style="font-size:11px; color:#94a3b8;">Uniform 300x300 canvas frame</div>')).show();
+                                } else {
+                                    $prevBox.hide();
+                                }
+
+                                $container.append($prevBox);
+                                $container.append($statusMsg);
+
+                                var $input = $("<input>")
+                                    .attr("id", "product_image_input")
+                                    .attr("type", "file")
+                                    .attr("accept", "image/jpeg,image/png,image/gif,image/webp")
+                                    .css({
+                                        color: "#f8fafc",
+                                        background: "rgba(15, 23, 42, 0.6)",
+                                        border: "1px solid rgba(255, 255, 255, 0.15)",
+                                        borderRadius: "6px",
+                                        padding: "6px 10px",
+                                        width: "100%",
+                                        fontSize: "13px",
+                                        cursor: "pointer"
+                                    })
+                                    .on("change", function(e) {
+                                        var file = this.files && this.files[0];
+                                        if (file) {
+                                            window._currentSelectedImageFile = file;
+
+                                            var grid = $("#gridContainer").dxDataGrid("instance");
+                                            if (grid) {
+                                                var editRowKey = grid.option("editing.editRowKey");
+                                                if (editRowKey !== null && editRowKey !== undefined) {
+                                                    var rIdx = grid.getRowIndexByKey(editRowKey);
+                                                    if (rIdx >= 0) {
+                                                        grid.cellValue(rIdx, "image", "pending_upload_" + Date.now());
+                                                    }
+                                                } else {
+                                                    var changes = grid.option("editing.changes") || [];
+                                                    if (changes.length > 0) {
+                                                        changes[0].data = changes[0].data || {};
+                                                        changes[0].data.image = "pending_upload_" + Date.now();
+                                                        grid.option("editing.changes", changes);
+                                                    }
+                                                }
+                                            }
+
+                                            if (data.component && typeof data.component.updateData === "function") {
+                                                data.component.updateData("image", "pending_upload_" + Date.now());
+                                            }
+
+                                            $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
+                                            standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
+                                                if (standardizedFile) {
+                                                    window._currentSelectedImageFile = standardizedFile;
+                                                }
+                                                if (previewDataUrl) {
+                                                    window._currentImagePreviewDataUrl = previewDataUrl;
+                                                }
+                                                $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
+
+                                                if (previewDataUrl) {
+                                                    $prevBox.empty().show();
+                                                    var $img = $("<img>").attr("src", previewDataUrl).css({
+                                                        width: "52px",
+                                                        height: "52px",
+                                                        objectFit: "contain",
+                                                        background: "#ffffff",
+                                                        borderRadius: "6px",
+                                                        border: "2px solid #34d399",
+                                                        padding: "2px",
+                                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                                    });
+                                                    $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">New Image Ready</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>'));
+                                                }
+                                            });
+                                        } else {
+                                            window._currentSelectedImageFile = null;
+                                            window._currentImagePreviewDataUrl = null;
+                                            $statusMsg.hide();
+                                        }
+                                    });
+                                $container.append($input);
+                                itemElement.append($container);
+
+                                setTimeout(function() {
+                                    itemElement.closest('.dx-field-item').find('label').attr('for', 'product_image_input');
+                                }, 0);
                             }
                         }
                     ]
+                }
+            },
+            onEditingStart: function(e) {
+                window._currentSelectedImageFile = null;
+                window._currentImagePreviewDataUrl = null;
+            },
+            onInitNewRow: function(e) {
+                window._currentSelectedImageFile = null;
+                window._currentImagePreviewDataUrl = null;
+            },
+            onRowUpdating: function(e) {
+                if (window._currentSelectedImageFile) {
+                    if (!e.newData) e.newData = {};
+                    e.newData.image = "pending_upload_" + Date.now();
+                }
+            },
+            onRowInserting: function(e) {
+                if (window._currentSelectedImageFile) {
+                    if (!e.data) e.data = {};
+                    e.data.image = "pending_upload_" + Date.now();
                 }
             },
             showBorders: true,
@@ -2252,7 +2738,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                 </div>
                             </div>
                         </div>
-                        <label class="toggle-switch-container">
+                        <label class="toggle-switch-container" for="toggleAutoPush">
                             <input type="checkbox" id="toggleAutoPush" class="toggle-switch-checkbox" checked>
                             <span class="toggle-switch-slider"></span>
                         </label>
@@ -2453,6 +2939,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 errDiv.style.display = 'none';
                 succDiv.style.display = 'none';
 
+                const submitBtn = form.querySelector('button[type="submit"]');
+                const origHtml = submitBtn ? submitBtn.innerHTML : '';
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving...';
+                }
+
                 const formData = new FormData(form);
                 fetch('create_user.php', {
                     method: 'POST',
@@ -2478,6 +2971,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 .catch(err => {
                     errDiv.textContent = 'Server error or invalid response.';
                     errDiv.style.display = 'block';
+                })
+                .finally(() => {
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = origHtml;
+                    }
                 });
             });
         }
@@ -2497,7 +2996,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         let tgPollTimer = null;
         let wasConnectingTelegram = false;
 
-        window.checkTelegramConnectionAndExecute = function(onConnected) {
+        window.checkTelegramConnectionAndExecute = function(onConnected, onNotConnected) {
             return fetch('telegram_settings.php?action=get&_t=' + Date.now())
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
@@ -2508,6 +3007,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         }
                     } else {
                         window.isTelegramConnected = false;
+                        if (typeof onNotConnected === 'function') {
+                            onNotConnected();
+                        }
                         if (typeof fetchTelegramStatus === 'function') {
                             fetchTelegramStatus();
                         }
@@ -2524,6 +3026,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     if (window.isTelegramConnected) {
                         if (typeof onConnected === 'function') onConnected();
                     } else {
+                        window.isTelegramConnected = false;
+                        if (typeof onNotConnected === 'function') {
+                            onNotConnected();
+                        }
                         if (typeof fetchTelegramStatus === 'function') {
                             fetchTelegramStatus();
                         }

@@ -541,11 +541,17 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                      . "<b>Price:</b> \${$price}\n"
                      . "<b>Stock Qty:</b> {$qty} units\n"
                      . "<b>Inventory Value:</b> \${$val}";
+
+                if (!empty($r['image'])) {
+                    sendSingleTelegramPhoto($chatId, $r['image'], $msg, $botToken);
+                } else {
+                    sendTelegramMessage($chatId, $msg, $botToken);
+                }
             } else {
                 $msg = "❌ <b>PRODUCT NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
+                sendTelegramMessage($chatId, $msg, $botToken);
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
             break;
 
         // 9. /outofstock

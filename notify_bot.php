@@ -106,6 +106,206 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
 }
 
 /**
+ * Send a single Photo with Caption via Telegram Bot API
+ */
+function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken = null) {
+    $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc"; 
+    $url = "https://api.telegram.org/bot$botToken/sendPhoto";
+    $data = [
+        'chat_id' => $chatId,
+        'photo' => $photoUrl,
+        'caption' => $caption,
+        'parse_mode' => 'HTML'
+    ];
+
+    $result = false;
+    $curlError = '';
+
+    // Method 1: Fast Standard cURL
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
+        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+        if (defined('CURL_IPRESOLVE_V4')) {
+            curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
+        }
+
+        $result = curl_exec($ch);
+        if ($result === false) {
+            $curlError = curl_error($ch);
+        }
+        curl_close($ch);
+    }
+
+    // Method 2: Fast DNS Resolution Bypass
+    if (($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) && function_exists('curl_init')) {
+        $telegramIPs = ['149.154.167.220'];
+        foreach ($telegramIPs as $ip) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+            curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+            curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 2);
+            curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+
+            if (defined('CURLOPT_RESOLVE')) {
+                curl_setopt($ch, CURLOPT_RESOLVE, ["api.telegram.org:443:$ip"]);
+            }
+
+            $res = curl_exec($ch);
+            if ($res !== false && strpos($res, '"ok":true') !== false) {
+                $result = $res;
+                curl_close($ch);
+                break;
+            }
+            curl_close($ch);
+        }
+    }
+
+    // Method 3: Fast Fallback Stream Context
+    if ($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) {
+        $options = [
+            'http' => [
+                'header'  => "Content-Type: application/x-www-form-urlencoded\r\n" .
+                             "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\r\n",
+                'method'  => 'POST',
+                'content' => http_build_query($data),
+                'timeout' => 4,
+                'ignore_errors' => true
+            ],
+            'ssl' => [
+                'verify_peer'      => false,
+                'verify_peer_name' => false
+            ]
+        ];
+        $context = stream_context_create($options);
+        $streamRes = @file_get_contents($url, false, $context);
+        if ($streamRes !== false) {
+            $result = $streamRes;
+        }
+    }
+
+    if ($result === false) {
+        return json_encode([
+            "ok" => false,
+            "description" => "PHP unable to send photo via Telegram API. " . ($curlError ? "cURL error: " . $curlError : "Check outgoing server connection.")
+        ]);
+    }
+
+    return $result;
+}
+
+/**
+ * Send photo notification to specific user or all subscribers
+ */
+function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userId = null) {
+    if (!$conn) {
+        global $conn;
+    }
+
+    if ($userId === null || (int)$userId <= 0) {
+        if (function_exists('getCurrentUser')) {
+            $u = getCurrentUser();
+            if (!empty($u['id'])) {
+                $userId = (int)$u['id'];
+            }
+        }
+        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
+            $userId = (int)$_SESSION['user_id'];
+        }
+    }
+
+    if ($userId !== null && (int)$userId > 0) {
+        $uId = (int)$userId;
+        if ($conn) {
+            $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+            if ($stmt) {
+                db_stmt_bind_param($stmt, "i", $uId);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
+                $row = db_fetch_assoc($res);
+                db_stmt_close($stmt);
+
+                if ($row && !empty(trim($row['chat_id']))) {
+                    $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
+                    return sendSingleTelegramPhoto(trim($row['chat_id']), $photoUrl, $message, $bToken);
+                }
+            }
+        }
+        return sendTelegramNotification($message, $conn, $userId);
+    }
+
+    $targets = getSubscriberChatIds($conn);
+    if (empty($targets)) {
+        return sendTelegramNotification($message, $conn, $userId);
+    }
+
+    $successCount = 0;
+    $lastRes = false;
+
+    foreach ($targets as $cid => $bToken) {
+        $res = sendSingleTelegramPhoto($cid, $photoUrl, $message, $bToken);
+        $lastRes = $res;
+        if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
+            $successCount++;
+        }
+    }
+
+    if ($successCount > 0) {
+        return json_encode(["ok" => true, "delivered_chats" => $successCount]);
+    }
+
+    return $lastRes ?: sendTelegramNotification($message, $conn, $userId);
+}
+
+/**
+ * Universal photo push helper function
+ */
+function sendPhotoToTelegram($param1, $param2, $param3, $param4 = null) {
+    // If called as sendPhotoToTelegram($chatId, $photoUrl, $caption, $customBotToken)
+    if (is_string($param1) && (preg_match('/^-?\d+$/', trim($param1)) || strpos($param1, 'http') !== 0)) {
+        return sendSingleTelegramPhoto($param1, $param2, $param3, $param4);
+    }
+    // If called as sendPhotoToTelegram($message, $photoUrl, $conn, $userId)
+    return sendTelegramPhotoNotification($param1, $param2, $param3, $param4);
+}
+
+/**
+ * Format product push in Premium Style (Design 3)
+ */
+function formatProductPushPremium($product, $pushType = 'Manual') {
+    $name = htmlspecialchars($product['product_name'] ?? 'N/A');
+    $code = htmlspecialchars($product['product_code'] ?? 'N/A');
+    $price = number_format((float)($product['price'] ?? 0), 2);
+    $qty = (int)($product['quantity'] ?? 0);
+    $totalVal = (float)($product['price'] ?? 0) * $qty;
+    $formattedVal = ($totalVal == (int)$totalVal) ? number_format($totalVal, 0) : number_format($totalVal, 2);
+    $timeStr = date('h:i A');
+
+    $msg = "🔦 {$name} │ {$code}\n"
+         . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+         . "💵 \${$price}  │  📦 {$qty} units  │  💎 \${$formattedVal}\n"
+         . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+         . "🕐 {$timeStr}  │  📤 {$pushType} Push";
+
+    return $msg;
+}
+
+/**
  * Ensure telegram_subscribers table exists
  */
 function ensureSubscribersTableExists($conn = null) {
@@ -187,9 +387,6 @@ function isUserTelegramConnected($conn = null, $userId = null) {
             $userId = (int)$_SESSION['user_id'];
         }
     }
-    if ($userId === null || (int)$userId <= 0) {
-        $userId = 1;
-    }
     if ($userId !== null && (int)$userId > 0) {
         $uId = (int)$userId;
         if ($conn) {
@@ -201,14 +398,6 @@ function isUserTelegramConnected($conn = null, $userId = null) {
                 $row = db_fetch_assoc($res);
                 db_stmt_close($stmt);
                 if ($row && !empty(trim($row['chat_id']))) {
-                    return true;
-                }
-            }
-            // Fallback for stateless serverless sessions: check any connected row
-            $resAny = db_query($conn, "SELECT chat_id FROM user_telegram_bots WHERE chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
-            if ($resAny) {
-                $rowAny = db_fetch_assoc($resAny);
-                if ($rowAny && !empty(trim($rowAny['chat_id']))) {
                     return true;
                 }
             }

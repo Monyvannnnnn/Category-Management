@@ -24,8 +24,7 @@ $action = $_REQUEST['action'] ?? $inputJSON['action'] ?? 'summary';
 $customMessage = trim($_REQUEST['message'] ?? $inputJSON['message'] ?? '');
 
 $currentUser = getCurrentUser();
-$userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_id'] ?? 1));
-if ($userId <= 0) $userId = 1;
+$userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_id'] ?? 0));
 $userWhere = ($userId > 0) ? " AND user_id = {$userId} " : "";
 $userWhereWhere = ($userId > 0) ? " WHERE user_id = {$userId} " : "";
 
@@ -135,7 +134,11 @@ if ($action === 'get_settings') {
              . "───────────────────────\n"
              . "<i>Pushed manually from Product row</i>";
 
-        echo sendTelegramNotification($msg, $conn, $targetUserId);
+        if (!empty($row['image'])) {
+            echo sendTelegramPhotoNotification($msg, $row['image'], $conn, $targetUserId);
+        } else {
+            echo sendTelegramNotification($msg, $conn, $targetUserId);
+        }
         exit;
     } else {
         echo json_encode(["ok" => false, "message" => "Product not found."]);

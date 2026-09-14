@@ -3289,6 +3289,7 @@ label,
     font-size: 24px;
     box-shadow: 0 4px 16px rgba(0, 136, 204, 0.4);
   }
+
   .floating-telegram-btn .floating-tooltip {
     right: 60px;
     font-size: 12px;
@@ -3386,6 +3387,7 @@ label,
     align-items: flex-start;
     padding: 12px 14px;
   }
+
   .top-telegram-banner-actions {
     width: 100%;
     justify-content: space-between;
@@ -3495,6 +3497,7 @@ label,
     opacity: 0;
     transform: scale(0.95) translateY(10px);
   }
+
   to {
     opacity: 01;
     transform: scale(1) translateY(0);
@@ -3586,8 +3589,8 @@ label,
 }
 
 .modal-form-control:-webkit-autofill,
-.modal-form-control:-webkit-autofill:hover, 
-.modal-form-control:-webkit-autofill:focus, 
+.modal-form-control:-webkit-autofill:hover,
+.modal-form-control:-webkit-autofill:focus,
 .modal-form-control:-webkit-autofill:active {
   -webkit-box-shadow: 0 0 0 1000px #0f141c inset !important;
   -webkit-text-fill-color: #f8fafc !important;

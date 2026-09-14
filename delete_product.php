@@ -3,6 +3,7 @@
 require_once "database.php";
 require_once "includes/auth_helper.php";
 require_once "notify_bot.php";
+require_once "supabase_storage.php";
 
 header("Content-Type: application/json");
 
@@ -23,9 +24,9 @@ if (!isset($_GET["id"]) || !is_numeric($_GET["id"])) {
 
 $id = (int)$_GET["id"];
 
-// Fetch product info before deletion for notification
+// Fetch product info before deletion for notification and storage cleanup
 $prod_info = null;
-$sel_stmt = db_prepare($conn, "SELECT product_code, product_name FROM product WHERE id = ?");
+$sel_stmt = db_prepare($conn, "SELECT product_code, product_name, image FROM product WHERE id = ?");
 if ($sel_stmt) {
     db_stmt_bind_param($sel_stmt, "i", $id);
     db_stmt_execute($sel_stmt);
@@ -39,6 +40,10 @@ if ($stmt) {
     db_stmt_bind_param($stmt, "i", $id);
     if (db_stmt_execute($stmt)) {
         db_stmt_close($stmt);
+
+        if (!empty($prod_info['image'])) {
+            deleteFromSupabase($prod_info['image']);
+        }
 
         $prodCode = $prod_info['product_code'] ?? "N/A";
         $prodName = $prod_info['product_name'] ?? "N/A";
