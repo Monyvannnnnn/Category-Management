@@ -306,6 +306,9 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
         'parse_mode' => 'HTML'
     ];
 
+    $result = false;
+    $curlError = '';
+
     if (function_exists('curl_init')) {
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
@@ -318,15 +321,45 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
         curl_setopt($ch, CURLOPT_TIMEOUT, 30);
 
         $result = curl_exec($ch);
-        $curlError = curl_error($ch);
+        if ($result === false) {
+            $curlError = curl_error($ch);
+        }
         curl_close($ch);
+    }
 
-        if ($result !== false) {
-            return $result;
+    // Fallback: DNS Resolution Bypass if cURL fails
+    if (($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) && function_exists('curl_init')) {
+        $telegramIPs = ['149.154.167.220'];
+        foreach ($telegramIPs as $ip) {
+            $ch = curl_init();
+            curl_setopt($ch, CURLOPT_URL, $url);
+            curl_setopt($ch, CURLOPT_POST, true);
+            curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+            curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+            curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+            curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+            curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+            if (defined('CURLOPT_RESOLVE')) {
+                curl_setopt($ch, CURLOPT_RESOLVE, ["api.telegram.org:443:$ip"]);
+            }
+
+            $res = curl_exec($ch);
+            if ($res !== false && strpos($res, '"ok":true') !== false) {
+                $result = $res;
+                curl_close($ch);
+                break;
+            }
+            curl_close($ch);
         }
     }
 
-    return json_encode(["ok" => false, "description" => "Failed to send document via cURL."]);
+    if ($result !== false) {
+        return $result;
+    }
+
+    return json_encode(["ok" => false, "description" => "Failed to send document via cURL. " . ($curlError ? "cURL error: " . $curlError : "")]);
 }
 
 /**
@@ -338,14 +371,33 @@ function sendTelegramDocument($filePath, $caption = '', $conn = null, $userId = 
     }
     $targetUserId = (int)$userId;
     if ($targetUserId <= 0) {
-        $user = getCurrentUser();
-        $targetUserId = (int)($user['id'] ?? 0);
+        if (function_exists('getCurrentUser')) {
+            $u = getCurrentUser();
+            if (!empty($u['id'])) {
+                $targetUserId = (int)$u['id'];
+            }
+        }
+        if ($targetUserId <= 0 && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
+            $targetUserId = (int)$_SESSION['user_id'];
+        }
     }
 
-    $botToken = getUserBotToken($conn, $targetUserId);
-    $userChats = getUserTelegramChats($conn, $targetUserId);
+    if ($targetUserId > 0) {
+        if ($conn) {
+            $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+            if ($stmt) {
+                db_stmt_bind_param($stmt, "i", $targetUserId);
+                db_stmt_execute($stmt);
+                $res = db_stmt_get_result($stmt);
+                $row = db_fetch_assoc($res);
+                db_stmt_close($stmt);
 
-    if (empty($userChats)) {
+                if ($row && !empty(trim($row['chat_id']))) {
+                    $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
+                    return sendSingleTelegramDocument(trim($row['chat_id']), $filePath, $caption, $bToken, $fileName);
+                }
+            }
+        }
         return json_encode([
             "ok" => false,
             "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
@@ -353,11 +405,31 @@ function sendTelegramDocument($filePath, $caption = '', $conn = null, $userId = 
         ]);
     }
 
-    $lastResult = false;
-    foreach ($userChats as $chatId) {
-        $lastResult = sendSingleTelegramDocument($chatId, $filePath, $caption, $botToken, $fileName);
+    $targets = getSubscriberChatIds($conn);
+    if (empty($targets)) {
+        return json_encode([
+            "ok" => false,
+            "message" => "No connected Telegram account found. Please connect your Telegram bot in Settings.",
+            "description" => "No connected Telegram account found. Please connect your Telegram bot in Settings."
+        ]);
     }
-    return $lastResult;
+
+    $successCount = 0;
+    $lastRes = false;
+
+    foreach ($targets as $cid => $bToken) {
+        $res = sendSingleTelegramDocument($cid, $filePath, $caption, $bToken, $fileName);
+        $lastRes = $res;
+        if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
+            $successCount++;
+        }
+    }
+
+    if ($successCount > 0) {
+        return json_encode(["ok" => true, "delivered_chats" => $successCount]);
+    }
+
+    return $lastRes;
 }
 
 /**
