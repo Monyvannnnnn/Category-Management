@@ -151,7 +151,8 @@
     }
 
     function initiateConnection() {
-        $('#btn-connect').prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-2"></i> Generating Link...');
+        $('#btn-connect').addClass('btn-loading').prop('disabled', true);
+            LoadingOverlay.show('Generating Link...');
 
         $.getJSON('telegram_connect.php', { user_id: USER_ID }, function(res) {
             $('#btn-connect').prop('disabled', false).html('<i class="fa-brands fa-telegram me-2"></i> Connect Telegram');

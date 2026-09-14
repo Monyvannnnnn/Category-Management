@@ -378,7 +378,8 @@ document.addEventListener('DOMContentLoaded', function() {
             const submitBtn = this.querySelector('.btn-submit');
             if (submitBtn) {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Signing In...';
+                submitBtn.classList.add("btn-loading");
+            LoadingOverlay.show("Signing In...");
             }
         });
     }

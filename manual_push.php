@@ -25,8 +25,10 @@ $customMessage = trim($_REQUEST['message'] ?? $inputJSON['message'] ?? '');
 
 $currentUser = getCurrentUser();
 $userId = (int)($currentUser['id'] ?? ($_REQUEST['user_id'] ?? $inputJSON['user_id'] ?? 0));
-$userWhere = ($userId > 0) ? " AND user_id = {$userId} " : "";
-$userWhereWhere = ($userId > 0) ? " WHERE user_id = {$userId} " : "";
+$userWhere = ($userId > 0) ? " AND p.user_id = {$userId} " : "";
+$userWhereWhere = ($userId > 0) ? " WHERE p.user_id = {$userId} " : "";
+$userWherePlain = ($userId > 0) ? " WHERE user_id = {$userId} " : "";
+$userWherePlainAnd = ($userId > 0) ? " AND user_id = {$userId} " : "";
 
 // Validate Telegram connection before executing any push action
 if ($action !== 'get_settings' && $action !== 'toggle_auto') {
@@ -274,7 +276,7 @@ if ($action === 'get_settings') {
 // 8. Push Financial Valuation Report
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_valuation') {
-    $res = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product {$userWhereWhere}");
+    $res = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val, COALESCE(AVG(price), 0) as avg_price FROM product {$userWherePlain}");
     if ($res && $row = db_fetch_assoc($res)) {
         $nowStr = date('Y-m-d H:i:s');
         $msg = "<b>💰 INVENTORY FINANCIAL & VALUATION REPORT</b>\n"
@@ -295,10 +297,10 @@ if ($action === 'get_settings') {
 // 9. Manual Push: Inventory Summary
 // --------------------------------------------------------------------------
 } elseif ($action === 'summary') {
-    $catRes = db_query($conn, "SELECT COUNT(*) AS total_cats FROM category {$userWhereWhere}");
+    $catRes = db_query($conn, "SELECT COUNT(*) AS total_cats FROM category {$userWherePlain}");
     $totalCats = ($catRes && $catRow = db_fetch_assoc($catRes)) ? (int)$catRow['total_cats'] : 0;
 
-    $prodRes = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val FROM product {$userWhereWhere}");
+    $prodRes = db_query($conn, "SELECT COUNT(*) AS total_prods, COALESCE(SUM(quantity), 0) AS total_stock, COALESCE(SUM(price * quantity), 0) AS total_val FROM product {$userWherePlain}");
     $totalProds = 0;
     $totalStock = 0;
     $totalVal = 0.00;
@@ -308,7 +310,7 @@ if ($action === 'get_settings') {
         $totalVal = (float)$prodRow['total_val'];
     }
 
-    $lowStockRes = db_query($conn, "SELECT product_code, product_name, quantity FROM product WHERE quantity <= 5 {$userWhere} ORDER BY quantity ASC LIMIT 5");
+    $lowStockRes = db_query($conn, "SELECT product_code, product_name, quantity FROM product WHERE quantity <= 5 {$userWherePlainAnd} ORDER BY quantity ASC LIMIT 5");
     $lowStockList = [];
     if ($lowStockRes) {
         while ($row = db_fetch_assoc($lowStockRes)) {
@@ -344,7 +346,7 @@ if ($action === 'get_settings') {
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_added') {
     $recentProds = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC LIMIT 5");
-    $recentCats  = db_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY id DESC LIMIT 5");
+    $recentCats  = db_query($conn, "SELECT * FROM category {$userWherePlain} ORDER BY id DESC LIMIT 5");
 
     $prodList = [];
     if ($recentProds) {
@@ -387,7 +389,7 @@ if ($action === 'get_settings') {
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_updated') {
     $updatedProds = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.lastupdate DESC LIMIT 5");
-    $updatedCats  = db_query($conn, "SELECT * FROM category {$userWhereWhere} ORDER BY lastupdate DESC LIMIT 5");
+    $updatedCats  = db_query($conn, "SELECT * FROM category {$userWherePlain} ORDER BY lastupdate DESC LIMIT 5");
 
     $prodList = [];
     if ($updatedProds) {
@@ -453,62 +455,112 @@ if ($action === 'get_settings') {
 // 13. Push Excel Document File to Telegram
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_excel_file' || $action === 'push_csv_file') {
-    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC");
-    $filename = "Inventory_Products_Report_" . date('Y-m-d_His') . ".csv";
-    $filepath = sys_get_temp_dir() . '/' . $filename;
-    $fp = fopen($filepath, 'w');
-    if ($fp) {
-        fputs($fp, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
-        fputcsv($fp, ['ID', 'Product Code', 'Product Name', 'Category', 'Price ($)', 'Quantity', 'Valuation ($)', 'Created At']);
-        $totalVal = 0;
-        $totalQty = 0;
-        $count = 0;
-        if ($res) {
-            while ($r = db_fetch_assoc($res)) {
-                $val = (float)$r['price'] * (int)$r['quantity'];
-                $totalVal += $val;
-                $totalQty += (int)$r['quantity'];
-                $count++;
-                fputcsv($fp, [
-                    $r['id'],
-                    $r['product_code'],
-                    $r['product_name'],
-                    $r['category_name'] ?? 'N/A',
-                    number_format((float)$r['price'], 2, '.', ''),
-                    (int)$r['quantity'],
-                    number_format($val, 2, '.', ''),
-                    $r['created_at']
-                ]);
-            }
-        }
-        fclose($fp);
+    $scope = $_REQUEST['scope'] ?? $inputJSON['scope'] ?? 'all';
+    $scopeTag = ($scope === 'current') ? " (CURRENT PAGE)" : " (ALL PAGES)";
 
-        $caption = "📊 <b>INVENTORY EXCEL REPORT (.CSV)</b>\n"
+    // 13a. Support direct client-uploaded .xlsx or .csv file
+    if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        $tmpPath = $_FILES['file']['tmp_name'];
+        $isCsv = ($action === 'push_csv_file');
+        $defaultExt = $isCsv ? ".csv" : ".xlsx";
+        $userFileName = $_FILES['file']['name'] ?: ("Inventory_Products_Report_" . date('Y-m-d_His') . $defaultExt);
+
+        $caption = $isCsv
+                 ? "📄 <b>INVENTORY CSV REPORT (.CSV){$scopeTag}</b>\n"
                  . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
                  . "───────────────────────\n"
-                 . "📦 <b>Total Products:</b> {$count}\n"
-                 . "🔢 <b>Total Stock Qty:</b> " . number_format($totalQty) . " units\n"
-                 . "💰 <b>Total Valuation:</b> $" . number_format($totalVal, 2) . "\n"
+                 . "<i>Attached raw CSV text report document file</i>"
+                 : "📊 <b>INVENTORY EXCEL REPORT (.XLSX){$scopeTag}</b>\n"
+                 . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
                  . "───────────────────────\n"
-                 . "<i>Attached Excel document file</i>";
+                 . "<i>Attached Excel (.xlsx) document file</i>";
 
-        $resJson = sendTelegramDocument($filepath, $caption, $conn, $userId, $filename);
-        @unlink($filepath);
+        $resJson = sendTelegramDocument($tmpPath, $caption, $conn, $userId, $userFileName);
         echo $resJson;
         exit;
-    } else {
-        http_response_code(500);
-        echo json_encode(["ok" => false, "message" => "Could not create temporary Excel file."]);
-        exit;
     }
+
+    $rawIds = $_REQUEST['ids'] ?? $inputJSON['ids'] ?? '';
+    $ids = is_array($rawIds) ? array_map('intval', $rawIds) : array_map('intval', explode(',', (string)$rawIds));
+    $ids = array_filter($ids, function($v) { return $v > 0; });
+
+    if ($scope === 'current' && !empty($ids)) {
+        $idList = implode(',', $ids);
+        $whereFilter = " WHERE p.id IN ({$idList}) " . ($userId > 0 ? " AND p.user_id = {$userId} " : "");
+    } else {
+        $whereFilter = ($userId > 0) ? " WHERE p.user_id = {$userId} " : "";
+    }
+
+    require_once __DIR__ . "/includes/excel_generator.php";
+
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$whereFilter} ORDER BY p.id DESC");
+    $rows = [];
+    $totalVal = 0;
+    $totalQty = 0;
+    if ($res) {
+        while ($r = db_fetch_assoc($res)) {
+            $rows[] = $r;
+            $totalVal += ((float)$r['price'] * (int)$r['quantity']);
+            $totalQty += (int)$r['quantity'];
+        }
+    }
+
+    $excelGen = new InventoryExcel();
+    $excelXml = $excelGen->generateProductsExcel("INVENTORY PRODUCTS EXCEL REPORT" . $scopeTag, $rows, $totalVal);
+
+    $filename = "Inventory_Products_Report_" . date('Y-m-d_His') . ".xls";
+    $filepath = sys_get_temp_dir() . '/' . $filename;
+    file_put_contents($filepath, $excelXml);
+
+    $caption = "📊 <b>INVENTORY EXCEL REPORT (.XLS){$scopeTag}</b>\n"
+             . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+             . "───────────────────────\n"
+             . "📦 <b>Total Products:</b> " . count($rows) . "\n"
+             . "🔢 <b>Total Stock Qty:</b> " . number_format($totalQty) . " units\n"
+             . "💰 <b>Total Valuation:</b> $" . number_format($totalVal, 2) . "\n"
+             . "───────────────────────\n"
+             . "<i>Attached Excel Spreadsheet document file</i>";
+
+    $resJson = sendTelegramDocument($filepath, $caption, $conn, $userId, $filename);
+    @unlink($filepath);
+    echo $resJson;
+    exit;
 
 // --------------------------------------------------------------------------
 // 14. Push PDF Document File to Telegram
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_pdf_file') {
+    $scope = $_REQUEST['scope'] ?? $inputJSON['scope'] ?? 'all';
+    $scopeTag = ($scope === 'current') ? " (CURRENT PAGE)" : " (ALL PAGES)";
+
+    if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        $tmpPath = $_FILES['file']['tmp_name'];
+        $userFileName = $_FILES['file']['name'] ?: ("Inventory_PDF_Report_" . date('Y-m-d_His') . ".pdf");
+
+        $caption = "📄 <b>INVENTORY PDF REPORT{$scopeTag}</b>\n"
+                 . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+                 . "───────────────────────\n"
+                 . "<i>Attached formatted PDF report document file</i>";
+
+        $resJson = sendTelegramDocument($tmpPath, $caption, $conn, $userId, $userFileName);
+        echo $resJson;
+        exit;
+    }
+
     require_once __DIR__ . "/includes/pdf_generator.php";
 
-    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC");
+    $rawIds = $_REQUEST['ids'] ?? $inputJSON['ids'] ?? '';
+    $ids = is_array($rawIds) ? array_map('intval', $rawIds) : array_map('intval', explode(',', (string)$rawIds));
+    $ids = array_filter($ids, function($v) { return $v > 0; });
+
+    if ($scope === 'current' && !empty($ids)) {
+        $idList = implode(',', $ids);
+        $whereFilter = " WHERE p.id IN ({$idList}) " . ($userId > 0 ? " AND p.user_id = {$userId} " : "");
+    } else {
+        $whereFilter = ($userId > 0) ? " WHERE p.user_id = {$userId} " : "";
+    }
+
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$whereFilter} ORDER BY p.id DESC");
     $rows = [];
     $totalVal = 0;
     if ($res) {
@@ -519,13 +571,13 @@ if ($action === 'get_settings') {
     }
 
     $pdfGen = new InventoryPDF();
-    $pdfData = $pdfGen->generateProductsPDF("INVENTORY PRODUCTS REPORT", $rows, $totalVal);
+    $pdfData = $pdfGen->generateProductsPDF("INVENTORY PRODUCTS REPORT" . $scopeTag, $rows, $totalVal);
 
     $filename = "Inventory_Products_Report_" . date('Y-m-d_His') . ".pdf";
     $filepath = sys_get_temp_dir() . '/' . $filename;
     file_put_contents($filepath, $pdfData);
 
-    $caption = "📄 <b>INVENTORY PDF REPORT (.PDF)</b>\n"
+    $caption = "📄 <b>INVENTORY PDF REPORT{$scopeTag}</b>\n"
              . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
              . "───────────────────────\n"
              . "📦 <b>Total Products:</b> " . count($rows) . "\n"
@@ -537,6 +589,31 @@ if ($action === 'get_settings') {
     @unlink($filepath);
     echo $resJson;
     exit;
+
+// --------------------------------------------------------------------------
+// 15. Push Page Picture / Screenshot (JPG) to Telegram
+// --------------------------------------------------------------------------
+} elseif ($action === 'push_image_file' || $action === 'push_picture_file') {
+    $scope = $_REQUEST['scope'] ?? $inputJSON['scope'] ?? 'all';
+    $scopeTag = ($scope === 'current') ? " (CURRENT PAGE)" : " (ALL PAGES)";
+
+    if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        $tmpPath = $_FILES['file']['tmp_name'];
+        $userFileName = $_FILES['file']['name'] ?: ("Inventory_Page_Screenshot_" . date('Y-m-d_His') . ".jpg");
+
+        $caption = "🖼️ <b>INVENTORY PAGE SCREENSHOT (.JPG){$scopeTag}</b>\n"
+                 . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+                 . "───────────────────────\n"
+                 . "<i>Attached High-Resolution Page Picture / Screenshot</i>";
+
+        $resJson = sendTelegramPhotoNotification($caption, $tmpPath, $conn, $userId);
+        echo $resJson;
+        exit;
+    } else {
+        http_response_code(400);
+        echo json_encode(["ok" => false, "message" => "No image file uploaded."]);
+        exit;
+    }
 
 } else {
     http_response_code(400);

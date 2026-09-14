@@ -3,6 +3,38 @@
  * Inventory & Category Management System
  */
 
+// Global LoadingOverlay fallback object to prevent ReferenceErrors
+window.LoadingOverlay = window.LoadingOverlay || {
+    show: function (msg) {},
+    hide: function () {}
+};
+
+// Helper for push report card loading states
+function setCardLoading($btn, isLoading, statusText) {
+    if (!$btn || !$btn.length) return;
+    if (isLoading) {
+        if (!$btn.data("orig-html")) {
+            $btn.data("orig-html", $btn.html());
+        }
+        $btn.addClass("is-loading btn-loading").prop("disabled", true);
+        var $arrow = $btn.find(".report-arrow");
+        if ($arrow.length) {
+            $arrow.removeClass("fa-chevron-right").addClass("fa-spinner fa-spin").css({ "color": "#38bdf8", "font-size": "16px" });
+        }
+        if (statusText) {
+            $btn.find(".report-desc").text(statusText);
+        }
+    } else {
+        var origHtml = $btn.data("orig-html");
+        if (origHtml) {
+            $btn.html(origHtml);
+            $btn.removeData("orig-html");
+        }
+        $btn.removeClass("is-loading btn-loading").prop("disabled", false);
+    }
+}
+window.setCardLoading = setCardLoading;
+
 $(document).ready(function () {
     console.log("Inventory App Initialized");
 });

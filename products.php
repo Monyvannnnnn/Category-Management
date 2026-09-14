@@ -112,7 +112,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
     <script src="https://cdn3.devexpress.com/jslib/23.1.6/js/dx.all.js"></script>
     <script src="js/KhmerOSSiemreap.js"></script>
-    <script src="js/app.js"></script>
+    <script src="js/app.js?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/js/app.js')); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
     <style>
     .img-lightbox-modal {
@@ -281,10 +281,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         <i class="fa-solid fa-file-excel" style="width:16px; text-align:center; color:#107c41;"></i>
                                         Export current page
                                     </button>
-                                    <button class="export-item push-tg-excel" id="btnExportPushExcel">
-                                        <i class="fa-brands fa-telegram" style="width:16px; text-align:center; color:#38bdf8;"></i>
-                                        Push Excel to Telegram
-                                    </button>
                                 </div>
                                 
                                 <!-- CSV -->
@@ -311,9 +307,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         <i class="fa-solid fa-file-pdf" style="width:16px; text-align:center; color:#e3242b;"></i>
                                         Export current page
                                     </button>
-                                    <button class="export-item push-tg-pdf" id="btnExportPushPdf">
-                                        <i class="fa-brands fa-telegram" style="width:16px; text-align:center; color:#38bdf8;"></i>
-                                        Push PDF to Telegram
+                                </div>
+
+                                <!-- Image / Picture (JPG) -->
+                                <div class="orientation-section">
+                                    <div class="orientation-label">Image / Picture (JPG)</div>
+                                    <button class="export-item" id="btnDownloadImageJpg">
+                                        <i class="fa-solid fa-file-image" style="width:16px; text-align:center; color:#f59e0b;"></i>
+                                        Download Page Picture (JPG)
                                     </button>
                                 </div>
                                 
@@ -1099,13 +1100,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                 if (options.data && options.data.id) {
                                     var $btn = $(this);
                                     if ($btn.data("loading")) return;
-                                    var $icon = $btn.find("i");
                                     $btn.data("loading", true);
-                                    $icon.removeClass("fa-paper-plane").addClass("fa-spinner fa-spin");
+                                    $btn.addClass("is-loading").html('<i class="fa-solid fa-spinner fa-spin" style="font-size: 14px; color: #38bdf8;"></i>');
 
                                     function resetBtn() {
                                         $btn.data("loading", false);
-                                        $icon.removeClass("fa-spinner fa-spin").addClass("fa-paper-plane");
+                                        $btn.removeClass("is-loading").html(telegramSvg);
                                     }
 
                                     window.checkTelegramConnectionAndExecute(function() {
@@ -1254,6 +1254,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     },
                     onShown: function(e) {
                         fixFormLabelsAccessibility(e);
+                    },
+                    onShowing: function(e) {
+                        window._currentSelectedImageFile = null;
+                        window._currentImagePreviewDataUrl = null;
+                    },
+                    onHiding: function(e) {
+                        window._currentSelectedImageFile = null;
+                        window._currentImagePreviewDataUrl = null;
                     }
                 },
                 form: {
@@ -1305,121 +1313,133 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             dataField: "image",
                             label: { text: "Product Image" },
                             template: function(data, itemElement) {
-                                var $container = $("<div>").css({ display: "flex", flexDirection: "column", gap: "8px", marginTop: "4px" });
-                                var formData = data.component.option("formData") || {};
+                                var $container = $("<div>").addClass("custom-file-upload-wrapper").css({ display: "flex", flexDirection: "column", gap: "10px", marginTop: "4px", width: "100%" });
+                                var formData = data.formData || (data.component && data.component.option ? data.component.option("formData") : {}) || {};
                                 var currentImg = formData.image;
+
+                                var $hiddenInput = $("<input>")
+                                    .attr("id", "product_image_input")
+                                    .attr("type", "file")
+                                    .attr("accept", "image/jpeg,image/png,image/gif,image/webp")
+                                    .css({ display: "none" });
+
+                                var $dropzone = $("<div>")
+                                    .addClass("custom-upload-dropzone")
+                                    .html(
+                                        '<div class="upload-dropzone-inner">' +
+                                            '<div class="upload-icon-wrapper">' +
+                                                '<i class="fa-solid fa-cloud-arrow-up"></i>' +
+                                            '</div>' +
+                                            '<div class="upload-text-content">' +
+                                                '<span class="upload-title">Choose image or drag & drop</span>' +
+                                                '<span class="upload-subtext">JPG, PNG, WEBP or GIF (Auto 300x300 canvas framing)</span>' +
+                                            '</div>' +
+                                            '<button type="button" class="btn-browse-file"><i class="fa-solid fa-folder-open me-1"></i> Browse File</button>' +
+                                        '</div>'
+                                    );
 
                                 var $prevBox = $("<div>")
                                     .addClass("form-preview-container")
-                                    .css({ display: "flex", alignItems: "center", gap: "12px", background: "rgba(15, 23, 42, 0.5)", border: "1px solid rgba(255, 255, 255, 0.1)", borderRadius: "8px", padding: "8px 12px" });
+                                    .css({ display: "flex", alignItems: "center", gap: "12px", background: "rgba(15, 23, 42, 0.6)", border: "1px solid rgba(52, 211, 153, 0.3)", borderRadius: "8px", padding: "10px 14px" });
 
                                 var $statusMsg = $("<div>").css({ fontSize: "11px", display: "none" });
 
                                 if (window._currentImagePreviewDataUrl) {
                                     var $img = $("<img>").attr("src", window._currentImagePreviewDataUrl).css({
-                                        width: "52px",
-                                        height: "52px",
-                                        objectFit: "contain",
-                                        background: "#ffffff",
-                                        borderRadius: "6px",
-                                        border: "2px solid #34d399",
-                                        padding: "2px",
-                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                        width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #34d399", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
                                     });
                                     $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">New Image Ready</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>')).show();
                                     $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
                                 } else if (currentImg && typeof currentImg === "string" && (currentImg.startsWith("http://") || currentImg.startsWith("https://") || currentImg.startsWith("/") || currentImg.startsWith("assets/") || currentImg.startsWith("data:"))) {
                                     var $img = $("<img>").attr("src", currentImg).css({
-                                        width: "52px",
-                                        height: "52px",
-                                        objectFit: "contain",
-                                        background: "#ffffff",
-                                        borderRadius: "6px",
-                                        border: "2px solid #38bdf8",
-                                        padding: "2px",
-                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                        width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #38bdf8", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
                                     });
                                     $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#f8fafc;">Current Image</div><div style="font-size:11px; color:#94a3b8;">Uniform 300x300 canvas frame</div>')).show();
                                 } else {
                                     $prevBox.hide();
                                 }
 
-                                $container.append($prevBox);
-                                $container.append($statusMsg);
+                                $dropzone.on("click", function(e) {
+                                    e.preventDefault();
+                                    $hiddenInput.trigger("click");
+                                });
 
-                                var $input = $("<input>")
-                                    .attr("id", "product_image_input")
-                                    .attr("type", "file")
-                                    .attr("accept", "image/jpeg,image/png,image/gif,image/webp")
-                                    .css({
-                                        color: "#f8fafc",
-                                        background: "rgba(15, 23, 42, 0.6)",
-                                        border: "1px solid rgba(255, 255, 255, 0.15)",
-                                        borderRadius: "6px",
-                                        padding: "6px 10px",
-                                        width: "100%",
-                                        fontSize: "13px",
-                                        cursor: "pointer"
-                                    })
-                                    .on("change", function(e) {
-                                        var file = this.files && this.files[0];
-                                        if (file) {
-                                            window._currentSelectedImageFile = file;
+                                $dropzone.on("dragover dragenter", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    $dropzone.addClass("is-dragover");
+                                });
 
-                                            var grid = $("#gridContainer").dxDataGrid("instance");
-                                            if (grid) {
-                                                var editRowKey = grid.option("editing.editRowKey");
-                                                var changes = grid.option("editing.changes") || [];
-                                                if (changes.length === 0) {
-                                                    if (editRowKey !== null && editRowKey !== undefined) {
-                                                        grid.option("editing.changes", [{
-                                                            key: editRowKey,
-                                                            type: "update",
-                                                            data: { image: "pending_upload_" + Date.now() }
-                                                        }]);
-                                                    } else {
-                                                        grid.option("editing.changes", [{
-                                                            type: "insert",
-                                                            data: { image: "pending_upload_" + Date.now() }
-                                                        }]);
-                                                    }
-                                                } else {
-                                                    changes[0].data = changes[0].data || {};
-                                                    changes[0].data.image = "pending_upload_" + Date.now();
-                                                    grid.option("editing.changes", changes);
-                                                }
+                                $dropzone.on("dragleave dragend drop", function(e) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    $dropzone.removeClass("is-dragover");
+                                });
+
+                                $dropzone.on("drop", function(e) {
+                                    var files = e.originalEvent && e.originalEvent.dataTransfer && e.originalEvent.dataTransfer.files;
+                                    if (files && files.length > 0) {
+                                        handleFileSelect(files[0]);
+                                    }
+                                });
+
+                                function handleFileSelect(file) {
+                                    if (!file) {
+                                        window._currentSelectedImageFile = null;
+                                        window._currentImagePreviewDataUrl = null;
+                                        if (formData) formData.image = null;
+                                        $statusMsg.hide();
+                                        $prevBox.hide();
+                                        return;
+                                    }
+
+                                    window._currentSelectedImageFile = file;
+
+                                    var grid = $("#gridContainer").dxDataGrid("instance");
+                                    if (grid) {
+                                        var editRowKey = grid.option("editing.editRowKey");
+                                        var changes = $.extend(true, [], grid.option("editing.changes") || []);
+                                        var pendingVal = "pending_upload_" + Date.now();
+
+                                        if (changes.length === 0) {
+                                            if (editRowKey !== null && editRowKey !== undefined) {
+                                                changes = [{ key: editRowKey, type: "update", data: { image: pendingVal } }];
+                                            } else {
+                                                changes = [{ type: "insert", data: { image: pendingVal } }];
                                             }
-
-                                            $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
-                                            standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
-                                                if (standardizedFile) {
-                                                    window._currentSelectedImageFile = standardizedFile;
-                                                }
-                                                if (previewDataUrl) {
-                                                    window._currentImagePreviewDataUrl = previewDataUrl;
-                                                    $prevBox.empty().css({ display: "flex" }).show();
-                                                    var $img = $("<img>").attr("src", previewDataUrl).css({
-                                                        width: "52px",
-                                                        height: "52px",
-                                                        objectFit: "contain",
-                                                        background: "#ffffff",
-                                                        borderRadius: "6px",
-                                                        border: "2px solid #34d399",
-                                                        padding: "2px",
-                                                        boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
-                                                    });
-                                                    $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">New Image Ready</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>'));
-                                                }
-                                                $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
-                                            });
                                         } else {
-                                            window._currentSelectedImageFile = null;
-                                            window._currentImagePreviewDataUrl = null;
-                                            $statusMsg.hide();
-                                            $prevBox.hide();
+                                            changes[0].data = changes[0].data || {};
+                                            changes[0].data.image = pendingVal;
                                         }
+
+                                        grid.option("editing.changes", changes);
+                                        if (formData) formData.image = pendingVal;
+                                    }
+
+                                    $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
+                                    standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
+                                        if (standardizedFile) {
+                                            window._currentSelectedImageFile = standardizedFile;
+                                        }
+                                        if (previewDataUrl) {
+                                            window._currentImagePreviewDataUrl = previewDataUrl;
+                                            $prevBox.empty().css({ display: "flex" }).show();
+                                            var $img = $("<img>").attr("src", previewDataUrl).css({
+                                                width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #34d399", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                            });
+                                            var fileSizeKb = (file.size / 1024).toFixed(1);
+                                            $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>'));
+                                        }
+                                        $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
                                     });
-                                $container.append($input);
+                                }
+
+                                $hiddenInput.on("change", function() {
+                                    var file = this.files && this.files[0];
+                                    handleFileSelect(file);
+                                });
+
+                                $container.append($dropzone).append($hiddenInput).append($prevBox).append($statusMsg);
                                 itemElement.append($container);
 
                                 setTimeout(function() {
@@ -1431,12 +1451,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 }
             },
             onEditingStart: function(e) {
-                window._currentSelectedImageFile = null;
-                window._currentImagePreviewDataUrl = null;
+                // Handled in popup.onShowing
             },
             onInitNewRow: function(e) {
-                window._currentSelectedImageFile = null;
-                window._currentImagePreviewDataUrl = null;
+                // Handled in popup.onShowing
             },
             onRowUpdating: function(e) {
                 if (window._currentSelectedImageFile) {
@@ -1798,149 +1816,126 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // PDF paper size: "a4" (default), "a3", "letter".
         var pdfPaper = "a4";
 
+        async function generateCleanGridPdfBlob(pageOnly) {
+            var gridInstance = $("#gridContainer").dxDataGrid("instance");
+            if (!gridInstance) throw new Error("Grid instance not found");
+
+            var exportData;
+            if (pageOnly) {
+                exportData = gridInstance.getVisibleRows()
+                    .filter(function(r) { return r.rowType === "data"; })
+                    .map(function(r) { return r.data; });
+            } else {
+                exportData = await gridInstance.getDataSource().store().load();
+            }
+
+            if (!exportData || exportData.length === 0) {
+                throw new Error("No data available to export.");
+            }
+
+            var visibleColumns = gridInstance.option("columns").filter(function(col) {
+                return col.type !== "buttons" && col.caption !== "Action" && col.dataField !== "action";
+            });
+
+            var thead = "<thead><tr>";
+            visibleColumns.forEach(function(col) {
+                var cap = col.caption || col.dataField || "";
+                thead += "<th>" + cap + "</th>";
+            });
+            thead += "</tr></thead>";
+
+            var tbody = "<tbody>";
+            exportData.forEach(function(row) {
+                tbody += "<tr>";
+                visibleColumns.forEach(function(col) {
+                    var val = row[col.dataField];
+                    if (val === null || val === undefined) val = "";
+                    if ((col.dataField === "created_at" || col.dataField === "lastupdate" || col.dataField === "date_created") && val) {
+                        try { val = formatDateTime(new Date(val)); } catch(e) {}
+                    }
+                    if (col.dataField === "price" && val !== "") {
+                        val = "$" + parseFloat(val).toFixed(2);
+                    }
+                    tbody += "<td>" + String(val).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;") + "</td>";
+                });
+                tbody += "</tr>";
+            });
+            tbody += "</tbody>";
+
+            var scopeTag = pageOnly ? " (Current Page)" : " (All Pages)";
+
+            var overlay = $(
+                '<div id="pdfCaptureOverlay">' +
+                '<style>' +
+                '#pdfCaptureOverlay { position: fixed; left: -10000px; top: 0; z-index: -1; background: #ffffff !important; padding: 24px; box-sizing: border-box; }' +
+                '#pdfTable { font-family: "KhmerOSWeb", "Khmer OS Siemreap", Arial, sans-serif; border-collapse: collapse; width: 100%; color: #000000; font-size: 10px; font-weight: normal; background: #ffffff !important; }' +
+                '#pdfTable th { background: #f1f5f9 !important; color: #0f172a; padding: 7px 8px; text-align: left; border: 1px solid #64748b !important; font-weight: 700; font-size: 10px; }' +
+                '#pdfTable td { padding: 6px 8px; border: 1px solid #64748b !important; color: #0f172a; font-weight: normal; font-size: 9.5px; background: #ffffff !important; }' +
+                '#pdfTable tr:nth-child(even) td { background: #f8fafc !important; }' +
+                '</style>' +
+                '<div style="font-family: Arial, sans-serif; font-size: 15px; font-weight: bold; margin-bottom: 12px; color: #0f172a;">Products Inventory Report' + scopeTag + '</div>' +
+                '<table id="pdfTable">' + thead + tbody + '</table>' +
+                '</div>'
+            ).appendTo("body");
+
+            if (document.fonts && document.fonts.ready) {
+                await document.fonts.ready;
+            }
+            await new Promise(function(r) { setTimeout(r, 400); });
+
+            const canvas = await html2canvas(overlay[0], {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: "#ffffff",
+                logging: false,
+                onclone: function(clonedDoc) {
+                    try {
+                        if (window.__khmerB64) {
+                            var s = clonedDoc.createElement("style");
+                            s.textContent = '@font-face{font-family:"KhmerOSWeb";src:url(data:font/ttf;base64,' + window.__khmerB64 + ') format("truetype");font-weight:normal;font-style:normal;}';
+                            clonedDoc.head.appendChild(s);
+                        }
+                    } catch (e) {}
+                }
+            });
+            overlay.remove();
+
+            const { jsPDF } = window.jspdf;
+            var $menu = document.getElementById("masterExportMenu");
+            var $actPaper = $menu ? $menu.querySelector("[data-paper].active") : null;
+            var $actOrient = $menu ? $menu.querySelector("[data-orientation].active") : null;
+            var pdfPaper = $actPaper ? $actPaper.dataset.paper : "a4";
+            var pdfOrientation = $actOrient ? ($actOrient.dataset.orientation === "landscape" ? "l" : "p") : (visibleColumns.length > 5 ? "l" : "p");
+
+            const pdf = new jsPDF(pdfOrientation, "pt", pdfPaper);
+            const pageW = pdf.internal.pageSize.getWidth();
+            const pageH = pdf.internal.pageSize.getHeight();
+            const margin = 20;
+
+            const imgData = canvas.toDataURL("image/jpeg", 0.95);
+            const imgProps = pdf.getImageProperties(imgData);
+            let imgW = pageW - margin * 2;
+            let imgH = (imgProps.height * imgW) / imgProps.width;
+            if (imgH > pageH - margin * 2) {
+                imgH = pageH - margin * 2;
+                imgW = (imgProps.width * imgH) / imgProps.height;
+            }
+            pdf.addImage(imgData, "JPEG", margin, margin, imgW, imgH);
+
+            return { pdf: pdf, blob: pdf.output("blob") };
+        }
+
         async function exportPDF(pageOnly) {
             const $btn = $("#pdfExportTrigger");
-            let overlay = null;
             try {
                 $btn.prop("disabled", true).css("opacity", "0.6");
-
-                var gridInstance = $("#gridContainer").dxDataGrid("instance");
-
-                // 1) Read rows from the LIVE grid (same data shown on this page)
-                var exportData;
-                if (pageOnly) {
-                    exportData = gridInstance.getVisibleRows()
-                        .filter(function(r) {
-                            return r.rowType === "data";
-                        })
-                        .map(function(r) {
-                            return r.data;
-                        });
-                } else {
-                    exportData = await gridInstance.getDataSource().store().load();
-                }
-                if (!exportData || exportData.length === 0) {
-                    alert("No data to export.");
-                    return;
-                }
-
-                // 2) Columns from the grid (skip the Action/buttons column)
-                var visibleColumns = gridInstance.option("columns").filter(function(col) {
-                    return col.type !== "buttons" && col.caption !== "Action" &&
-                        col.dataField !== "action";
-                });
-
-                // 3) Build a plain table styled like index.php (red header, white body)
-                var thead = "<thead><tr>";
-                visibleColumns.forEach(function(col) {
-                    thead += "<th>" + (col.caption || col.dataField || "") + "</th>";
-                });
-                thead += "</tr></thead>";
-
-                var tbody = "<tbody>";
-                exportData.forEach(function(row) {
-                    tbody += "<tr>";
-                    visibleColumns.forEach(function(col) {
-                        var val = row[col.dataField];
-                        if (val === null || val === undefined) val = "";
-                        if ((col.dataField === "created_at" || col.dataField ===
-                                "lastupdate") && val) {
-                            val = formatDateTime(new Date(val));
-                        }
-                        if (col.dataField === "price" && val !== "") {
-                            val = "$" + parseFloat(val).toFixed(2);
-                        }
-                        tbody += "<td>" + String(val)
-                            .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g,
-                                "&gt;") + "</td>";
-                    });
-                    tbody += "</tr>";
-                });
-                tbody += "</tbody>";
-
-                // 4) Render off-screen (NOT visible on screen) but still painted by the
-                //    browser, so html2canvas can capture real pixels without a flash.
-                overlay = $(
-                    '<div id="pdfCaptureOverlay">' +
-                    '<style>' +
-                    '#pdfCaptureOverlay{position:fixed;left:-10000px;top:0;z-index:-1;background:#fff !important;padding:24px;}' +
-                    '#pdfTable{font-family:"KhmerOSWeb","Khmer OS Siemreap",Arial,sans-serif;' +
-                    'border-collapse:collapse;width:100%;color:#000;font-size:12px;font-weight:normal;background:#fff !important;}' +
-                    '#pdfTable th{background:#fff !important;color:#000;padding:8px 10px;text-align:left;' +
-                    'border:1px solid #999;font-weight:normal;}' +
-                    '#pdfTable td{padding:7px 10px;border:1px solid #999;color:#000;font-weight:normal;background:#fff !important;}' +
-                    '#pdfTable tr:nth-child(even) td{background:#fff !important;}' +
-                    '</style>' +
-                    '<table id="pdfTable">' + thead + tbody + '</table>' +
-                    '</div>'
-                ).appendTo("body");
-
-                // Wait for the Khmer webfont to shape text
-                if (document.fonts && document.fonts.ready) {
-                    await document.fonts.ready;
-                }
-                await new Promise(function(r) {
-                    setTimeout(r, 500);
-                });
-
-                // 5) Capture the (painted, off-screen) table, then move it into jsPDF.
-                //    scale:2 + high-quality JPEG keeps text sharp (small file thanks to JPEG).
-                const canvas = await html2canvas(overlay[0], {
-                    scale: 2,
-                    useCORS: true,
-                    backgroundColor: "#ffffff",
-                    logging: false,
-                    onclone: function(clonedDoc) {
-                        try {
-                            if (window.__khmerB64) {
-                                var s = clonedDoc.createElement("style");
-                                s.textContent = '@font-face{font-family:"KhmerOSWeb";' +
-                                    'src:url(data:font/ttf;base64,' + window.__khmerB64 +
-                                    ') format("truetype");font-weight:normal;font-style:normal;}';
-                                clonedDoc.head.appendChild(s);
-                            }
-                        } catch (e) {}
-                    }
-                });
-                overlay.remove();
-                overlay = null;
-
-                const {
-                    jsPDF
-                } = window.jspdf;
-                // Read the ACTIVE paper + orientation straight from the menu so the
-                // latest selection is always used (not a stale closure value).
-                var $menu = document.getElementById("masterExportMenu");
-                var $actPaper = $menu ? $menu.querySelector("[data-paper].active") : null;
-                var $actOrient = $menu ? $menu.querySelector("[data-orientation].active") : null;
-                pdfPaper = $actPaper ? $actPaper.dataset.paper : "a4";
-                pdfOrientation = $actOrient ? ($actOrient.dataset.orientation === "landscape" ? "l" : "p") :
-                    "p";
-                const pdf = new jsPDF(pdfOrientation, "pt", pdfPaper);
-                const pageW = pdf.internal.pageSize.getWidth();
-                const pageH = pdf.internal.pageSize.getHeight();
-                const margin = 20;
-
-                const imgData = canvas.toDataURL("image/jpeg", 0.92);
-                const imgProps = pdf.getImageProperties(imgData);
-                let imgW = pageW - margin * 2;
-                let imgH = (imgProps.height * imgW) / imgProps.width;
-                if (imgH > pageH - margin * 2) {
-                    imgH = pageH - margin * 2;
-                    imgW = (imgProps.width * imgH) / imgProps.height;
-                }
-                pdf.addImage(imgData, "JPEG", margin, margin, imgW, imgH);
-                pdf.save("Categories_" + (pageOnly ? "Page" : "All") + "_" + new Date().toISOString().slice(
-                    0, 10) + ".pdf");
+                var res = await generateCleanGridPdfBlob(pageOnly);
+                var filename = "Products_" + (pageOnly ? "CurrentPage" : "AllPages") + "_" + new Date().toISOString().slice(0, 10) + ".pdf";
+                res.pdf.save(filename);
             } catch (err) {
                 console.error("PDF Export Error:", err);
                 alert("Export failed: " + err.message);
             } finally {
-                if (overlay && overlay.length) {
-                    try {
-                        overlay.remove();
-                    } catch (e) {}
-                }
                 $btn.prop("disabled", false).css("opacity", "1");
             }
         }
@@ -2059,7 +2054,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     var escape = function(v) {
                         if (v === null || v === undefined) v = "";
                         v = String(v);
-                        if (v.search(/[",\n]/) !== -1) {
+                        if (v.search(/[",n]/) !== -1) {
                             v = '"' + v.replace(/"/g, '""') + '"';
                         }
                         return v;
@@ -2071,8 +2066,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         return cols.map(function(c) {
                             return escape(row[c.dataField]);
                         }).join(",");
-                    }).join("\n");
-                    var csv = "﻿" + header + "\n" + body;
+                    }).join("n");
+                    var csv = "﻿" + header + "n" + body;
 
                     var today = new Date();
                     var yyyy = today.getFullYear();
@@ -2408,16 +2403,23 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             e.preventDefault();
             $("#customPushMessageCustom").val("");
             loadPushSettings();
-            $("#pushModal").css("display", "flex").hide().fadeIn(200);
+            $("#pushModal").css("display", "flex").hide().fadeIn(120);
         });
 
         $(document).on("click", "#closePushModalBtn", function() {
-            $("#pushModal").fadeOut(150);
+            $("#pushModal").fadeOut(100);
+        });
+
+        $(document).on("click", "#closeDocumentPushModalBtn", function() {
+            $("#documentPushModal").fadeOut(100);
         });
 
         $(window).on("click", function(e) {
             if ($(e.target).is("#pushModal")) {
-                $("#pushModal").fadeOut(150);
+                $("#pushModal").fadeOut(100);
+            }
+            if ($(e.target).is("#documentPushModal")) {
+                $("#documentPushModal").fadeOut(100);
             }
         });
 
@@ -2462,7 +2464,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // Push Added Items Action
         $("#btnPushAdded").on("click", function() {
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Added Items...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Pushing Added Items...");
             
             $.ajax({
                 url: "manual_push.php",
@@ -2488,7 +2491,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // Push Updated Items Action
         $("#btnPushUpdated").on("click", function() {
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Updated Items...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Pushing Updated Items...");
             
             $.ajax({
                 url: "manual_push.php",
@@ -2514,7 +2518,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // Push Low Stock Warning Action
         $("#btnPushLowStock").on("click", function() {
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Low Stock Report...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Pushing Low Stock Report...");
             
             $.ajax({
                 url: "manual_push.php",
@@ -2540,7 +2545,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // Push Out of Stock Action
         $("#btnPushOutOfStock").on("click", function() {
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Out of Stock...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Pushing Out of Stock...");
             
             $.ajax({
                 url: "manual_push.php",
@@ -2566,7 +2572,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // Push Valuation Report Action
         $("#btnPushValuation").on("click", function() {
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Financial Report...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Pushing Financial Report...");
             
             $.ajax({
                 url: "manual_push.php",
@@ -2592,7 +2599,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         // Push Summary Action
         $("#btnPushSummary").on("click", function() {
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Summary...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Pushing Summary...");
             
             $.ajax({
                 url: "manual_push.php",
@@ -2624,7 +2632,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             }
 
             var $btn = $(this);
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Sending...');
+            $btn.addClass("btn-loading").prop("disabled", true);
+            LoadingOverlay.show("Sending...");
 
             $.ajax({
                 url: "manual_push.php",
@@ -2648,73 +2657,511 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             });
         });
 
-        // Open Push Modal from Document Push icon button
+        function getCurrentGridPageItemIds() {
+            try {
+                var grid = $("#gridContainer").dxDataGrid("instance");
+                if (grid) {
+                    return grid.getVisibleRows()
+                        .filter(function(r) { return r.rowType === "data" && r.data && r.data.id; })
+                        .map(function(r) { return r.data.id; });
+                }
+            } catch(e) {}
+            return [];
+        }
+
+        function executePushExcelDocument(scope) {
+            var $btn = $("#btnPushExcelFile");
+            setCardLoading($btn, true, "Generating Excel & Pushing to Telegram...");
+
+            var pageOnly = (scope === "current");
+            var rowIds = pageOnly ? getCurrentGridPageItemIds() : [];
+
+            if (pageOnly && rowIds.length === 0) {
+                DevExpress.ui.notify("No items visible on current grid page.", "warning", 3000);
+                setCardLoading($btn, false);
+                return;
+            }
+
+            window.checkTelegramConnectionAndExecute(function() {
+                try {
+                    var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                    var workbook = new ExcelJS.Workbook();
+                    var worksheet = workbook.addWorksheet('Products');
+
+                    DevExpress.excelExporter.exportDataGrid({
+                        component: gridInstance,
+                        worksheet: worksheet,
+                        autoFilterEnabled: true
+                    }).then(function() {
+                        return workbook.xlsx.writeBuffer();
+                    }).then(function(buffer) {
+                        setCardLoading($btn, true, "Pushing Excel to Telegram...");
+                        var blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+                        var formData = new FormData();
+                        var today = new Date();
+                        var yyyy = today.getFullYear();
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var filename = "Products_Report_" + yyyy + "-" + mm + "-" + dd + (pageOnly ? "_CurrentPage" : "") + ".xlsx";
+
+                        formData.append("action", "push_excel_file");
+                        formData.append("scope", scope);
+                        if (pageOnly && rowIds.length > 0) {
+                            formData.append("ids", rowIds.join(','));
+                        }
+                        formData.append("file", blob, filename);
+
+                        $.ajax({
+                            url: "manual_push.php",
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "json",
+                            success: function(res) {
+                                if (res && res.ok) {
+                                    var tag = pageOnly ? " (Current Page)" : " (All Pages)";
+                                    DevExpress.ui.notify("✅ Real Excel (.xlsx) file" + tag + " pushed to Telegram!", "success", 4000);
+                                } else {
+                                    DevExpress.ui.notify(res.message || res.description || "Failed to push Excel file.", "error", 4000);
+                                }
+                            },
+                            error: function() {
+                                DevExpress.ui.notify("Network error pushing Excel file.", "error", 4000);
+                            },
+                            complete: function() {
+                                setCardLoading($btn, false);
+                            }
+                        });
+                    }).catch(function() {
+                        $.ajax({
+                            url: "manual_push.php",
+                            type: "POST",
+                            dataType: "json",
+                            data: { action: "push_excel_file", scope: scope, ids: rowIds },
+                            success: function(res) {
+                                if (res && res.ok) {
+                                    var tag = pageOnly ? " (Current Page)" : " (All Pages)";
+                                    DevExpress.ui.notify("✅ Excel Report Document" + tag + " pushed to Telegram!", "success", 4000);
+                                } else {
+                                    DevExpress.ui.notify(res.message || res.description || "Failed to push Excel file.", "error", 4000);
+                                }
+                            },
+                            error: function() {
+                                DevExpress.ui.notify("Network error pushing Excel file.", "error", 4000);
+                            },
+                            complete: function() {
+                                setCardLoading($btn, false);
+                            }
+                        });
+                    });
+                } catch(e) {
+                    setCardLoading($btn, false);
+                }
+            }, function() {
+                setCardLoading($btn, false);
+            });
+        }
+
+        function executePushCsvDocument(scope) {
+            var $btn = $("#btnPushCsvFile");
+            setCardLoading($btn, true, "Generating CSV & Pushing to Telegram...");
+
+            var pageOnly = (scope === "current");
+            var rowIds = pageOnly ? getCurrentGridPageItemIds() : [];
+
+            if (pageOnly && rowIds.length === 0) {
+                DevExpress.ui.notify("No items visible on current grid page.", "warning", 3000);
+                setCardLoading($btn, false);
+                return;
+            }
+
+            window.checkTelegramConnectionAndExecute(function() {
+                try {
+                    var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                    var fetchRows;
+                    if (pageOnly) {
+                        var visibleRows = gridInstance.getVisibleRows()
+                            .filter(function(r) { return r.rowType === "data"; })
+                            .map(function(r) { return r.data; });
+                        fetchRows = Promise.resolve(visibleRows);
+                    } else {
+                        fetchRows = Promise.resolve(gridInstance.getDataSource().store().load());
+                    }
+
+                    fetchRows.then(function(rows) {
+                        if (!rows || rows.length === 0) {
+                            DevExpress.ui.notify("No data to export.", "warning", 3000);
+                            setCardLoading($btn, false);
+                            return;
+                        }
+
+                        var cols = gridInstance.option("columns").filter(function(col) {
+                            return col.type !== "buttons" && col.caption !== "Action" && col.dataField !== "action";
+                        });
+
+                        var escapeCsv = function(v) {
+                            if (v === null || v === undefined) v = "";
+                            v = String(v);
+                            if (v.search(/[",\n]/) !== -1) {
+                                v = '"' + v.replace(/"/g, '""') + '"';
+                            }
+                            return v;
+                        };
+
+                        var header = cols.map(function(c) {
+                            return escapeCsv(c.caption || c.dataField || "");
+                        }).join(",") + "\n";
+
+                        var body = rows.map(function(row) {
+                            return cols.map(function(c) {
+                                var val = row[c.dataField];
+                                if (c.calculateCellValue) {
+                                    val = c.calculateCellValue(row);
+                                }
+                                return escapeCsv(val);
+                            }).join(",");
+                        }).join("\n");
+
+                        var csvContent = "\uFEFF" + header + body;
+                        var blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+
+                        var formData = new FormData();
+                        var today = new Date();
+                        var yyyy = today.getFullYear();
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var filename = "Products_Report_" + yyyy + "-" + mm + "-" + dd + (pageOnly ? "_CurrentPage" : "") + ".csv";
+
+                        formData.append("action", "push_csv_file");
+                        formData.append("scope", scope);
+                        if (pageOnly && rowIds.length > 0) {
+                            formData.append("ids", rowIds.join(','));
+                        }
+                        formData.append("file", blob, filename);
+
+                        setCardLoading($btn, true, "Pushing CSV to Telegram...");
+
+                        $.ajax({
+                            url: "manual_push.php",
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "json",
+                            success: function(res) {
+                                if (res && res.ok) {
+                                    var tag = pageOnly ? " (Current Page)" : " (All Pages)";
+                                    DevExpress.ui.notify("✅ CSV Report Document" + tag + " pushed to Telegram!", "success", 4000);
+                                } else {
+                                    DevExpress.ui.notify(res.message || res.description || "Failed to push CSV file.", "error", 4000);
+                                }
+                            },
+                            error: function() {
+                                DevExpress.ui.notify("Network error pushing CSV file.", "error", 4000);
+                            },
+                            complete: function() {
+                                setCardLoading($btn, false);
+                            }
+                        });
+                    }).catch(function(err) {
+                        DevExpress.ui.notify("CSV Generation Error: " + (err.message || err), "error", 4000);
+                        setCardLoading($btn, false);
+                    });
+                } catch(e) {
+                    setCardLoading($btn, false);
+                }
+            }, function() {
+                setCardLoading($btn, false);
+            });
+        }
+
+        function executePushPdfDocument(scope) {
+            var $btn = $("#btnPushPdfFile");
+            setCardLoading($btn, true, "Generating PDF & Pushing to Telegram...");
+
+            window.checkTelegramConnectionAndExecute(function() {
+                var pageOnly = (scope === "current");
+                generateCleanGridPdfBlob(pageOnly).then(function(res) {
+                    var formData = new FormData();
+                    var today = new Date();
+                    var yyyy = today.getFullYear();
+                    var mm = String(today.getMonth() + 1).padStart(2, '0');
+                    var dd = String(today.getDate()).padStart(2, '0');
+                    var filename = "Products_Report_" + (pageOnly ? "CurrentPage" : "AllPages") + "_" + yyyy + "-" + mm + "-" + dd + ".pdf";
+
+                    formData.append("action", "push_pdf_file");
+                    formData.append("scope", scope);
+                    formData.append("file", res.blob, filename);
+
+                    $.ajax({
+                        url: "manual_push.php",
+                        type: "POST",
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: "json",
+                        success: function(res) {
+                            if (res && res.ok) {
+                                var tag = (scope === "current") ? " (Current Page)" : " (All Pages)";
+                                DevExpress.ui.notify("✅ PDF Report Document" + tag + " pushed to Telegram successfully!", "success", 4000);
+                            } else {
+                                DevExpress.ui.notify(res.message || res.description || "Failed to push PDF file.", "error", 4000);
+                            }
+                        },
+                        error: function() {
+                            DevExpress.ui.notify("Network error pushing PDF file.", "error", 4000);
+                        },
+                        complete: function() {
+                            setCardLoading($btn, false);
+                        }
+                    });
+                }).catch(function(err) {
+                    DevExpress.ui.notify("PDF Generation Error: " + err.message, "error", 4000);
+                    setCardLoading($btn, false);
+                });
+            }, function() {
+                setCardLoading($btn, false);
+            });
+        }
+
+        function buildProductsTableCanvas(scope) {
+            return new Promise(function(resolve, reject) {
+                var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                if (!gridInstance) {
+                    return reject(new Error("Grid instance not found"));
+                }
+
+                var fetchRows;
+                if (scope === "current") {
+                    var visibleRows = gridInstance.getVisibleRows()
+                        .filter(function(r) { return r.rowType === "data"; })
+                        .map(function(r) { return r.data; });
+                    fetchRows = Promise.resolve(visibleRows);
+                } else {
+                    fetchRows = Promise.resolve(gridInstance.getDataSource().store().load());
+                }
+
+                fetchRows.then(function(rows) {
+                    if (!rows || rows.length === 0) {
+                        return reject(new Error("No table rows found to render picture."));
+                    }
+
+                    var totalValuation = 0;
+                    var totalQty = 0;
+
+                    var tableRowsHtml = rows.map(function(item, idx) {
+                        var price = parseFloat(item.price || 0);
+                        var qty = parseInt(item.quantity || 0, 10);
+                        var val = price * qty;
+                        totalValuation += val;
+                        totalQty += qty;
+
+                        var bg = (idx % 2 === 0) ? "background: rgba(30, 41, 59, 0.45);" : "background: rgba(15, 23, 42, 0.45);";
+                        return '<tr style="' + bg + ' border-bottom: 1px solid rgba(255, 255, 255, 0.08);">' +
+                            '<td style="padding: 10px 12px; font-family: monospace; color: #94a3b8;">#' + (item.id || '') + '</td>' +
+                            '<td style="padding: 10px 12px; font-weight: 600; color: #38bdf8;">' + (item.product_code || '') + '</td>' +
+                            '<td style="padding: 10px 12px; font-weight: 600; color: #f8fafc;">' + (item.product_name || '') + '</td>' +
+                            '<td style="padding: 10px 12px; color: #cbd5e1;">' + (item.category_name || 'N/A') + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: right; color: #f8fafc;">$' + price.toFixed(2) + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: center; font-weight: 600; color: #38bdf8;">' + qty + '</td>' +
+                            '<td style="padding: 10px 12px; text-align: right; font-weight: 700; color: #4ade80;">$' + val.toFixed(2) + '</td>' +
+                            '</tr>';
+                    }).join('');
+
+                    var nowStr = new Date().toLocaleString();
+                    var scopeStr = (scope === "current") ? "CURRENT PAGE" : "ALL PAGES";
+
+                    var html = '<div id="tempTableReportCanvas" style="position: absolute; left: -9999px; top: 0; width: 1100px; background: #0f172a; color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif; padding: 28px; border-radius: 12px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">' +
+                        '<div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #38bdf8; padding-bottom: 14px; margin-bottom: 20px;">' +
+                            '<div>' +
+                                '<div style="font-size: 22px; font-weight: 800; color: #38bdf8; letter-spacing: 0.5px;">INVENTORY PRODUCTS DATA TABLE</div>' +
+                                '<div style="font-size: 12px; color: #94a3b8; margin-top: 4px;">Scope: <strong>' + scopeStr + '</strong> | Generated: ' + nowStr + '</div>' +
+                            '</div>' +
+                            '<div style="text-align: right;">' +
+                                '<div style="font-size: 13px; color: #94a3b8;">Total Products: <strong style="color: #f8fafc;">' + rows.length + '</strong></div>' +
+                                '<div style="font-size: 15px; font-weight: 700; color: #4ade80; margin-top: 2px;">Total Valuation: $' + totalValuation.toFixed(2) + '</div>' +
+                            '</div>' +
+                        '</div>' +
+                        '<table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">' +
+                            '<thead>' +
+                                '<tr style="background: #1e293b; color: #38bdf8; border-bottom: 2px solid #334155;">' +
+                                    '<th style="padding: 12px; font-weight: 700;">ID</th>' +
+                                    '<th style="padding: 12px; font-weight: 700;">Code</th>' +
+                                    '<th style="padding: 12px; font-weight: 700;">Product Name</th>' +
+                                    '<th style="padding: 12px; font-weight: 700;">Category</th>' +
+                                    '<th style="padding: 12px; font-weight: 700; text-align: right;">Price</th>' +
+                                    '<th style="padding: 12px; font-weight: 700; text-align: center;">Qty</th>' +
+                                    '<th style="padding: 12px; font-weight: 700; text-align: right;">Valuation</th>' +
+                                '</tr>' +
+                            '</thead>' +
+                            '<tbody>' +
+                                tableRowsHtml +
+                            '</tbody>' +
+                            '<tfoot>' +
+                                '<tr style="background: #1e293b; border-top: 2px solid #38bdf8; font-weight: 700; color: #f8fafc;">' +
+                                    '<td colspan="4" style="padding: 14px 12px; color: #38bdf8;">TOTAL SUMMARY (' + rows.length + ' Items)</td>' +
+                                    '<td style="padding: 14px 12px; text-align: right; color: #94a3b8;">-</td>' +
+                                    '<td style="padding: 14px 12px; text-align: center; color: #38bdf8;">' + totalQty + '</td>' +
+                                    '<td style="padding: 14px 12px; text-align: right; color: #4ade80; font-size: 14px;">$' + totalValuation.toFixed(2) + '</td>' +
+                                '</tr>' +
+                            '</tfoot>' +
+                        '</table>' +
+                    '</div>';
+
+                    var $wrapper = $(html).appendTo("body");
+
+                    html2canvas($wrapper[0], {
+                        scale: 2,
+                        useCORS: true,
+                        backgroundColor: "#0f172a",
+                        logging: false
+                    }).then(function(canvas) {
+                        $wrapper.remove();
+                        resolve(canvas);
+                    }).catch(function(err) {
+                        $wrapper.remove();
+                        reject(err);
+                    });
+                }).catch(reject);
+            });
+        }
+
+        function executePushImageDocument(scope) {
+            var $btn = $("#btnPushImageFile");
+            setCardLoading($btn, true, "Rendering Picture & Pushing to Telegram...");
+
+            window.checkTelegramConnectionAndExecute(function() {
+                buildProductsTableCanvas(scope).then(function(canvas) {
+                    canvas.toBlob(function(blob) {
+                        if (!blob) {
+                            DevExpress.ui.notify("Failed to render table picture.", "error", 3000);
+                            setCardLoading($btn, false);
+                            return;
+                        }
+
+                        var formData = new FormData();
+                        var today = new Date();
+                        var yyyy = today.getFullYear();
+                        var mm = String(today.getMonth() + 1).padStart(2, '0');
+                        var dd = String(today.getDate()).padStart(2, '0');
+                        var filename = "Products_Table_Report_" + yyyy + "-" + mm + "-" + dd + ".jpg";
+
+                        formData.append("action", "push_image_file");
+                        formData.append("scope", scope);
+                        formData.append("file", blob, filename);
+
+                        $.ajax({
+                            url: "manual_push.php",
+                            type: "POST",
+                            data: formData,
+                            processData: false,
+                            contentType: false,
+                            dataType: "json",
+                            success: function(res) {
+                                if (res && res.ok) {
+                                    var tag = (scope === "current") ? " (Current Page)" : " (All Pages)";
+                                    DevExpress.ui.notify("✅ Table Picture Report (.JPG)" + tag + " pushed to Telegram!", "success", 4000);
+                                } else {
+                                    DevExpress.ui.notify(res.message || res.description || "Failed to push table picture.", "error", 4000);
+                                }
+                            },
+                            error: function() {
+                                DevExpress.ui.notify("Network error pushing table picture.", "error", 4000);
+                            },
+                            complete: function() {
+                                setCardLoading($btn, false);
+                            }
+                        });
+                    }, "image/jpeg", 0.95);
+                }).catch(function(err) {
+                    DevExpress.ui.notify("Table Picture Render Error: " + (err.message || err), "error", 4000);
+                    setCardLoading($btn, false);
+                });
+            }, function() {
+                setCardLoading($btn, false);
+            });
+        }
+
+        // Open Dedicated Document Push Modal from purple document icon button
         $("#openPushExcelPdfBtn").on("click", function(e) {
             e.preventDefault();
             window.checkTelegramConnectionAndExecute(function() {
-                $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                $("#documentPushModal").css("display", "flex").hide().fadeIn(120);
             });
         });
 
-        // Push Excel File to Telegram
-        $("#btnPushExcelFile, #btnExportPushExcel").on("click", function(e) {
+        // Push Modal Card Clicks
+        $("#btnPushExcelFile").on("click", function(e) {
             e.preventDefault();
-            var $btn = $("#btnPushExcelFile");
-            var origHtml = $btn.html();
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Excel File...');
-            window.checkTelegramConnectionAndExecute(function() {
-                $.ajax({
-                    url: "manual_push.php",
-                    type: "POST",
-                    dataType: "json",
-                    data: { action: "push_excel_file" },
-                    success: function(res) {
-                        if (res && res.ok) {
-                            DevExpress.ui.notify("✅ Excel Report Document pushed to Telegram successfully!", "success", 4000);
-                        } else {
-                            DevExpress.ui.notify(res.message || res.description || "Failed to push Excel file.", "error", 4000);
-                        }
-                    },
-                    error: function() {
-                        DevExpress.ui.notify("Network error pushing Excel file.", "error", 4000);
-                    },
-                    complete: function() {
-                        $btn.prop("disabled", false).html(origHtml);
-                    }
-                });
-            }, function() {
-                $btn.prop("disabled", false).html(origHtml);
-            });
+            var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
+            executePushExcelDocument(scope);
         });
 
-        // Push PDF File to Telegram
-        $("#btnPushPdfFile, #btnExportPushPdf").on("click", function(e) {
+        $("#btnPushCsvFile").on("click", function(e) {
             e.preventDefault();
-            var $btn = $("#btnPushPdfFile");
-            var origHtml = $btn.html();
-            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing PDF File...');
-            window.checkTelegramConnectionAndExecute(function() {
-                $.ajax({
-                    url: "manual_push.php",
-                    type: "POST",
-                    dataType: "json",
-                    data: { action: "push_pdf_file" },
-                    success: function(res) {
-                        if (res && res.ok) {
-                            DevExpress.ui.notify("✅ PDF Report Document pushed to Telegram successfully!", "success", 4000);
-                        } else {
-                            DevExpress.ui.notify(res.message || res.description || "Failed to push PDF file.", "error", 4000);
-                        }
-                    },
-                    error: function() {
-                        DevExpress.ui.notify("Network error pushing PDF file.", "error", 4000);
-                    },
-                    complete: function() {
-                        $btn.prop("disabled", false).html(origHtml);
-                    }
-                });
-            }, function() {
-                $btn.prop("disabled", false).html(origHtml);
+            var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
+            executePushCsvDocument(scope);
+        });
+
+        $("#btnPushPdfFile").on("click", function(e) {
+            e.preventDefault();
+            var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
+            executePushPdfDocument(scope);
+        });
+
+        $("#btnPushImageFile").on("click", function(e) {
+            e.preventDefault();
+            var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
+            executePushImageDocument(scope);
+        });
+
+        // Export Menu Item Clicks
+        $("#btnExportPushExcelAll, #btnExportPushCsvAll").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            executePushExcelDocument("all");
+        });
+        $("#btnExportPushExcelCurrent, #btnExportPushCsvCurrent").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            executePushExcelDocument("current");
+        });
+        $("#btnExportPushPdfAll").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            executePushPdfDocument("all");
+        });
+        $("#btnExportPushPdfCurrent").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            executePushPdfDocument("current");
+        });
+        $("#btnExportPushImageAll").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            executePushImageDocument("all");
+        });
+        $("#btnExportPushImageCurrent").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            executePushImageDocument("current");
+        });
+
+        $("#btnDownloadImageJpg").on("click", function(e) {
+            e.preventDefault();
+            $("#masterExportMenu").removeClass("open");
+            DevExpress.ui.notify("📸 Rendering Table Data Picture (JPG)...", "info", 2000);
+            var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
+            buildProductsTableCanvas(scope).then(function(canvas) {
+                var link = document.createElement("a");
+                link.download = "Products_Table_Report_" + Date.now() + ".jpg";
+                link.href = canvas.toDataURL("image/jpeg", 0.95);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(function(err) {
+                DevExpress.ui.notify("Error rendering table picture: " + err.message, "error", 3000);
             });
         });
 
@@ -2913,28 +3360,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
 
-                        <!-- Report Button 6: Push Excel File -->
-                        <button type="button" class="push-report-card" id="btnPushExcelFile" style="border-left: 4px solid #107c41;">
-                            <div class="report-icon" style="background: rgba(16, 124, 65, 0.15); color: #107c41;"><i class="fa-solid fa-file-excel"></i></div>
-                            <div class="report-info">
-                                <span class="report-title">Push Excel Document File</span>
-                                <span class="report-desc">Send .csv / .xlsx report file to Telegram</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-right report-arrow"></i>
-                        </button>
-
-                        <!-- Report Button 7: Push PDF File -->
-                        <button type="button" class="push-report-card" id="btnPushPdfFile" style="border-left: 4px solid #e3242b;">
-                            <div class="report-icon" style="background: rgba(227, 36, 43, 0.15); color: #e3242b;"><i class="fa-solid fa-file-pdf"></i></div>
-                            <div class="report-info">
-                                <span class="report-title">Push PDF Document File</span>
-                                <span class="report-desc">Send formatted .pdf report file to Telegram</span>
-                            </div>
-                            <i class="fa-solid fa-chevron-right report-arrow"></i>
-                        </button>
-
-                        <!-- Report Button 8: Custom -->
-                        <div class="push-report-card custom-report">
+                        <!-- Report Button 6: Custom -->
+                        <div class="push-report-card custom-report" style="grid-column: 1 / -1;">
                             <div class="report-icon bg-cyan"><i class="fa-solid fa-comment-dots"></i></div>
                             <div class="report-info">
                                 <span class="report-title">Custom Message</span>
@@ -2945,6 +3372,69 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             </button>
                         </div>
                     </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dedicated Push Documents to Telegram Modal -->
+    <div id="documentPushModal" class="custom-modal-backdrop" style="display: none;">
+        <div class="custom-modal-content" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
+            <div class="custom-modal-header">
+                <h3><i class="fa-solid fa-file-arrow-up" style="color: #38bdf8;"></i> Push Documents to Telegram</h3>
+                <button type="button" class="custom-modal-close" id="closeDocumentPushModalBtn">&times;</button>
+            </div>
+            <div class="custom-modal-body">
+                <!-- Document Push Scope Selector -->
+                <div class="push-report-card scope-selector-card" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.12); padding: 14px 18px; border-radius: 12px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <div class="report-icon" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; width: 36px; height: 36px; border-radius: 8px; display: flex; align-items: center; justify-content: center;"><i class="fa-solid fa-filter"></i></div>
+                        <div>
+                            <span style="display: block; font-weight: 700; color: #f8fafc; font-size: 14px;">Document Push Scope</span>
+                            <span style="display: block; font-size: 12px; color: #94a3b8;">Choose whether to send all items or active grid page items</span>
+                        </div>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 14px;">
+                        <label style="font-size: 13px; color: #f8fafc; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; font-weight: 600;">
+                            <input type="radio" name="pushDocumentScope" value="all" checked style="accent-color: #38bdf8;"> All Pages
+                        </label>
+                        <label style="font-size: 13px; color: #f8fafc; cursor: pointer; display: inline-flex; align-items: gap: 6px; font-weight: 600;">
+                            <input type="radio" name="pushDocumentScope" value="current" style="accent-color: #38bdf8;"> Current Page
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Document Push Grid (Excel, CSV, PDF, Picture) -->
+                <div class="push-reports-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+                    <!-- Push Excel File -->
+                    <button type="button" class="push-report-card" id="btnPushExcelFile" style="border-left: 4px solid #107c41;">
+                        <div class="report-icon" style="background: rgba(16, 124, 65, 0.15); color: #107c41;"><i class="fa-solid fa-file-excel"></i></div>
+                        <div class="report-info">
+                            <span class="report-title">Push Excel Document File</span>
+                            <span class="report-desc">Send formatted .xlsx spreadsheet file to Telegram</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right report-arrow"></i>
+                    </button>
+
+                    <!-- Push PDF File -->
+                    <button type="button" class="push-report-card" id="btnPushPdfFile" style="border-left: 4px solid #e3242b;">
+                        <div class="report-icon" style="background: rgba(227, 36, 43, 0.15); color: #e3242b;"><i class="fa-solid fa-file-pdf"></i></div>
+                        <div class="report-info">
+                            <span class="report-title">Push PDF Document File</span>
+                            <span class="report-desc">Send formatted .pdf report file to Telegram</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right report-arrow"></i>
+                    </button>
+
+                    <!-- Push Page Picture File (JPG) -->
+                    <button type="button" class="push-report-card" id="btnPushImageFile" style="border-left: 4px solid #f59e0b;">
+                        <div class="report-icon" style="background: rgba(245, 158, 11, 0.15); color: #f59e0b;"><i class="fa-solid fa-file-image"></i></div>
+                        <div class="report-info">
+                            <span class="report-title">Push Page Picture File</span>
+                            <span class="report-desc">Send high-resolution .jpg screenshot picture to Telegram</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right report-arrow"></i>
+                    </button>
                 </div>
             </div>
         </div>
@@ -3044,7 +3534,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                 const origHtml = submitBtn ? submitBtn.innerHTML : '';
                 if (submitBtn) {
                     submitBtn.disabled = true;
-                    submitBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-2"></i> Saving...';
+                    submitBtn.classList.add("btn-loading");
+            LoadingOverlay.show("Saving...");
                 }
 
                 const formData = new FormData(form);
@@ -3097,17 +3588,28 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         let tgPollTimer = null;
         let wasConnectingTelegram = false;
 
-        window.checkTelegramConnectionAndExecute = function(onConnected, onNotConnected) {
-            return fetch('telegram_settings.php?action=get&_t=' + Date.now())
+        window.lastTelegramCheckTime = 0;
+        window.isTelegramConnected = false;
+
+        window.checkTelegramConnectionAndExecute = function(onConnected, onNotConnected, forceRefresh) {
+            var now = Date.now();
+            if (!forceRefresh && window.isTelegramConnected && (now - window.lastTelegramCheckTime < 25000)) {
+                if (typeof onConnected === 'function') onConnected();
+                return Promise.resolve({ success: true, is_connected: true });
+            }
+
+            return fetch('telegram_settings.php?action=get&_t=' + now)
                 .then(function(r) { return r.json(); })
                 .then(function(data) {
                     if (data && data.success && data.is_connected) {
                         window.isTelegramConnected = true;
+                        window.lastTelegramCheckTime = Date.now();
                         if (typeof onConnected === 'function') {
                             onConnected();
                         }
                     } else {
                         window.isTelegramConnected = false;
+                        window.lastTelegramCheckTime = 0;
                         if (typeof onNotConnected === 'function') {
                             onNotConnected();
                         }
@@ -3117,7 +3619,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         if (typeof loadPushSettings === 'function') {
                             loadPushSettings();
                         }
-                        $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                        $("#pushModal").css("display", "flex").hide().fadeIn(120);
                         if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
                             DevExpress.ui.notify("⚠️ Telegram is not connected. Please click 'Connect Telegram' to link your account.", "info", 4000);
                         }
@@ -3128,13 +3630,14 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         if (typeof onConnected === 'function') onConnected();
                     } else {
                         window.isTelegramConnected = false;
+                        window.lastTelegramCheckTime = 0;
                         if (typeof onNotConnected === 'function') {
                             onNotConnected();
                         }
                         if (typeof fetchTelegramStatus === 'function') {
                             fetchTelegramStatus();
                         }
-                        $("#pushModal").css("display", "flex").hide().fadeIn(200);
+                        $("#pushModal").css("display", "flex").hide().fadeIn(120);
                         if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
                             DevExpress.ui.notify("⚠️ Telegram is not connected. Please click 'Connect Telegram' to link your account.", "info", 4000);
                         }
@@ -3222,7 +3725,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         if (btnConnect) {
             btnConnect.addEventListener('click', function() {
                 const newWindow = window.open('about:blank', '_blank');
-                btnConnect.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Generating...';
+                btnConnect.classList.add("btn-loading");
+            LoadingOverlay.show("Generating...");
                 fetch('telegram_settings.php?action=generate_code', { method: 'POST' })
                     .then(r => r.json())
                     .then(data => {
@@ -3296,6 +3800,47 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         }
     });
     </script>
+
+<script>
+// Disabled Loading Overlay per user request
+var LoadingOverlay = window.LoadingOverlay || { show() {}, hide() {} };
+
+window.setCardLoading = window.setCardLoading || function($btn, isLoading, statusText) {
+    if (!$btn || !$btn.length) return;
+    if (isLoading) {
+        if (!$btn.data("orig-html")) {
+            $btn.data("orig-html", $btn.html());
+        }
+        $btn.addClass("is-loading btn-loading").prop("disabled", true);
+        var $arrow = $btn.find(".report-arrow");
+        if ($arrow.length) {
+            $arrow.removeClass("fa-chevron-right").addClass("fa-spinner fa-spin").css({ "color": "#38bdf8", "font-size": "16px" });
+        }
+        if (statusText) {
+            $btn.find(".report-desc").text(statusText);
+        }
+    } else {
+        var origHtml = $btn.data("orig-html");
+        if (origHtml) {
+            $btn.html(origHtml);
+            $btn.removeData("orig-html");
+        }
+        $btn.removeClass("is-loading btn-loading").prop("disabled", false);
+    }
+};
+
+// Button loading for push buttons
+$(document).on('click', '[id^="btnPush"]', function() {
+    const btn = $(this);
+    if (btn.hasClass('push-report-card')) return;
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Pushing...');
+    
+    setTimeout(() => {
+        btn.prop('disabled', false).html(originalText);
+    }, 2500);
+});
+</script>
 
 </body>
 

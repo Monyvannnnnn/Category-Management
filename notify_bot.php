@@ -111,12 +111,26 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
 function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken = null) {
     $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc"; 
     $url = "https://api.telegram.org/bot$botToken/sendPhoto";
-    $data = [
-        'chat_id' => $chatId,
-        'photo' => $photoUrl,
-        'caption' => $caption,
-        'parse_mode' => 'HTML'
-    ];
+
+    $isLocalFile = (is_string($photoUrl) && file_exists($photoUrl));
+    if ($isLocalFile) {
+        $mime = function_exists('mime_content_type') ? @mime_content_type($photoUrl) : 'image/jpeg';
+        if (!$mime) $mime = 'image/jpeg';
+        $cFile = new CURLFile(realpath($photoUrl), $mime, basename($photoUrl));
+        $data = [
+            'chat_id' => $chatId,
+            'photo' => $cFile,
+            'caption' => $caption,
+            'parse_mode' => 'HTML'
+        ];
+    } else {
+        $data = [
+            'chat_id' => $chatId,
+            'photo' => $photoUrl,
+            'caption' => $caption,
+            'parse_mode' => 'HTML'
+        ];
+    }
 
     $result = false;
     $curlError = '';
@@ -126,14 +140,12 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $isLocalFile ? $data : http_build_query($data));
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-        curl_setopt($ch, CURLOPT_TIMEOUT, 6);
-        curl_setopt($ch, CURLOPT_CONNECTTIMEOUT, 3);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 20);
 
         if (defined('CURL_IPRESOLVE_V4')) {
             curl_setopt($ch, CURLOPT_IPRESOLVE, CURL_IPRESOLVE_V4);
