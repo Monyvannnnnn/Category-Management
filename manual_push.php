@@ -449,6 +449,95 @@ if ($action === 'get_settings') {
     echo $result;
     exit;
 
+// --------------------------------------------------------------------------
+// 13. Push Excel Document File to Telegram
+// --------------------------------------------------------------------------
+} elseif ($action === 'push_excel_file' || $action === 'push_csv_file') {
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC");
+    $filename = "Inventory_Products_Report_" . date('Y-m-d_His') . ".csv";
+    $filepath = sys_get_temp_dir() . '/' . $filename;
+    $fp = fopen($filepath, 'w');
+    if ($fp) {
+        fputs($fp, "\xEF\xBB\xBF"); // UTF-8 BOM for Excel
+        fputcsv($fp, ['ID', 'Product Code', 'Product Name', 'Category', 'Price ($)', 'Quantity', 'Valuation ($)', 'Created At']);
+        $totalVal = 0;
+        $totalQty = 0;
+        $count = 0;
+        if ($res) {
+            while ($r = db_fetch_assoc($res)) {
+                $val = (float)$r['price'] * (int)$r['quantity'];
+                $totalVal += $val;
+                $totalQty += (int)$r['quantity'];
+                $count++;
+                fputcsv($fp, [
+                    $r['id'],
+                    $r['product_code'],
+                    $r['product_name'],
+                    $r['category_name'] ?? 'N/A',
+                    number_format((float)$r['price'], 2, '.', ''),
+                    (int)$r['quantity'],
+                    number_format($val, 2, '.', ''),
+                    $r['created_at']
+                ]);
+            }
+        }
+        fclose($fp);
+
+        $caption = "📊 <b>INVENTORY EXCEL REPORT (.CSV)</b>\n"
+                 . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+                 . "───────────────────────\n"
+                 . "📦 <b>Total Products:</b> {$count}\n"
+                 . "🔢 <b>Total Stock Qty:</b> " . number_format($totalQty) . " units\n"
+                 . "💰 <b>Total Valuation:</b> $" . number_format($totalVal, 2) . "\n"
+                 . "───────────────────────\n"
+                 . "<i>Attached Excel document file</i>";
+
+        $resJson = sendTelegramDocument($filepath, $caption, $conn, $userId, $filename);
+        @unlink($filepath);
+        echo $resJson;
+        exit;
+    } else {
+        http_response_code(500);
+        echo json_encode(["ok" => false, "message" => "Could not create temporary Excel file."]);
+        exit;
+    }
+
+// --------------------------------------------------------------------------
+// 14. Push PDF Document File to Telegram
+// --------------------------------------------------------------------------
+} elseif ($action === 'push_pdf_file') {
+    require_once __DIR__ . "/includes/pdf_generator.php";
+
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$userWhereWhere} ORDER BY p.id DESC");
+    $rows = [];
+    $totalVal = 0;
+    if ($res) {
+        while ($r = db_fetch_assoc($res)) {
+            $rows[] = $r;
+            $totalVal += ((float)$r['price'] * (int)$r['quantity']);
+        }
+    }
+
+    $pdfGen = new InventoryPDF();
+    $pdfData = $pdfGen->generateProductsPDF("INVENTORY PRODUCTS REPORT", $rows, $totalVal);
+
+    $filename = "Inventory_Products_Report_" . date('Y-m-d_His') . ".pdf";
+    $filepath = sys_get_temp_dir() . '/' . $filename;
+    file_put_contents($filepath, $pdfData);
+
+    $caption = "📄 <b>INVENTORY PDF REPORT (.PDF)</b>\n"
+             . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+             . "───────────────────────\n"
+             . "📦 <b>Total Products:</b> " . count($rows) . "\n"
+             . "💰 <b>Total Valuation:</b> $" . number_format($totalVal, 2) . "\n"
+             . "───────────────────────\n"
+             . "<i>Attached PDF document file</i>";
+
+    $resJson = sendTelegramDocument($filepath, $caption, $conn, $userId, $filename);
+    @unlink($filepath);
+    echo $resJson;
+    exit;
+
 } else {
     http_response_code(400);
     echo json_encode(["ok" => false, "message" => "Invalid push action specified."]);

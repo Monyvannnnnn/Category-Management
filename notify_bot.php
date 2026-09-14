@@ -285,6 +285,82 @@ function sendPhotoToTelegram($param1, $param2, $param3, $param4 = null) {
 }
 
 /**
+ * Send a single Document (Excel, PDF, CSV, TXT) via Telegram Bot API
+ */
+function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBotToken = null, $fileName = null) {
+    if (!file_exists($filePath)) {
+        return json_encode(["ok" => false, "description" => "Document file not found."]);
+    }
+    $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+    $url = "https://api.telegram.org/bot$botToken/sendDocument";
+
+    $mimeType = function_exists('mime_content_type') ? @mime_content_type($filePath) : 'application/octet-stream';
+    if (!$mimeType) $mimeType = 'application/octet-stream';
+
+    $cFile = new CURLFile(realpath($filePath), $mimeType, $fileName ?: basename($filePath));
+
+    $postData = [
+        'chat_id' => $chatId,
+        'document' => $cFile,
+        'caption' => $caption,
+        'parse_mode' => 'HTML'
+    ];
+
+    if (function_exists('curl_init')) {
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $postData);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_USERAGENT, 'Mozilla/5.0');
+        curl_setopt($ch, CURLOPT_TIMEOUT, 30);
+
+        $result = curl_exec($ch);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($result !== false) {
+            return $result;
+        }
+    }
+
+    return json_encode(["ok" => false, "description" => "Failed to send document via cURL."]);
+}
+
+/**
+ * Send Document file to user's connected Telegram chat(s)
+ */
+function sendTelegramDocument($filePath, $caption = '', $conn = null, $userId = 0, $fileName = null) {
+    if (!$conn) {
+        global $conn;
+    }
+    $targetUserId = (int)$userId;
+    if ($targetUserId <= 0) {
+        $user = getCurrentUser();
+        $targetUserId = (int)($user['id'] ?? 0);
+    }
+
+    $botToken = getUserBotToken($conn, $targetUserId);
+    $userChats = getUserTelegramChats($conn, $targetUserId);
+
+    if (empty($userChats)) {
+        return json_encode([
+            "ok" => false,
+            "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
+            "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
+        ]);
+    }
+
+    $lastResult = false;
+    foreach ($userChats as $chatId) {
+        $lastResult = sendSingleTelegramDocument($chatId, $filePath, $caption, $botToken, $fileName);
+    }
+    return $lastResult;
+}
+
+/**
  * Format product push in Premium Style (Design 3)
  */
 function formatProductPushPremium($product, $pushType = 'Manual') {

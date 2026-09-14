@@ -815,6 +815,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                  . "📅 <code>/today</code> — Today's activity\n"
                  . "📤 <code>/push &lt;msg&gt;</code> — Send to Telegram\n"
                  . "🔔 <code>/toggle</code> — Toggle auto-notify\n"
+                 . "📊 <code>/excel</code> — Export Excel/CSV report\n"
+                 . "📄 <code>/pdf</code> — Export PDF report\n"
                  . "❓ <code>/help</code> — View all commands\n\n"
                  . "─────────────────────────────\n"
                  . "<i>Tap any command above to run it instantly!</i>";

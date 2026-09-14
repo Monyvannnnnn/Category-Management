@@ -253,6 +253,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
+                        <button type="button" class="add-btn telegram-file-btn" id="openPushExcelPdfBtn" data-tooltip="Push Excel & PDF Files to Telegram" aria-label="Push Excel & PDF Files to Telegram" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                            <i class="fa-solid fa-file-arrow-up"></i>
+                        </button>
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
                             <i class="fa-solid fa-gear"></i>
                         </button>
@@ -277,6 +280,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                     <button class="export-item" data-format="excel" data-action="current">
                                         <i class="fa-solid fa-file-excel" style="width:16px; text-align:center; color:#107c41;"></i>
                                         Export current page
+                                    </button>
+                                    <button class="export-item push-tg-excel" id="btnExportPushExcel">
+                                        <i class="fa-brands fa-telegram" style="width:16px; text-align:center; color:#38bdf8;"></i>
+                                        Push Excel to Telegram
                                     </button>
                                 </div>
                                 
@@ -303,6 +310,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                     <button class="export-item" data-format="pdf" data-action="current">
                                         <i class="fa-solid fa-file-pdf" style="width:16px; text-align:center; color:#e3242b;"></i>
                                         Export current page
+                                    </button>
+                                    <button class="export-item push-tg-pdf" id="btnExportPushPdf">
+                                        <i class="fa-brands fa-telegram" style="width:16px; text-align:center; color:#38bdf8;"></i>
+                                        Push PDF to Telegram
                                     </button>
                                 </div>
                                 
@@ -2637,6 +2648,76 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             });
         });
 
+        // Open Push Modal from Document Push icon button
+        $("#openPushExcelPdfBtn").on("click", function(e) {
+            e.preventDefault();
+            window.checkTelegramConnectionAndExecute(function() {
+                $("#pushModal").css("display", "flex").hide().fadeIn(200);
+            });
+        });
+
+        // Push Excel File to Telegram
+        $("#btnPushExcelFile, #btnExportPushExcel").on("click", function(e) {
+            e.preventDefault();
+            var $btn = $("#btnPushExcelFile");
+            var origHtml = $btn.html();
+            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing Excel File...');
+            window.checkTelegramConnectionAndExecute(function() {
+                $.ajax({
+                    url: "manual_push.php",
+                    type: "POST",
+                    dataType: "json",
+                    data: { action: "push_excel_file" },
+                    success: function(res) {
+                        if (res && res.ok) {
+                            DevExpress.ui.notify("✅ Excel Report Document pushed to Telegram successfully!", "success", 4000);
+                        } else {
+                            DevExpress.ui.notify(res.message || res.description || "Failed to push Excel file.", "error", 4000);
+                        }
+                    },
+                    error: function() {
+                        DevExpress.ui.notify("Network error pushing Excel file.", "error", 4000);
+                    },
+                    complete: function() {
+                        $btn.prop("disabled", false).html(origHtml);
+                    }
+                });
+            }, function() {
+                $btn.prop("disabled", false).html(origHtml);
+            });
+        });
+
+        // Push PDF File to Telegram
+        $("#btnPushPdfFile, #btnExportPushPdf").on("click", function(e) {
+            e.preventDefault();
+            var $btn = $("#btnPushPdfFile");
+            var origHtml = $btn.html();
+            $btn.prop("disabled", true).html('<i class="fa-solid fa-spinner fa-spin"></i> Pushing PDF File...');
+            window.checkTelegramConnectionAndExecute(function() {
+                $.ajax({
+                    url: "manual_push.php",
+                    type: "POST",
+                    dataType: "json",
+                    data: { action: "push_pdf_file" },
+                    success: function(res) {
+                        if (res && res.ok) {
+                            DevExpress.ui.notify("✅ PDF Report Document pushed to Telegram successfully!", "success", 4000);
+                        } else {
+                            DevExpress.ui.notify(res.message || res.description || "Failed to push PDF file.", "error", 4000);
+                        }
+                    },
+                    error: function() {
+                        DevExpress.ui.notify("Network error pushing PDF file.", "error", 4000);
+                    },
+                    complete: function() {
+                        $btn.prop("disabled", false).html(origHtml);
+                    }
+                });
+            }, function() {
+                $btn.prop("disabled", false).html(origHtml);
+            });
+        });
+
         // Tab Switch Handlers
         $(".push-tab-btn").on("click", function() {
             var targetTab = $(this).data("tab");
@@ -2832,7 +2913,27 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             <i class="fa-solid fa-chevron-right report-arrow"></i>
                         </button>
 
-                        <!-- Report Button 6: Custom -->
+                        <!-- Report Button 6: Push Excel File -->
+                        <button type="button" class="push-report-card" id="btnPushExcelFile" style="border-left: 4px solid #107c41;">
+                            <div class="report-icon" style="background: rgba(16, 124, 65, 0.15); color: #107c41;"><i class="fa-solid fa-file-excel"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Push Excel Document File</span>
+                                <span class="report-desc">Send .csv / .xlsx report file to Telegram</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
+                        </button>
+
+                        <!-- Report Button 7: Push PDF File -->
+                        <button type="button" class="push-report-card" id="btnPushPdfFile" style="border-left: 4px solid #e3242b;">
+                            <div class="report-icon" style="background: rgba(227, 36, 43, 0.15); color: #e3242b;"><i class="fa-solid fa-file-pdf"></i></div>
+                            <div class="report-info">
+                                <span class="report-title">Push PDF Document File</span>
+                                <span class="report-desc">Send formatted .pdf report file to Telegram</span>
+                            </div>
+                            <i class="fa-solid fa-chevron-right report-arrow"></i>
+                        </button>
+
+                        <!-- Report Button 8: Custom -->
                         <div class="push-report-card custom-report">
                             <div class="report-icon bg-cyan"><i class="fa-solid fa-comment-dots"></i></div>
                             <div class="report-info">
