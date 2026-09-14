@@ -1363,13 +1363,26 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                                     if (rIdx >= 0) {
                                                         grid.cellValue(rIdx, "image", "pending_upload_" + Date.now());
                                                     }
-                                                } else {
-                                                    var changes = grid.option("editing.changes") || [];
-                                                    if (changes.length > 0) {
-                                                        changes[0].data = changes[0].data || {};
-                                                        changes[0].data.image = "pending_upload_" + Date.now();
-                                                        grid.option("editing.changes", changes);
+                                                }
+
+                                                var changes = grid.option("editing.changes") || [];
+                                                if (changes.length === 0) {
+                                                    if (editRowKey !== null && editRowKey !== undefined) {
+                                                        grid.option("editing.changes", [{
+                                                            key: editRowKey,
+                                                            type: "update",
+                                                            data: { image: "pending_upload_" + Date.now() }
+                                                        }]);
+                                                    } else {
+                                                        grid.option("editing.changes", [{
+                                                            type: "insert",
+                                                            data: { image: "pending_upload_" + Date.now() }
+                                                        }]);
                                                     }
+                                                } else {
+                                                    changes[0].data = changes[0].data || {};
+                                                    changes[0].data.image = "pending_upload_" + Date.now();
+                                                    grid.option("editing.changes", changes);
                                                 }
                                             }
 
