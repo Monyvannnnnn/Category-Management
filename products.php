@@ -1358,13 +1358,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                             var grid = $("#gridContainer").dxDataGrid("instance");
                                             if (grid) {
                                                 var editRowKey = grid.option("editing.editRowKey");
-                                                if (editRowKey !== null && editRowKey !== undefined) {
-                                                    var rIdx = grid.getRowIndexByKey(editRowKey);
-                                                    if (rIdx >= 0) {
-                                                        grid.cellValue(rIdx, "image", "pending_upload_" + Date.now());
-                                                    }
-                                                }
-
                                                 var changes = grid.option("editing.changes") || [];
                                                 if (changes.length === 0) {
                                                     if (editRowKey !== null && editRowKey !== undefined) {
@@ -1386,10 +1379,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                                 }
                                             }
 
-                                            if (data.component && typeof data.component.updateData === "function") {
-                                                data.component.updateData("image", "pending_upload_" + Date.now());
-                                            }
-
                                             $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
                                             standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
                                                 if (standardizedFile) {
@@ -1397,11 +1386,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                                 }
                                                 if (previewDataUrl) {
                                                     window._currentImagePreviewDataUrl = previewDataUrl;
-                                                }
-                                                $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
-
-                                                if (previewDataUrl) {
-                                                    $prevBox.empty().show();
+                                                    $prevBox.empty().css({ display: "flex" }).show();
                                                     var $img = $("<img>").attr("src", previewDataUrl).css({
                                                         width: "52px",
                                                         height: "52px",
@@ -1414,11 +1399,13 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                                     });
                                                     $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">New Image Ready</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>'));
                                                 }
+                                                $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
                                             });
                                         } else {
                                             window._currentSelectedImageFile = null;
                                             window._currentImagePreviewDataUrl = null;
                                             $statusMsg.hide();
+                                            $prevBox.hide();
                                         }
                                     });
                                 $container.append($input);
