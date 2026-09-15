@@ -6,6 +6,7 @@ header("Pragma: no-cache");
 header("Expires: 0");
 
 require_once __DIR__ . "/includes/auth_helper.php";
+require_once __DIR__ . "/bot_poller.php";
 
 $user = getCurrentUser();
 if (!$user) {
@@ -28,6 +29,20 @@ function getUserBotRow($conn, $userId) {
         $res = db_stmt_get_result($stmt);
         $row = db_fetch_assoc($res);
         db_stmt_close($stmt);
+
+        if ($row && ($row['bot_token'] === '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc' || $row['bot_username'] === 'reportpush_bot')) {
+            $newToken = '8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8';
+            $newUsername = 'enginebi_bot';
+            $upd = db_prepare($conn, "UPDATE user_telegram_bots SET bot_token = ?, bot_username = ? WHERE id = ?");
+            if ($upd) {
+                db_stmt_bind_param($upd, "ssi", $newToken, $newUsername, $row['id']);
+                db_stmt_execute($upd);
+                db_stmt_close($upd);
+            }
+            $row['bot_token'] = $newToken;
+            $row['bot_username'] = $newUsername;
+        }
+
         return $row;
     }
     return null;
@@ -35,12 +50,18 @@ function getUserBotRow($conn, $userId) {
 
 switch ($action) {
     case 'get':
-        $row = getUserBotRow($conn, $userId);
         $defaultBotToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
         $defaultBotUsername = "enginebi_bot";
+        $row = getUserBotRow($conn, $userId);
 
         $botToken = (!empty($row['bot_token']) && $row['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $row['bot_token'] : $defaultBotToken;
         $botUsername = (!empty($row['bot_username']) && $row['bot_username'] !== 'reportpush_bot') ? $row['bot_username'] : $defaultBotUsername;
+
+        // On-demand poll Telegram updates for incoming /start or code bindings
+        if (function_exists('pollTelegramUpdatesForBot')) {
+            pollTelegramUpdatesForBot($conn, $botToken);
+            $row = getUserBotRow($conn, $userId);
+        }
 
         echo json_encode([
             'success' => true,

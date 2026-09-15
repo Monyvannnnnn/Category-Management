@@ -167,32 +167,75 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     $rawArg  = trim($parts[1] ?? '');
     $arg     = strtolower($rawArg);
 
-    // 1. Connection Code Binding (/start <code>)
-    if ($command === '/start' && !empty($rawArg)) {
-        $boundBot = handleCodeBinding($conn, $chatId, $rawArg);
-        if ($boundBot) {
-            $uId = (int)$boundBot['user_id'];
+    // 1. Connection Code Binding (/start <code> or plain /start)
+    if ($command === '/start') {
+        $alreadyConnected = getConnectedUserByChatIdMySQLi($conn, $chatId);
+        
+        // If account is ALREADY connected and no new code provided, send welcome info
+        if ($alreadyConnected && empty($rawArg)) {
+            $uId = (int)$alreadyConnected['user_id'];
             if (function_exists('registerSubscriberChatId')) {
                 registerSubscriberChatId($conn, $chatId);
             }
-            $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
+            $msg = "✅ <b>TELEGRAM BOT CONNECTED</b>\n"
                  . "═════════════════════════════\n"
                  . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
                  . "Linked to Website Account User #{$uId}.\n\n"
                  . "Type /help to see all available commands!";
             sendTelegramMessage($chatId, $msg, $botToken);
             return;
-        } else {
-            $msg = "❌ <b>INVALID OR EXPIRED CONNECTION CODE</b>\n"
-                 . "═════════════════════════════\n"
-                 . "⚠️ The connection code provided is invalid or has expired.\n\n"
-                 . "🔑 <b>How to Connect:</b>\n"
-                 . "1. Log into your Inventory Account on the website.\n"
-                 . "2. Navigate to <b>Settings ➜ Telegram Bot Settings</b>.\n"
-                 . "3. Click <b>Connect Bot</b> to generate a valid connection code.\n"
-                 . "4. Send <code>/start &lt;YOUR_CODE&gt;</code> here in chat to link!";
-            sendTelegramMessage($chatId, $msg, $botToken);
-            return;
+        }
+
+        $targetCode = $rawArg;
+        if (empty($targetCode)) {
+            // Auto-fallback: check if there is a pending, unexpired connection code waiting to be linked
+            $stmtPending = db_prepare($conn, "SELECT b.* FROM user_telegram_bots b WHERE (b.chat_id IS NULL OR b.chat_id = '') AND b.connection_code IS NOT NULL AND b.connection_code != '' AND (b.code_expires_at IS NULL OR b.code_expires_at >= NOW()) ORDER BY b.id DESC LIMIT 1");
+            if ($stmtPending) {
+                db_stmt_execute($stmtPending);
+                $resPending = db_stmt_get_result($stmtPending);
+                $pendingRow = db_fetch_assoc($resPending);
+                db_stmt_close($stmtPending);
+                if ($pendingRow && !empty($pendingRow['connection_code'])) {
+                    $targetCode = $pendingRow['connection_code'];
+                }
+            }
+        }
+
+        if (!empty($targetCode)) {
+            $boundBot = handleCodeBinding($conn, $chatId, $targetCode);
+            if ($boundBot) {
+                $uId = (int)$boundBot['user_id'];
+                if (function_exists('registerSubscriberChatId')) {
+                    registerSubscriberChatId($conn, $chatId);
+                }
+                $msg = "✅ <b>TELEGRAM BOT CONNECTED SUCCESSFULLY!</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
+                     . "Linked to Website Account User #{$uId}.\n\n"
+                     . "Type /help to see all available commands!";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            } else if ($alreadyConnected) {
+                // If code failed/used but user is already connected, show welcome
+                $uId = (int)$alreadyConnected['user_id'];
+                $msg = "✅ <b>TELEGRAM BOT CONNECTED</b>\n"
+                     . "═════════════════════════════\n"
+                     . "Your Telegram Chat ID: <code>{$chatId}</code>\n"
+                     . "Linked to Website Account User #{$uId}.\n\n"
+                     . "Type /help to see all available commands!";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            } else {
+                $msg = "❌ <b>INVALID OR EXPIRED CONNECTION CODE</b>\n"
+                     . "═════════════════════════════\n"
+                     . "⚠️ The connection code provided is invalid or has expired.\n\n"
+                     . "🔑 <b>How to Connect:</b>\n"
+                     . "1. Log into your Inventory Account on the website.\n"
+                     . "2. Click <b>Connect Telegram</b> to generate a valid connection code.\n"
+                     . "3. Tap <b>Open Bot & Press START</b> to link automatically!";
+                sendTelegramMessage($chatId, $msg, $botToken);
+                return;
+            }
         }
     }
 
@@ -833,13 +876,13 @@ function pollTelegramUpdatesForBot($conn, $botToken) {
     $offsetFile = __DIR__ . '/telegram_offset.txt';
     $offset = file_exists($offsetFile) ? (int)file_get_contents($offsetFile) : 0;
 
-    $url = "https://api.telegram.org/bot{$botToken}/getUpdates?offset={$offset}&timeout=2";
+    $url = "https://api.telegram.org/bot{$botToken}/getUpdates?offset={$offset}&timeout=0";
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
     curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 4);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 2);
     $response = curl_exec($ch);
     curl_close($ch);
 

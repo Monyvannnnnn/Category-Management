@@ -42,7 +42,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
     }
 
     // Method 2: Fast DNS Resolution Bypass
-    if (($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) && function_exists('curl_init')) {
+    if ($result === false && function_exists('curl_init')) {
         $telegramIPs = ['149.154.167.220'];
         foreach ($telegramIPs as $ip) {
             $ch = curl_init();
@@ -72,7 +72,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
     }
 
     // Method 3: Fast Fallback Stream Context
-    if ($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) {
+    if ($result === false) {
         $options = [
             'http' => [
                 'header'  => "Content-Type: application/x-www-form-urlencoded\r\n" .
@@ -159,7 +159,7 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     }
 
     // Method 2: Fast DNS Resolution Bypass
-    if (($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) && function_exists('curl_init')) {
+    if ($result === false && function_exists('curl_init')) {
         $telegramIPs = ['149.154.167.220'];
         foreach ($telegramIPs as $ip) {
             $ch = curl_init();
@@ -189,7 +189,7 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     }
 
     // Method 3: Fast Fallback Stream Context
-    if ($result === false || (is_string($result) && strpos($result, '"ok":true') === false)) {
+    if ($result === false) {
         $options = [
             'http' => [
                 'header'  => "Content-Type: application/x-www-form-urlencoded\r\n" .
