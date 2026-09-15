@@ -120,7 +120,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
-                        <button type="button" class="add-btn telegram-file-btn" id="openPushExcelPdfBtn" data-tooltip="Push Excel & PDF Files to Telegram" aria-label="Push Excel & PDF Files to Telegram" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                        <button type="button" class="add-btn telegram-file-btn" id="openPushExcelPdfBtn" data-tooltip="⚡ Push Excel, PDF & HTML Reports to Telegram" aria-label="Push Excel, PDF & HTML Reports to Telegram" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
                             <i class="fa-solid fa-file-arrow-up"></i>
                         </button>
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">

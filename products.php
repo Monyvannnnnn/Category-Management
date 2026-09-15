@@ -253,7 +253,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         <input type="text" id="searchInput" placeholder="Search...">
                     </div>
                     <div class="action-buttons-group">
-                        <button type="button" class="add-btn telegram-file-btn" id="openPushExcelPdfBtn" data-tooltip="Push Excel & PDF Files to Telegram" aria-label="Push Excel & PDF Files to Telegram" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
+                        <button type="button" class="add-btn telegram-file-btn" id="openPushExcelPdfBtn" data-tooltip="⚡ Push Excel, PDF & HTML Reports to Telegram" aria-label="Push Excel, PDF & HTML Reports to Telegram" style="background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35);">
                             <i class="fa-solid fa-file-arrow-up"></i>
                         </button>
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
@@ -2925,6 +2925,51 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             });
         }
 
+        function executePushHtmlDocument(scope) {
+            var $btn = $("#btnPushHtmlFile");
+            setCardLoading($btn, true, "Generating HTML Report & Pushing to Telegram...");
+
+            window.checkTelegramConnectionAndExecute(function() {
+                var pageOnly = (scope === "current");
+                var idsArr = [];
+                if (pageOnly) {
+                    var gridInstance = $("#gridContainer").dxDataGrid("instance");
+                    if (gridInstance) {
+                        idsArr = gridInstance.getVisibleRows()
+                            .filter(function(r) { return r.rowType === "data" && r.data && r.data.id; })
+                            .map(function(r) { return r.data.id; });
+                    }
+                }
+
+                $.ajax({
+                    url: "manual_push.php",
+                    type: "POST",
+                    data: {
+                        action: "push_html_file",
+                        scope: scope,
+                        ids: idsArr.join(",")
+                    },
+                    dataType: "json",
+                    success: function(res) {
+                        if (res && res.ok) {
+                            var tag = pageOnly ? " (Current Page)" : " (All Pages)";
+                            DevExpress.ui.notify("✅ HTML Report Document" + tag + " pushed to Telegram successfully!", "success", 4000);
+                        } else {
+                            DevExpress.ui.notify(res.message || res.description || "Failed to push HTML file.", "error", 4000);
+                        }
+                    },
+                    error: function() {
+                        DevExpress.ui.notify("Network error pushing HTML file.", "error", 4000);
+                    },
+                    complete: function() {
+                        setCardLoading($btn, false);
+                    }
+                });
+            }, function() {
+                setCardLoading($btn, false);
+            });
+        }
+
         function buildProductsTableCanvas(scope) {
             return new Promise(function(resolve, reject) {
                 var gridInstance = $("#gridContainer").dxDataGrid("instance");
@@ -3108,6 +3153,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             e.preventDefault();
             var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
             executePushPdfDocument(scope);
+        });
+
+        $("#btnPushHtmlFile").on("click", function(e) {
+            e.preventDefault();
+            var scope = $("input[name='pushDocumentScope']:checked").val() || "all";
+            executePushHtmlDocument(scope);
         });
 
         $("#btnPushImageFile").on("click", function(e) {
@@ -3422,6 +3473,16 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         <div class="report-info">
                             <span class="report-title">Push PDF Document File</span>
                             <span class="report-desc">Send formatted .pdf report file to Telegram</span>
+                        </div>
+                        <i class="fa-solid fa-chevron-right report-arrow"></i>
+                    </button>
+
+                    <!-- Push HTML File -->
+                    <button type="button" class="push-report-card" id="btnPushHtmlFile" style="border-left: 4px solid #2563eb;">
+                        <div class="report-icon" style="background: rgba(37, 99, 235, 0.15); color: #2563eb;"><i class="fa-solid fa-code"></i></div>
+                        <div class="report-info">
+                            <span class="report-title">Push HTML Document File</span>
+                            <span class="report-desc">Send interactive .html report file to Telegram</span>
                         </div>
                         <i class="fa-solid fa-chevron-right report-arrow"></i>
                     </button>

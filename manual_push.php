@@ -591,7 +591,71 @@ if ($action === 'get_settings') {
     exit;
 
 // --------------------------------------------------------------------------
-// 15. Push Page Picture / Screenshot (JPG) to Telegram
+// 15. Push HTML Document File to Telegram
+// --------------------------------------------------------------------------
+} elseif ($action === 'push_html_file') {
+    $scope = $_REQUEST['scope'] ?? $inputJSON['scope'] ?? 'all';
+    $scopeTag = ($scope === 'current') ? " (CURRENT PAGE)" : " (ALL PAGES)";
+
+    if (isset($_FILES['file']) && $_FILES['file']['error'] === UPLOAD_ERR_OK) {
+        $tmpPath = $_FILES['file']['tmp_name'];
+        $userFileName = $_FILES['file']['name'] ?: ("Inventory_HTML_Report_" . date('Y-m-d_His') . ".html");
+
+        $caption = "🌐 <b>INVENTORY HTML REPORT (.HTML){$scopeTag}</b>\n"
+                 . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+                 . "───────────────────────\n"
+                 . "<i>Attached interactive HTML report document file</i>";
+
+        $resJson = sendTelegramDocument($tmpPath, $caption, $conn, $userId, $userFileName);
+        echo $resJson;
+        exit;
+    }
+
+    require_once __DIR__ . "/includes/html_generator.php";
+
+    $rawIds = $_REQUEST['ids'] ?? $inputJSON['ids'] ?? '';
+    $ids = is_array($rawIds) ? array_map('intval', $rawIds) : array_map('intval', explode(',', (string)$rawIds));
+    $ids = array_filter($ids, function($v) { return $v > 0; });
+
+    if ($scope === 'current' && !empty($ids)) {
+        $idList = implode(',', $ids);
+        $whereFilter = " WHERE p.id IN ({$idList}) " . ($userId > 0 ? " AND p.user_id = {$userId} " : "");
+    } else {
+        $whereFilter = ($userId > 0) ? " WHERE p.user_id = {$userId} " : "";
+    }
+
+    $res = db_query($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id {$whereFilter} ORDER BY p.id DESC");
+    $rows = [];
+    $totalVal = 0;
+    if ($res) {
+        while ($r = db_fetch_assoc($res)) {
+            $rows[] = $r;
+            $totalVal += ((float)$r['price'] * (int)$r['quantity']);
+        }
+    }
+
+    $htmlGen = new InventoryHTML();
+    $htmlData = $htmlGen->generateProductsHTML("INVENTORY PRODUCTS REPORT" . $scopeTag, $rows, $totalVal);
+
+    $filename = "Inventory_Products_Report_" . date('Y-m-d_His') . ".html";
+    $filepath = sys_get_temp_dir() . '/' . $filename;
+    file_put_contents($filepath, $htmlData);
+
+    $caption = "🌐 <b>INVENTORY HTML REPORT (.HTML){$scopeTag}</b>\n"
+             . "<i>Generated: " . date('Y-m-d H:i:s') . "</i>\n"
+             . "───────────────────────\n"
+             . "📦 <b>Total Products:</b> " . count($rows) . "\n"
+             . "💰 <b>Total Valuation:</b> $" . number_format($totalVal, 2) . "\n"
+             . "───────────────────────\n"
+             . "<i>Attached standalone HTML document file</i>";
+
+    $resJson = sendTelegramDocument($filepath, $caption, $conn, $userId, $filename);
+    @unlink($filepath);
+    echo $resJson;
+    exit;
+
+// --------------------------------------------------------------------------
+// 16. Push Page Picture / Screenshot (JPG) to Telegram
 // --------------------------------------------------------------------------
 } elseif ($action === 'push_image_file' || $action === 'push_picture_file') {
     $scope = $_REQUEST['scope'] ?? $inputJSON['scope'] ?? 'all';
