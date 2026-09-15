@@ -18,7 +18,7 @@ try {
         $stmtIns->execute([$userId, DEFAULT_BOT_TOKEN, DEFAULT_BOT_USERNAME]);
         $botUsername = DEFAULT_BOT_USERNAME;
     } else {
-        $botUsername = $userBot['bot_username'];
+        $botUsername = (!empty($userBot['bot_username']) && $userBot['bot_username'] !== 'reportpush_bot') ? $userBot['bot_username'] : DEFAULT_BOT_USERNAME;
     }
 
     // Generate one-time connection code

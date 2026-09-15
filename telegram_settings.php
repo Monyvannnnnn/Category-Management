@@ -39,11 +39,14 @@ switch ($action) {
         $defaultBotToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
         $defaultBotUsername = "enginebi_bot";
 
+        $botToken = (!empty($row['bot_token']) && $row['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $row['bot_token'] : $defaultBotToken;
+        $botUsername = (!empty($row['bot_username']) && $row['bot_username'] !== 'reportpush_bot') ? $row['bot_username'] : $defaultBotUsername;
+
         echo json_encode([
             'success' => true,
             'user_id' => $userId,
-            'bot_token' => $row['bot_token'] ?? $defaultBotToken,
-            'bot_username' => $row['bot_username'] ?? $defaultBotUsername,
+            'bot_token' => $botToken,
+            'bot_username' => $botUsername,
             'chat_id' => $row['chat_id'] ?? null,
             'connection_code' => $row['connection_code'] ?? null,
             'code_expires_at' => $row['code_expires_at'] ?? null,
@@ -89,17 +92,21 @@ switch ($action) {
         $code = str_pad((string)rand(100000, 999999), 6, '0', STR_PAD_LEFT);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
+        $defaultToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $defaultUsername = "enginebi_bot";
+
         $existing = getUserBotRow($conn, $userId);
+        $botUsername = (!empty($existing['bot_username']) && $existing['bot_username'] !== 'reportpush_bot') ? $existing['bot_username'] : $defaultUsername;
+        $botToken = (!empty($existing['bot_token']) && $existing['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $existing['bot_token'] : $defaultToken;
+
         if ($existing) {
-            $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = ? WHERE user_id = ?");
-            db_stmt_bind_param($stmt, "ssi", $code, $expiresAt, $userId);
+            $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = ?, bot_username = ?, bot_token = ? WHERE user_id = ?");
+            db_stmt_bind_param($stmt, "ssssi", $code, $expiresAt, $botUsername, $botToken, $userId);
             db_stmt_execute($stmt);
             db_stmt_close($stmt);
         } else {
-            $defaultToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
-            $defaultUsername = "enginebi_bot";
             $stmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, ?)");
-            db_stmt_bind_param($stmt, "issss", $userId, $defaultToken, $defaultUsername, $code, $expiresAt);
+            db_stmt_bind_param($stmt, "issss", $userId, $botToken, $botUsername, $code, $expiresAt);
             db_stmt_execute($stmt);
             db_stmt_close($stmt);
         }
@@ -108,7 +115,7 @@ switch ($action) {
         $host = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
         $webhookUrl = "{$scheme}://{$host}/set_commands.php";
-        $bToken = !empty($existing['bot_token']) ? $existing['bot_token'] : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $bToken = $botToken;
 
         if (function_exists('curl_init') && strpos($host, 'localhost') === false && strpos($host, '127.0.0.1') === false) {
             $whApiUrl = "https://api.telegram.org/bot{$bToken}/setWebhook?url=" . urlencode($webhookUrl);
@@ -120,9 +127,6 @@ switch ($action) {
             @curl_exec($ch);
             @curl_close($ch);
         }
-
-        $botUsername = $existing['bot_username'] ?? "enginebi_bot";
-        if (empty($botUsername)) $botUsername = "enginebi_bot";
 
         $deepLink = "https://t.me/" . ltrim($botUsername, '@') . "?start=" . $code;
 
