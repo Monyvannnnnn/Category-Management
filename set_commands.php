@@ -9,7 +9,7 @@ require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/notify_bot.php';
 require_once __DIR__ . '/bot_poller.php';
 
-$botToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+$botToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
 
 // If accessed via GET browser request, register Webhook and all 18 commands with Telegram BotFather API
 if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_GET['action'])) {

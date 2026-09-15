@@ -22,7 +22,7 @@ if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
     exit(0);
 }
 
-$defaultBotToken = "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+$defaultBotToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
 registerBotCommands($defaultBotToken);
 
 // Auto-ensure atomic updates table exists

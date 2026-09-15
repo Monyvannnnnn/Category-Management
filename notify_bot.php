@@ -5,7 +5,7 @@
  */
 
 function sendSingleTelegramNotification($chatId, $message, $customBotToken = null) {
-    $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc"; 
+    $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
         'chat_id' => $chatId,
@@ -109,7 +109,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
  * Send a single Photo with Caption via Telegram Bot API
  */
 function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken = null) {
-    $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc"; 
+    $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendPhoto";
 
     $isLocalFile = (is_string($photoUrl) && file_exists($photoUrl));
@@ -303,7 +303,7 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
     if (!file_exists($filePath)) {
         return json_encode(["ok" => false, "description" => "Document file not found."]);
     }
-    $botToken = !empty($customBotToken) ? $customBotToken : "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+    $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
     $url = "https://api.telegram.org/bot$botToken/sendDocument";
 
     $mimeType = function_exists('mime_content_type') ? @mime_content_type($filePath) : 'application/octet-stream';

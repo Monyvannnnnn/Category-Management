@@ -34,7 +34,7 @@ if ($stmt) {
     db_stmt_close($stmt);
 }
 
-$botToken = $userBot['bot_token'] ?? "8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc";
+$botToken = $userBot['bot_token'] ?? "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
 $chatId   = $userBot['chat_id'] ?? null;
 
 if (empty($chatId)) {
