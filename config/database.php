@@ -30,7 +30,7 @@ if (!defined('SUPABASE_SERVICE_KEY')) define('SUPABASE_SERVICE_KEY', getenv('SUP
 if (!defined('SUPABASE_BUCKET')) define('SUPABASE_BUCKET', getenv('SUPABASE_BUCKET') ?: 'products-img');
 
 define("DEFAULT_BOT_TOKEN", "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8");
-define("DEFAULT_BOT_USERNAME", "reportpush_bot");
+define("DEFAULT_BOT_USERNAME", "enginebi_bot");
 
 /**
  * Returns a PDO Connection for Supabase (PostgreSQL) or fallback.

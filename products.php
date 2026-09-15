@@ -3239,7 +3239,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     <div id="pushModal" class="custom-modal-backdrop" style="display: none;">
         <div class="custom-modal-content" style="max-width: 580px; max-height: 85vh; overflow-y: auto;">
             <div class="custom-modal-header">
-                <h3><i class="fa-brands fa-telegram telegram-icon"></i> Telegram Hub <a href="https://t.me/reportpush_bot" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 14px; margin-left: 6px;">@reportpush_bot <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i></a></h3>
+                <h3><i class="fa-brands fa-telegram telegram-icon"></i> Telegram Hub <a href="https://t.me/enginebi_bot" target="_blank" style="color: #38bdf8; text-decoration: none; font-size: 14px; margin-left: 6px;">@enginebi_bot <i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 11px;"></i></a></h3>
                 <button type="button" class="custom-modal-close" id="closePushModalBtn">&times;</button>
             </div>
             <div class="custom-modal-body">

@@ -37,7 +37,7 @@ switch ($action) {
     case 'get':
         $row = getUserBotRow($conn, $userId);
         $defaultBotToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
-        $defaultBotUsername = "reportpush_bot";
+        $defaultBotUsername = "enginebi_bot";
 
         echo json_encode([
             'success' => true,
@@ -97,7 +97,7 @@ switch ($action) {
             db_stmt_close($stmt);
         } else {
             $defaultToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
-            $defaultUsername = "reportpush_bot";
+            $defaultUsername = "enginebi_bot";
             $stmt = db_prepare($conn, "INSERT INTO user_telegram_bots (user_id, bot_token, bot_username, connection_code, code_expires_at) VALUES (?, ?, ?, ?, ?)");
             db_stmt_bind_param($stmt, "issss", $userId, $defaultToken, $defaultUsername, $code, $expiresAt);
             db_stmt_execute($stmt);
@@ -121,8 +121,8 @@ switch ($action) {
             @curl_close($ch);
         }
 
-        $botUsername = $existing['bot_username'] ?? "reportpush_bot";
-        if (empty($botUsername)) $botUsername = "reportpush_bot";
+        $botUsername = $existing['bot_username'] ?? "enginebi_bot";
+        if (empty($botUsername)) $botUsername = "enginebi_bot";
 
         $deepLink = "https://t.me/" . ltrim($botUsername, '@') . "?start=" . $code;
 
