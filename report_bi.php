@@ -32,17 +32,26 @@ if (!$currentUser) {
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
 
     <style>
+        html, body {
+            height: auto !important;
+            min-height: 100% !important;
+            max-height: none !important;
+            overflow-y: auto !important;
+            overflow-x: hidden !important;
+        }
+
         .bi-page-container {
             width: 100%;
             max-width: 100%;
             min-height: 100vh;
+            height: auto !important;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             background-color: var(--bg-main, #0f141c);
-            overflow-y: auto;
-            padding: 12px 16px;
-            gap: 16px;
+            overflow: visible !important;
+            padding: 16px 20px;
+            gap: 18px;
         }
 
         .bi-header-card {
