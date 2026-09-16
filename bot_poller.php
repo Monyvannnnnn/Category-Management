@@ -24,6 +24,7 @@ function registerBotCommands($botToken) {
         ['command' => 'product',    'description' => '📦 Product info (/product <code|name>)'],
         ['command' => 'outofstock', 'description' => '🚫 Out of stock items'],
         ['command' => 'summary',    'description' => '📊 Live inventory summary'],
+        ['command' => 'bi',         'description' => '📊 Open Live BI Dashboard Mini App'],
         ['command' => 'valuation',  'description' => '💎 Financial report'],
         ['command' => 'added',      'description' => '🆕 Recently added items'],
         ['command' => 'updated',    'description' => '✏️ Recently modified items'],
@@ -47,12 +48,19 @@ function registerBotCommands($botToken) {
 }
 
 function sendTelegramMessage($chatId, $text, $botToken) {
+    return sendTelegramMessageWithMarkup($chatId, $text, $botToken, null);
+}
+
+function sendTelegramMessageWithMarkup($chatId, $text, $botToken, $replyMarkup = null) {
     $url = "https://api.telegram.org/bot{$botToken}/sendMessage";
     $postData = [
         'chat_id'    => $chatId,
         'text'       => $text,
         'parse_mode' => 'HTML'
     ];
+    if (!empty($replyMarkup)) {
+        $postData['reply_markup'] = json_encode($replyMarkup);
+    }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -267,13 +275,47 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     // 3. Process commands for connected user
     switch ($command) {
         case '/start':
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+            $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
+            $biUrl  = "{$scheme}://{$host}/report_bi.php";
             $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
                  . "═════════════════════════════\n"
                  . "Status: <b>Connected ✅</b>\n"
                  . "Account User ID: <code>#{$userId}</code>\n"
                  . "Connected Chat ID: <code>{$chatId}</code>\n\n"
-                 . "Type /help to see available inventory commands!";
-            sendTelegramMessage($chatId, $msg, $botToken);
+                 . "Tap below to launch the <b>Live BI Dashboard Mini App</b> or type /help for all commands!";
+            $markup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                    ]
+                ]
+            ];
+            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+            break;
+
+        case '/bi':
+        case '/report':
+        case '/miniapp':
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+            $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
+            $biUrl  = "{$scheme}://{$host}/report_bi.php";
+            $msg = "📊 <b>LIVE BI REPORT & ANALYTICS MINI APP</b>\n"
+                 . "═════════════════════════════\n"
+                 . "Tap the button below to launch the live Business Intelligence Dashboard directly inside Telegram!\n\n"
+                 . "⚡ <i>Real-time Valuation, KPI Metrics & Interactive Charts.</i>";
+            $markup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                    ],
+                    [
+                        ['text' => '🏷 View Categories', 'url' => "{$scheme}://{$host}/index.php"],
+                        ['text' => '📦 View Products', 'url' => "{$scheme}://{$host}/products.php"]
+                    ]
+                ]
+            ];
+            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
             break;
 
         // 1. /search <keyword>

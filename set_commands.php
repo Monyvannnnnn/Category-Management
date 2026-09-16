@@ -28,12 +28,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_GET['action'])) {
 
     $cmdRes = registerBotCommands($botToken);
 
+    // Set Telegram Chat Menu Button to open Live BI Mini App
+    $biAppUrl = "{$scheme}://{$host}/report_bi.php";
+    $menuBtnUrl = "https://api.telegram.org/bot{$botToken}/setChatMenuButton";
+    $menuBtnPayload = [
+        'menu_button' => [
+            'type' => 'web_app',
+            'text' => '📊 BI Report',
+            'web_app' => [
+                'url' => $biAppUrl
+            ]
+        ]
+    ];
+    $chMB = curl_init($menuBtnUrl);
+    curl_setopt($chMB, CURLOPT_POST, true);
+    curl_setopt($chMB, CURLOPT_POSTFIELDS, json_encode($menuBtnPayload));
+    curl_setopt($chMB, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+    curl_setopt($chMB, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($chMB, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($chMB, CURLOPT_SSL_VERIFYHOST, 0);
+    $menuBtnRes = curl_exec($chMB);
+    curl_close($chMB);
+
     echo json_encode([
         "ok" => true,
-        "message" => "Telegram Bot Webhook and all 18 commands registered successfully!",
+        "message" => "Telegram Bot Webhook, Commands, and Live BI Mini App Menu Button registered successfully!",
         "webhook_url" => $webhookUrl,
         "webhook_response" => json_decode($whRes, true),
-        "commands_response" => json_decode($cmdRes, true)
+        "commands_response" => json_decode($cmdRes, true),
+        "menu_button_response" => json_decode($menuBtnRes, true)
     ]);
     exit;
 }

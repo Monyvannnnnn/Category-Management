@@ -120,6 +120,61 @@ label,
    HEADER SECTION & BUTTONS (SOLID COLORS, NO GRADIENT/AURA)
    ========================================================================== */
 
+/* ==========================================================================
+   MINI APP NAVIGATION BAR SYSTEM
+   ========================================================================== */
+
+.mini-app-nav-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--surface-card, #161d2a);
+  border: 1px solid var(--border-subtle, #242f42);
+  border-radius: 10px;
+  padding: 5px;
+  margin-bottom: 14px;
+  width: 100%;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.mini-nav-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted, #94a3b8);
+  text-decoration: none;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.mini-nav-tab:hover {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mini-nav-tab.active {
+  background: #6366f1;
+  color: #ffffff;
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+}
+
+.mini-nav-tab.bi-tab {
+  border: 1px dashed rgba(99, 102, 241, 0.4);
+  color: #a78bfa;
+}
+
+.mini-nav-tab.bi-tab.active {
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: #ffffff;
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -4052,4 +4107,196 @@ label,
     border-bottom-color: rgba(255, 255, 255, 0.5);
     border-left-color: rgba(255, 255, 255, 0.5);
     animation: spin-reverse 0.6s linear infinite;
+}
+
+/* ==========================================================================
+   MOBILE & TELEGRAM MINI APP RESPONSIVE SYSTEM
+   ========================================================================== */
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-y: auto !important;
+  }
+
+  .page {
+    padding: 10px 12px !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow: visible !important;
+  }
+
+  .header {
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .header h1 {
+    font-size: 18px !important;
+    gap: 8px !important;
+  }
+
+  .header h1 i {
+    font-size: 18px !important;
+  }
+
+  .user-profile-widget {
+    gap: 6px !important;
+    max-width: 100% !important;
+  }
+
+  .user-profile-badge {
+    padding: 3px 8px !important;
+    font-size: 11px !important;
+    max-width: 180px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+  }
+
+  .user-profile-name {
+    max-width: 90px !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    display: inline-block !important;
+  }
+
+  .user-role-badge {
+    display: none !important;
+  }
+
+  .options-container {
+    width: 100% !important;
+    margin-bottom: 12px !important;
+  }
+
+  .search-and-export {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+  }
+
+  .search-wrapper {
+    flex: 1 1 120px !important;
+    min-width: 100px !important;
+    max-width: 100% !important;
+  }
+
+  .search-wrapper input {
+    font-size: 13px !important;
+    padding: 6px 10px 6px 30px !important;
+    height: 34px !important;
+  }
+
+  .action-buttons-group {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 5px !important;
+    align-items: center !important;
+  }
+
+  .add-btn,
+  .export-btn,
+  .telegram-file-btn,
+  .telegram-push-btn,
+  .nav-link-btn,
+  #openAddModalBtn,
+  #masterExportTrigger {
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    font-size: 13px !important;
+    border-radius: 6px !important;
+  }
+
+  .export-menu {
+    right: 0 !important;
+    left: auto !important;
+    min-width: 180px !important;
+  }
+
+  /* Grid height & DevExtreme grid adjustments */
+  .dx-datagrid {
+    font-size: 12px !important;
+  }
+
+  .dx-datagrid-headers .dx-header-row > td {
+    padding: 8px 6px !important;
+    font-size: 11px !important;
+  }
+
+  .dx-datagrid-rowsview .dx-data-row > td {
+    padding: 8px 6px !important;
+  }
+
+  /* BI Dashboard Mobile Fixes */
+  .bi-page-container {
+    padding: 10px 12px !important;
+    gap: 12px !important;
+    height: auto !important;
+  }
+
+  .bi-header-card {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+    padding: 12px 14px !important;
+  }
+
+  .bi-header-actions {
+    width: 100% !important;
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+  }
+
+  .bi-btn {
+    padding: 6px 10px !important;
+    font-size: 12px !important;
+    flex: 1 1 auto !important;
+    justify-content: center !important;
+  }
+
+  .kpi-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .kpi-card {
+    padding: 12px 14px !important;
+    gap: 6px !important;
+  }
+
+  .kpi-value {
+    font-size: 18px !important;
+  }
+
+  .kpi-label {
+    font-size: 11px !important;
+  }
+
+  .chart-card {
+    padding: 14px !important;
+  }
+
+  .chart-canvas-container {
+    height: 220px !important;
+  }
+
+  .bi-search-input {
+    width: 100% !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .kpi-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .header h1 {
+    font-size: 16px !important;
+  }
 }

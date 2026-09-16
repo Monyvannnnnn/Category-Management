@@ -97,6 +97,17 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
 
     <div class="page">
         <div class="category-card">
+            <div class="mini-app-nav-bar">
+                <a href="index.php" class="mini-nav-tab active">
+                    <i class="fa-solid fa-layer-group"></i> Categories
+                </a>
+                <a href="products.php" class="mini-nav-tab">
+                    <i class="fa-solid fa-box"></i> Products
+                </a>
+                <a href="report_bi.php" class="mini-nav-tab bi-tab">
+                    <i class="fa-solid fa-chart-pie"></i> BI Dashboard
+                </a>
+            </div>
             <div class="header">
                 <h1>
                     <i class="fa-solid fa-layer-group" style="font-size: 22px;"></i>
@@ -125,6 +136,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         </button>
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
                             <i class="fa-solid fa-gear"></i>
+                        </button>
+                        <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='report_bi.php'" data-tooltip="BI Analytics Report" aria-label="BI Analytics Report">
+                            <i class="fa-solid fa-chart-pie"></i>
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
                             <i class="fa-solid fa-box"></i>
