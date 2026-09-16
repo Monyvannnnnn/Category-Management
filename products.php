@@ -230,17 +230,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 <body>
     <div class="page">
         <div class="category-card">
-            <div class="mini-app-nav-bar">
-                <a href="index.php" class="mini-nav-tab">
-                    <i class="fa-solid fa-layer-group"></i> Categories
-                </a>
-                <a href="products.php" class="mini-nav-tab active">
-                    <i class="fa-solid fa-box"></i> Products
-                </a>
-                <a href="report_bi.php" class="mini-nav-tab bi-tab">
-                    <i class="fa-solid fa-chart-pie"></i> BI Dashboard
-                </a>
-            </div>
             <div class="header">
                 <h1>
                     <i class="fa-solid fa-boxes-stacked" style="font-size: 22px;"></i>

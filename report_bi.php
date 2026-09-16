@@ -381,18 +381,6 @@ if (!$currentUser) {
 
 <div class="bi-page-container">
 
-    <div class="mini-app-nav-bar">
-        <a href="index.php" class="mini-nav-tab">
-            <i class="fa-solid fa-layer-group"></i> Categories
-        </a>
-        <a href="products.php" class="mini-nav-tab">
-            <i class="fa-solid fa-box"></i> Products
-        </a>
-        <a href="report_bi.php" class="mini-nav-tab bi-tab active">
-            <i class="fa-solid fa-chart-pie"></i> BI Dashboard
-        </a>
-    </div>
-
     <!-- Top Header Bar -->
     <div class="bi-header-card">
         <div class="bi-title-group">
