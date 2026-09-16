@@ -197,17 +197,7 @@ if (!$currentUser) {
 
         .kpi-card:hover {
             transform: translateY(-2px);
-            border-color: var(--primary-color, #6366f1);
-        }
-
-        .kpi-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 4px;
-            height: 100%;
-            background: var(--card-accent, var(--primary-color, #6366f1));
+            border-color: var(--card-accent, var(--primary-color, #6366f1));
         }
 
         .kpi-top {
