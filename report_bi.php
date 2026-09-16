@@ -50,19 +50,19 @@ if (!$currentUser) {
             flex-direction: column;
             background-color: var(--bg-main, #0f141c);
             overflow: visible !important;
-            padding: 16px 20px;
-            gap: 18px;
+            padding: 8px 10px;
+            gap: 8px;
         }
 
         .bi-header-card {
             background: var(--surface-card, #161d2a);
             border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 14px;
-            padding: 14px 18px;
+            border-radius: 8px;
+            padding: 8px 12px;
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+            gap: 6px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
             max-width: 100%;
             box-sizing: border-box;
         }
@@ -78,22 +78,22 @@ if (!$currentUser) {
         .bi-title-group {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 8px;
             min-width: 0;
         }
 
         .bi-title-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
             background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 18px;
+            font-size: 14px;
             flex-shrink: 0;
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
         }
 
         .bi-title-text {
@@ -101,18 +101,18 @@ if (!$currentUser) {
         }
 
         .bi-title-text h1 {
-            font-size: 18px;
+            font-size: 15px;
             font-weight: 700;
             color: var(--text-main, #f8fafc);
             margin: 0;
-            line-height: 1.25;
+            line-height: 1.2;
             white-space: nowrap;
         }
 
         .bi-title-text p {
-            font-size: 11px;
+            font-size: 10px;
             color: var(--text-muted, #94a3b8);
-            margin: 2px 0 0 0;
+            margin: 1px 0 0 0;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -120,7 +120,7 @@ if (!$currentUser) {
 
         @media (max-width: 480px) {
             .bi-title-text h1 {
-                font-size: 16px;
+                font-size: 14px;
                 white-space: normal;
             }
             .bi-title-text p {
@@ -132,7 +132,7 @@ if (!$currentUser) {
             display: flex;
             align-items: center;
             flex-wrap: wrap;
-            gap: 6px;
+            gap: 4px;
             width: 100%;
         }
 
@@ -146,14 +146,14 @@ if (!$currentUser) {
             background: var(--surface-alt, #1a2333);
             border: 1px solid var(--border-subtle, #242f42);
             color: var(--text-main, #f8fafc);
-            padding: 6px 12px;
-            border-radius: 8px;
-            font-size: 12px;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 11px;
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 4px;
             transition: all 0.2s ease;
             text-decoration: none;
             white-space: nowrap;
@@ -175,21 +175,34 @@ if (!$currentUser) {
             background: var(--primary-hover, #4f46e5);
         }
 
-        /* KPI Cards Grid */
+        /* KPI Cards Grid - Ultra-Compact Spacing */
         .kpi-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 14px;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 8px;
+        }
+
+        @media (max-width: 1200px) {
+            .kpi-grid {
+                grid-template-columns: repeat(3, 1fr);
+            }
+        }
+
+        @media (max-width: 600px) {
+            .kpi-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+            }
         }
 
         .kpi-card {
             background: var(--surface-card, #161d2a);
             border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 14px;
-            padding: 16px 18px;
+            border-radius: 8px;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 2px;
             transition: transform 0.2s ease, border-color 0.2s ease;
             position: relative;
             overflow: hidden;
@@ -207,61 +220,63 @@ if (!$currentUser) {
         }
 
         .kpi-label {
-            font-size: 12px;
+            font-size: 10px;
             font-weight: 600;
             color: var(--text-muted, #94a3b8);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.3px;
         }
 
         .kpi-icon-badge {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
+            width: 22px;
+            height: 22px;
+            border-radius: 5px;
             background: var(--surface-alt, #1a2333);
             display: flex;
             align-items: center;
             justify-content: center;
             color: var(--card-accent, var(--primary-color, #6366f1));
-            font-size: 14px;
+            font-size: 11px;
         }
 
         .kpi-value {
-            font-size: 22px;
+            font-size: 17px;
             font-weight: 700;
             color: var(--text-main, #f8fafc);
-            letter-spacing: -0.5px;
+            letter-spacing: -0.3px;
+            line-height: 1.2;
         }
 
         .kpi-subtext {
-            font-size: 11px;
+            font-size: 9.5px;
             color: var(--text-muted, #94a3b8);
             display: flex;
             align-items: center;
-            gap: 4px;
+            gap: 3px;
         }
 
-        /* Charts Layout */
+        /* Charts Layout - Ultra-Compact Grid Spacing */
         .charts-row {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 16px;
+            gap: 8px;
         }
 
         @media (max-width: 900px) {
             .charts-row {
                 grid-template-columns: 1fr;
+                gap: 8px;
             }
         }
 
         .chart-card {
             background: var(--surface-card, #161d2a);
             border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 14px;
-            padding: 18px;
+            border-radius: 8px;
+            padding: 8px 10px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
+            gap: 4px;
         }
 
         .chart-card-header {
@@ -271,30 +286,30 @@ if (!$currentUser) {
         }
 
         .chart-card-title {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: 600;
             color: var(--text-main, #f8fafc);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
         }
 
         .chart-canvas-container {
             position: relative;
             width: 100%;
-            height: 260px;
+            height: 180px;
         }
 
-        /* Table Card */
+        /* Table Card - Compact */
         .bi-table-card {
             background: var(--surface-card, #161d2a);
             border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 14px;
-            padding: 18px;
+            border-radius: 8px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            gap: 14px;
-            margin-bottom: 20px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
         .table-controls {
@@ -345,7 +360,7 @@ if (!$currentUser) {
             background: var(--surface-alt, #1a2333);
             color: var(--text-muted, #94a3b8);
             font-weight: 600;
-            padding: 10px 14px;
+            padding: 6px 10px;
             border-bottom: 1px solid var(--border-subtle, #242f42);
             font-size: 11px;
             text-transform: uppercase;
@@ -353,7 +368,7 @@ if (!$currentUser) {
         }
 
         .bi-data-table td {
-            padding: 12px 14px;
+            padding: 7px 10px;
             border-bottom: 1px solid var(--border-subtle, #242f42);
             color: var(--text-main, #f8fafc);
         }
