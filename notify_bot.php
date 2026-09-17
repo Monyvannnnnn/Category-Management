@@ -20,6 +20,28 @@ if (!function_exists('getAppBaseUrl')) {
     }
 }
 
+if (!function_exists('sendTelegramChatAction')) {
+    function sendTelegramChatAction($chatId, $action = 'typing', $customBotToken = null) {
+        $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $url = "https://api.telegram.org/bot{$botToken}/sendChatAction";
+        $data = [
+            'chat_id' => $chatId,
+            'action'  => $action
+        ];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        return $res;
+    }
+}
+
 function sendSingleTelegramNotification($chatId, $message, $customBotToken = null, $replyMarkup = null) {
     $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";

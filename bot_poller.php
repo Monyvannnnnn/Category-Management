@@ -220,6 +220,11 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         }
     }
 
+    // Immediately send "typing..." status indicator to Telegram chat header
+    if (function_exists('sendTelegramChatAction')) {
+        sendTelegramChatAction($chatId, 'typing', $botToken);
+    }
+
     // Custom Persistent Reply Keyboard button text mapping
     $buttonMap = [
         '📦 all products'          => '/products',
