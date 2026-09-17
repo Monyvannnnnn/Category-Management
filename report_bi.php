@@ -685,15 +685,25 @@ if (!$currentUser) {
             background: transparent;
             border: none;
             color: #94a3b8;
-            font-size: 18px;
+            font-size: 15px;
             cursor: pointer;
-            padding: 6px;
+            padding: 0;
+            width: 32px;
+            height: 32px;
+            min-width: 32px;
+            min-height: 32px;
             border-radius: 50%;
-            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-sizing: border-box;
+            flex-shrink: 0;
         }
         .bi-modal-close:hover {
             color: #f8fafc;
-            background: rgba(255,255,255,0.1);
+            background: rgba(255, 255, 255, 0.12);
+            transform: scale(1.08);
         }
         .bi-modal-body {
             padding: 20px;
