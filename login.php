@@ -67,7 +67,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .auth-container {
             width: 100%;
-            max-width: 420px;
+            max-width: 350px;
         }
 
         .auth-card {
@@ -310,8 +310,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 justify-content: center;
             }
             .auth-container {
-                max-width: 100%;
-                margin-top: 8px;
+                max-width: 340px;
+                width: 92%;
+                margin: 8px auto 0 auto;
             }
             .auth-card {
                 padding: 20px 16px;
