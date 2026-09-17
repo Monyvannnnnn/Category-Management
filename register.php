@@ -88,15 +88,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             overflow: hidden;
         }
 
-        .auth-card::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            height: 4px;
-            background: linear-gradient(90deg, #6366f1, #a78bfa);
-        }
+
 
         .auth-header {
             text-align: center;
