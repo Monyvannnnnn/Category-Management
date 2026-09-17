@@ -766,6 +766,10 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         // 10. /summary & /report
         case '/report':
         case '/summary':
+            $baseUrl = getAppBaseUrl();
+            $biUrl   = "{$baseUrl}/report_bi.php";
+            $prodUrl = "{$baseUrl}/products.php";
+
             $catStmt = db_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
             db_stmt_bind_param($catStmt, "i", $userId);
             db_stmt_execute($catStmt);
@@ -783,17 +787,34 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $totalVal = number_format((float)($pData['total_val'] ?? 0), 2);
             db_stmt_close($prodStmt);
 
-            $msg = "📊 <b>LIVE INVENTORY SUMMARY REPORT</b>\n"
+            $msg = "📈 <b>LIVE INVENTORY EXECUTIVE SUMMARY</b>\n"
                  . "═════════════════════════════\n"
-                 . "🏷️ Total Categories: <b>{$catCnt}</b>\n"
-                 . "📦 Total Products: <b>{$prodCnt}</b>\n"
-                 . "🔢 Total Items In Stock: <b>{$totalQty} units</b>\n"
-                 . "💵 Total Asset Valuation: <b>\${$totalVal}</b>\n";
-            sendTelegramMessage($chatId, $msg, $botToken);
+                 . "💎 <b>Total Asset Valuation:</b> <b>\${$totalVal}</b>\n"
+                 . "📦 <b>Total Active Products:</b> <b>{$prodCnt} items</b>\n"
+                 . "🔢 <b>Total Stock Units:</b> <b>{$totalQty} units</b>\n"
+                 . "🏷️ <b>Total Categories:</b> <b>{$catCnt} categories</b>\n"
+                 . "═════════════════════════════\n"
+                 . "🕐 <i>Updated: " . date('d M Y │ H:i') . "</i>";
+
+            $markup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📊 Launch Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
+                        ['text' => '🌐 Open BI Link', 'url' => $biUrl]
+                    ],
+                    [
+                        ['text' => '📦 View All Products', 'web_app' => ['url' => $prodUrl]],
+                        ['text' => '🏷️ View Categories', 'web_app' => ['url' => "{$baseUrl}/index.php"]]
+                    ]
+                ]
+            ];
+            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
             break;
 
         // 11. /valuation
         case '/valuation':
+            $baseUrl = getAppBaseUrl();
+            $biUrl   = "{$baseUrl}/report_bi.php";
             $stmt = db_prepare($conn, "SELECT COUNT(*) as total_prods, COALESCE(SUM(quantity), 0) as total_stock, COALESCE(SUM(price * quantity), 0) as total_val, COALESCE(AVG(price), 0) as avg_price FROM product WHERE user_id = ?");
             db_stmt_bind_param($stmt, "i", $userId);
             db_stmt_execute($stmt);
@@ -806,15 +827,26 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
 
                 $msg = "💎 <b>FINANCIAL & ASSET VALUATION REPORT</b>\n"
                      . "═════════════════════════════\n"
-                     . "📦 Total Products Listed: <b>{$prods}</b>\n"
-                     . "🔢 Total Stock Quantity: <b>{$stock} units</b>\n"
-                     . "💲 Average Unit Price: <b>\${$avgPrice}</b>\n"
-                     . "💵 Total Asset Valuation: <b>\${$totalVal}</b>";
+                     . "💰 <b>Total Asset Valuation:</b> <b>\${$totalVal}</b>\n"
+                     . "📦 <b>Total Products Listed:</b> <b>{$prods} items</b>\n"
+                     . "🔢 <b>Total Stock Quantity:</b> <b>{$stock} units</b>\n"
+                     . "🏷️ <b>Average Unit Price:</b> <b>\${$avgPrice}</b>\n"
+                     . "═════════════════════════════\n"
+                     . "🕐 <i>Updated: " . date('d M Y │ H:i') . "</i>";
             } else {
                 $msg = "💎 <b>VALUATION REPORT</b>\nNo inventory data found.";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+
+            $markup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
+                        ['text' => '🌐 Open BI Link', 'url' => $biUrl]
+                    ]
+                ]
+            ];
+            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
             break;
 
         // 12. /added
@@ -981,32 +1013,54 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         // 19. /help
         case '/help':
         default:
-            $msg = "🤖 <b>INVENTORY BOT COMMAND CENTER</b>\n"
-                 . "<i>All Available Bot Commands</i>\n"
+            $baseUrl = getAppBaseUrl();
+            $biUrl   = "{$baseUrl}/report_bi.php";
+            $prodUrl = "{$baseUrl}/products.php";
+
+            $msg = "⚡ <b>INVENTORY BOT COMMAND CENTER</b>\n"
+                 . "<i>Executive Control & Real-time Analytics</i>\n"
                  . "═════════════════════════════\n\n"
-                 . "🔍 <code>/search &lt;keyword&gt;</code> — Search product\n"
-                 . "🔍 <code>/searchall &lt;keyword&gt;</code> — Search all records\n"
-                 . "🏷️ <code>/categories</code> — List all categories\n"
-                 . "🏷️ <code>/category &lt;code&gt;</code> — Category info\n"
-                 . "↕️ <code>/sort [price|stock|date]</code> — Sort items\n"
-                 . "⚠️ <code>/lowstock</code> — Low stock items (≤ 5)\n"
-                 . "📊 <code>/topstock</code> — Top 10 highest stock\n"
-                 . "📦 <code>/product &lt;code&gt;</code> — Product info\n"
-                 . "🚫 <code>/outofstock</code> — Out of stock items\n"
-                 . "📊 <code>/summary</code> — Live inventory summary\n"
-                 . "💎 <code>/valuation</code> — Financial report\n"
-                 . "🆕 <code>/added</code> — Recently added items\n"
-                 . "✏️ <code>/updated</code> — Recently modified items\n"
-                 . "📜 <code>/history</code> — Activity log\n"
-                 . "📅 <code>/today</code> — Today's activity\n"
-                 . "📤 <code>/push &lt;msg&gt;</code> — Send to Telegram\n"
-                 . "🔔 <code>/toggle</code> — Toggle auto-notify\n"
-                 . "📊 <code>/excel</code> — Export Excel/CSV report\n"
-                 . "📄 <code>/pdf</code> — Export PDF report\n"
-                 . "❓ <code>/help</code> — View all commands\n\n"
-                 . "─────────────────────────────\n"
-                 . "<i>Tap any command above to run it instantly!</i>";
-            sendTelegramMessage($chatId, $msg, $botToken);
+                 . "📊 <b>MINI APP & DASHBOARD</b>\n"
+                 . "└ <code>/bi</code> — 📊 Open Live BI Analytics Mini App\n\n"
+                 . "📦 <b>PRODUCT MANAGEMENT</b>\n"
+                 . "├ <code>/product &lt;code&gt;</code> — 📦 Detailed product info\n"
+                 . "├ <code>/products</code> — 📋 All products overview\n"
+                 . "├ <code>/search &lt;keyword&gt;</code> — 🔍 Search products\n"
+                 . "├ <code>/searchall &lt;key&gt;</code> — 🔎 Search products & categories\n"
+                 . "└ <code>/sort [price|stock|date]</code> — ↕️ Sort items\n\n"
+                 . "🏷️ <b>CATEGORY CATALOG</b>\n"
+                 . "├ <code>/categories</code> — 🏷️ Category list & totals\n"
+                 . "└ <code>/category &lt;code&gt;</code> — 📁 Category info\n\n"
+                 . "📈 <b>VALUATION & STOCK ANALYTICS</b>\n"
+                 . "├ <code>/summary</code> — 📈 Live inventory summary\n"
+                 . "├ <code>/valuation</code> — 💎 Financial asset valuation\n"
+                 . "├ <code>/lowstock</code> — ⚠️ Low stock warnings (≤ 5)\n"
+                 . "├ <code>/outofstock</code> — 🚨 Out of stock items (0 units)\n"
+                 . "└ <code>/topstock</code> — 🏆 Top 10 highest stock\n\n"
+                 . "📜 <b>AUDIT LOG & NOTIFICATIONS</b>\n"
+                 . "├ <code>/added</code> — 🆕 Recently added items\n"
+                 . "├ <code>/updated</code> — ✏️ Recently modified items\n"
+                 . "├ <code>/today</code> — 📅 Today's activity log\n"
+                 . "├ <code>/history</code> — 📜 Audit history log\n"
+                 . "├ <code>/push &lt;msg&gt;</code> — 📤 Send custom push alert\n"
+                 . "├ <code>/toggle</code> — 🔔 Toggle auto notification\n"
+                 . "└ <code>/settings</code> — ⚙️ Account connection info\n\n"
+                 . "═════════════════════════════\n"
+                 . "💡 <i>Tap any command above or use the keyboard below!</i>";
+
+            $markup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
+                        ['text' => '🌐 Open Web Link', 'url' => $biUrl]
+                    ],
+                    [
+                        ['text' => '📦 All Products', 'web_app' => ['url' => $prodUrl]],
+                        ['text' => '🏷️ Categories', 'web_app' => ['url' => "{$baseUrl}/index.php"]]
+                    ]
+                ]
+            ];
+            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
             break;
     }
 }
