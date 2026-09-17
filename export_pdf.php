@@ -46,10 +46,17 @@ function fmt($dt) {
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
-        body { font-family: Arial, sans-serif; padding: 24px; }
+        body { font-family: Arial, sans-serif; padding: 24px; box-sizing: border-box; }
         #exportBtn {
             background: #ef4444; color: #fff; border: 0; padding: 10px 18px;
             border-radius: 6px; cursor: pointer; font-size: 15px; margin-bottom: 16px;
+            transition: background 0.2s ease;
+        }
+        #exportBtn:hover { background: #dc2626; }
+        .table-responsive {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         /* VISIBLE table (not hidden) so html2canvas captures real content */
         #htmlData {
@@ -62,13 +69,18 @@ function fmt($dt) {
         }
         #htmlData th {
             background: #ef4444; color: #fff; padding: 8px 10px; text-align: left;
-            border: 1px solid #cbd5e1;
+            border: 1px solid #cbd5e1; white-space: nowrap;
         }
         #htmlData td {
-            padding: 7px 10px; border: 1px solid #e2e8f0;
+            padding: 7px 10px; border: 1px solid #e2e8f0; white-space: nowrap;
         }
         #htmlData tr:nth-child(even) td { background: #fef2f2; }
         #rowCount { color: #64748b; margin: 8px 0; font-size: 13px; }
+        
+        @media (max-width: 600px) {
+            body { padding: 12px; }
+            #exportBtn { width: 100%; font-size: 14px; }
+        }
     </style>
 </head>
 <body>
@@ -76,6 +88,7 @@ function fmt($dt) {
     <button id="exportBtn">Export PDF (<?php echo count($rows); ?> rows)</button>
     <div id="rowCount">Real data from table `category`: <?php echo count($rows); ?> row(s).</div>
 
+    <div class="table-responsive">
     <table id="htmlData">
         <thead>
             <tr>
@@ -104,6 +117,7 @@ function fmt($dt) {
             <?php endif; ?>
         </tbody>
     </table>
+    </div>
 
     <!-- Khmer OS Siemreap as a real webfont (set window.__khmerB64) -->
     <script>
