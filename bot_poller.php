@@ -183,33 +183,44 @@ function getConnectedUserByChatIdMySQLi($conn, $chatId) {
 function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $updateId = 0) {
     // Database-level Atomic Update Deduplication Lock
     if (!empty($updateId)) {
+        $updateIdStr = (string)$updateId;
+
         @db_query($conn, "CREATE TABLE IF NOT EXISTS processed_telegram_updates (
           update_id varchar(100) NOT NULL,
           processed_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
           PRIMARY KEY (update_id)
         );");
 
-        // Clean up overflow / old entries
+        // 1. Check if updateId was already processed
+        $chkStmt = db_prepare($conn, "SELECT update_id FROM processed_telegram_updates WHERE update_id = ? LIMIT 1");
+        if ($chkStmt) {
+            db_stmt_bind_param($chkStmt, "s", $updateIdStr);
+            db_stmt_execute($chkStmt);
+            $resChk = db_stmt_get_result($chkStmt);
+            $foundRow = db_fetch_assoc($resChk);
+            db_stmt_close($chkStmt);
+
+            if ($foundRow) {
+                // Update already processed! Exit immediately to prevent duplicate messages!
+                return;
+            }
+        }
+
+        // 2. Insert update_id to claim lock
+        $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
+        if ($insStmt) {
+            db_stmt_bind_param($insStmt, "s", $updateIdStr);
+            db_stmt_execute($insStmt);
+            db_stmt_close($insStmt);
+        }
+
+        // Clean up old entries older than 1 hour
         $oneHourAgo = date('Y-m-d H:i:s', strtotime('-1 hour'));
         $delStmt = db_prepare($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < ?");
         if ($delStmt) {
             db_stmt_bind_param($delStmt, "s", $oneHourAgo);
             db_stmt_execute($delStmt);
             db_stmt_close($delStmt);
-        }
-
-        $updateIdStr = (string)$updateId;
-        $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
-        if ($insStmt) {
-            db_stmt_bind_param($insStmt, "s", $updateIdStr);
-            db_stmt_execute($insStmt);
-            $affected = ($conn instanceof PgSqlConnWrapper) ? ($insStmt ? 1 : 0) : mysqli_stmt_affected_rows($insStmt);
-            db_stmt_close($insStmt);
-
-            if ($affected === 0) {
-                // Already processed by Webhook, Daemon, or another poller instance!
-                return;
-            }
         }
     }
 

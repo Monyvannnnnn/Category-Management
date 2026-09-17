@@ -73,5 +73,16 @@ $text     = trim($update["message"]["text"] ?? '');
 
 if (empty($chatId) || empty($text)) exit;
 
+// Send HTTP 200 OK to Telegram immediately so Telegram marks update as delivered and never retries
+http_response_code(200);
+header("Content-Length: 0");
+header("Connection: close");
+if (function_exists('fastcgi_finish_request')) {
+    fastcgi_finish_request();
+} else {
+    @ob_end_flush();
+    @flush();
+}
+
 processTelegramCommand($conn, $chatId, $text, $botToken, 1, $updateId);
 exit;
