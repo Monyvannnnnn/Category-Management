@@ -43,6 +43,63 @@ if (!function_exists('sendTelegramChatAction')) {
     }
 }
 
+if (!function_exists('editTelegramMessageText')) {
+    function editTelegramMessageText($chatId, $messageId, $text, $customBotToken = null, $replyMarkup = null) {
+        if (empty($messageId)) {
+            return sendSingleTelegramNotification($chatId, $text, $customBotToken, $replyMarkup);
+        }
+        $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $url = "https://api.telegram.org/bot{$botToken}/editMessageText";
+        $payload = [
+            'chat_id'    => $chatId,
+            'message_id' => (int)$messageId,
+            'text'       => $text,
+            'parse_mode' => 'HTML'
+        ];
+        if (!empty($replyMarkup)) {
+            $payload['reply_markup'] = is_string($replyMarkup) ? json_decode($replyMarkup, true) : $replyMarkup;
+        }
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        $res = curl_exec($ch);
+        curl_close($ch);
+
+        $resDec = json_decode($res, true);
+        if (empty($resDec['ok'])) {
+            return sendSingleTelegramNotification($chatId, $text, $customBotToken, $replyMarkup);
+        }
+        return $res;
+    }
+}
+
+if (!function_exists('deleteTelegramMessage')) {
+    function deleteTelegramMessage($chatId, $messageId, $customBotToken = null) {
+        if (empty($messageId)) return false;
+        $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $url = "https://api.telegram.org/bot{$botToken}/deleteMessage";
+        $payload = ['chat_id' => $chatId, 'message_id' => (int)$messageId];
+        $ch = curl_init();
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 5);
+        $res = curl_exec($ch);
+        curl_close($ch);
+        return $res;
+    }
+}
+
 function sendSingleTelegramNotification($chatId, $message, $customBotToken = null, $replyMarkup = null) {
     $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";

@@ -119,6 +119,24 @@ function sendTelegramMessageWithMarkup($chatId, $text, $botToken, $replyMarkup =
     return $res;
 }
 
+if (!function_exists('sendTemporaryLoadingMessage')) {
+    function sendTemporaryLoadingMessage($chatId, $botToken, $customText = null) {
+        $text = !empty($customText) ? $customText : "⏳ <i>Processing live inventory request...</i>";
+        $resRaw = sendTelegramMessageWithMarkup($chatId, $text, $botToken, null);
+        $res = json_decode($resRaw, true);
+        return (int)($res['result']['message_id'] ?? 0);
+    }
+}
+
+if (!function_exists('replyOrEditMessage')) {
+    function replyOrEditMessage($chatId, $text, $botToken, $replyMarkup = null, $loadingMsgId = 0) {
+        if (!empty($loadingMsgId) && function_exists('editTelegramMessageText')) {
+            return editTelegramMessageText($chatId, $loadingMsgId, $text, $botToken, $replyMarkup);
+        }
+        return sendTelegramMessageWithMarkup($chatId, $text, $botToken, $replyMarkup);
+    }
+}
+
 /**
  * Handle user bot connection binding via /start <code>
  */
@@ -378,6 +396,9 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     // Authenticated User ID from DB
     $userId = (int)$userBot['user_id'];
 
+    // Send immediate temporary loading message (e.g. ⏳ Processing request...)
+    $loadingMsgId = sendTemporaryLoadingMessage($chatId, $botToken, "⏳ <i>Processing live inventory request...</i>");
+
     // 3. Process commands for connected user
     switch ($command) {
         case '/start':
@@ -397,7 +418,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             break;
 
         case '/bi':
@@ -421,7 +442,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             break;
 
         // 1. /search <keyword>
@@ -460,7 +481,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "❌ <b>NO MATCHES FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 2. /searchall <keyword>
@@ -511,7 +532,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             if (!$hasContent) {
                 $msg = "❌ <b>NO RECORDS FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
             }
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 3. /categories
@@ -540,7 +561,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "📂 <b>NO CATEGORIES FOUND</b>";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 4. /category <code|name>
@@ -562,7 +583,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     $msg = "📂 <b>NO CATEGORIES FOUND</b>";
                 }
                 db_stmt_close($stmt);
-                sendTelegramMessage($chatId, $msg, $botToken);
+                replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
                 break;
             }
 
@@ -590,7 +611,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "❌ <b>CATEGORY NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 5. /sort [price|stock|date]
@@ -622,7 +643,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "📦 <b>NO PRODUCTS FOUND TO SORT</b>";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 6. /lowstock
@@ -647,7 +668,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "✅ <b>ALL STOCK LEVELS HEALTHY!</b>\nNo items with quantity &le; 5.";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 7. /topstock
@@ -672,7 +693,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "📦 <b>NO PRODUCTS FOUND</b>";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 8. /product <code|name>
@@ -717,7 +738,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                         ]
                     ]
                 ];
-                sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+                replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
                 break;
             }
 
@@ -760,9 +781,12 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 ];
 
                 if (!empty($r['image'])) {
+                    if (function_exists('deleteTelegramMessage')) {
+                        deleteTelegramMessage($chatId, $loadingMsgId, $botToken);
+                    }
                     sendSingleTelegramPhoto($chatId, $r['image'], $msg, $botToken, $markup);
                 } else {
-                    sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+                    replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
                 }
             } else {
                 $msg = "❌ <b>PRODUCT NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
@@ -773,7 +797,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                         ]
                     ]
                 ];
-                sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+                replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             }
             db_stmt_close($stmt);
             break;
@@ -798,7 +822,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "✅ <b>GREAT!</b> All products are currently in stock.";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 10. /summary & /report
@@ -846,7 +870,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             break;
 
         // 11. /valuation
@@ -884,7 +908,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             break;
 
         // 12. /added
@@ -905,7 +929,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg .= "<i>No recent items found.</i>";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 13. /updated
@@ -926,7 +950,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg .= "<i>No recent updates recorded.</i>";
             }
             db_stmt_close($stmt);
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 14. /history
@@ -987,7 +1011,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                  . "📦 <b>Products Added Today:</b> <b>{$pCnt}</b>\n"
                  . "🏷️ <b>Categories Added Today:</b> <b>{$cCnt}</b>\n\n"
                  . "📊 Total Records Created Today: <b>" . ($pCnt + $cCnt) . "</b>";
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 16. /push <message>
@@ -997,7 +1021,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                      . "═════════════════════════════\n"
                      . "Usage: <code>/push &lt;your message&gt;</code>\n"
                      . "Example: <code>/push Inventory audit completed!</code>";
-                sendTelegramMessage($chatId, $msg, $botToken);
+                replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
                 break;
             }
             $nowStr = date('Y-m-d H:i:s');
@@ -1007,7 +1031,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                  . htmlspecialchars($rawArg) . "\n"
                  . "───────────────────────\n"
                  . "<i>Sent via Telegram Command</i>";
-            sendSingleTelegramNotification($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 17. /toggle
@@ -1023,7 +1047,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $msg = "🔕 <b>AUTO-NOTIFICATIONS DISABLED</b>\n"
                      . "Automatic Telegram notifications are now <b>OFF</b>.";
             }
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 18. /settings
@@ -1045,7 +1069,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                  . "🆔 <b>User ID:</b> <code>#{$userId}</code>\n"
                  . "📱 <b>Telegram Chat ID:</b> <code>{$chatId}</code>\n"
                  . "Status: <b>Connected ✅</b>";
-            sendTelegramMessage($chatId, $msg, $botToken);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 19. /help
@@ -1098,7 +1122,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
+            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             break;
     }
 }
