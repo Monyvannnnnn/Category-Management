@@ -590,12 +590,82 @@ if (!$currentUser) {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-top: 4px;
-        }
-        .cat-prod-price {
-            font-size: 12px;
-            font-weight: 700;
             color: #4ade80;
+        }
+
+        .table-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+        }
+
+        .bi-data-table {
+            width: 100%;
+            min-width: 680px;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .bi-page-container {
+                padding: 6px;
+                gap: 6px;
+            }
+            .bi-header-card {
+                padding: 10px;
+                gap: 8px;
+            }
+            .bi-title-text h1 {
+                font-size: 16px;
+            }
+            .bi-title-text p {
+                font-size: 10.5px;
+            }
+            .bi-header-actions {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+                width: 100%;
+            }
+            .bi-btn {
+                justify-content: center;
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .bi-search-wrapper, .bi-search-input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .bi-data-table th, .bi-data-table td {
+                padding: 6px 8px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+            .prod-single-wrapper {
+                gap: 5px;
+            }
+            .prod-single-thumb, .prod-single-no-img {
+                width: 30px;
+                height: 30px;
+            }
+            .prod-single-count-pill {
+                padding: 2px 7px;
+                font-size: 10px;
+            }
+            .bi-modal-card {
+                max-width: 94vw;
+                border-radius: 12px;
+            }
+            .cat-products-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         @media print {
@@ -782,7 +852,7 @@ if (!$currentUser) {
             </div>
         </div>
 
-        <div style="overflow-x: auto;">
+        <div class="table-scroll-container">
             <table class="bi-data-table" id="biTable">
                 <thead>
                     <tr>
