@@ -47,8 +47,41 @@ function registerBotCommands($botToken) {
     return $res;
 }
 
+if (!function_exists('getCustomReplyKeyboard')) {
+    function getCustomReplyKeyboard() {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+        $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
+        $baseUrl = "{$scheme}://{$host}";
+        $biUrl   = "{$baseUrl}/report_bi.php";
+        $prodUrl = "{$baseUrl}/products.php";
+        $catUrl  = "{$baseUrl}/index.php";
+
+        return [
+            'keyboard' => [
+                [
+                    ['text' => '📊 BI Dashboard Mini App', 'web_app' => ['url' => $biUrl]]
+                ],
+                [
+                    ['text' => '📦 All Products', 'web_app' => ['url' => $prodUrl]],
+                    ['text' => '🏷️ Categories', 'web_app' => ['url' => $catUrl]]
+                ],
+                [
+                    ['text' => '⚠️ Low Stock'],
+                    ['text' => '🚫 Out of Stock']
+                ],
+                [
+                    ['text' => '📈 Inventory Summary'],
+                    ['text' => '❓ Help & Commands']
+                ]
+            ],
+            'resize_keyboard' => true,
+            'one_time_keyboard' => false
+        ];
+    }
+}
+
 function sendTelegramMessage($chatId, $text, $botToken) {
-    return sendTelegramMessageWithMarkup($chatId, $text, $botToken, null);
+    return sendTelegramMessageWithMarkup($chatId, $text, $botToken, getCustomReplyKeyboard());
 }
 
 function sendTelegramMessageWithMarkup($chatId, $text, $botToken, $replyMarkup = null) {
@@ -58,9 +91,10 @@ function sendTelegramMessageWithMarkup($chatId, $text, $botToken, $replyMarkup =
         'text'       => $text,
         'parse_mode' => 'HTML'
     ];
-    if (!empty($replyMarkup)) {
-        $postData['reply_markup'] = json_encode($replyMarkup);
+    if (empty($replyMarkup)) {
+        $replyMarkup = getCustomReplyKeyboard();
     }
+    $postData['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $url);
@@ -169,11 +203,35 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         }
     }
 
-    $parts   = explode(' ', $text, 2);
-    $command = strtolower($parts[0]);
-    $command = explode('@', $command)[0];
-    $rawArg  = trim($parts[1] ?? '');
-    $arg     = strtolower($rawArg);
+    // Custom Persistent Reply Keyboard button text mapping
+    $buttonMap = [
+        '📦 all products'          => '/products',
+        '📦 products'              => '/products',
+        '🏷️ categories'            => '/categories',
+        '🏷️ category list'         => '/categories',
+        '📊 bi analytics mini app' => '/bi',
+        '📊 bi dashboard mini app' => '/bi',
+        '📊 bi dashboard'          => '/bi',
+        '🔍 search product'        => '/search',
+        '⚠️ low stock'              => '/lowstock',
+        '🚫 out of stock'           => '/outofstock',
+        '📈 inventory summary'      => '/summary',
+        '❓ help & commands'        => '/help',
+        '❓ help'                  => '/help'
+    ];
+
+    $cleanText = strtolower(trim($text));
+    if (isset($buttonMap[$cleanText])) {
+        $command = $buttonMap[$cleanText];
+        $rawArg = '';
+        $arg = '';
+    } else {
+        $parts   = explode(' ', $text, 2);
+        $command = strtolower($parts[0]);
+        $command = explode('@', $command)[0];
+        $rawArg  = trim($parts[1] ?? '');
+        $arg     = strtolower($rawArg);
+    }
 
     // 1. Connection Code Binding (/start <code> or plain /start)
     if ($command === '/start') {
