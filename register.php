@@ -240,9 +240,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             position: relative;
             overflow: hidden;
             transition: transform 0.45s cubic-bezier(0.25, 1, 0.3, 1), 
-                        background-position 0.65s cubic-bezier(0.25, 1, 0.3, 1), 
-                        box-shadow 0.45s cubic-bezier(0.25, 1, 0.3, 1);
-            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+                        background-position 0.65s cubic-bezier(0.25, 1, 0.3, 1);
+            box-shadow: none;
         }
 
         .btn-submit i {
@@ -252,7 +251,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .btn-submit:hover {
             background-position: 100% 50%;
             transform: translateY(-2px) scale(1.01);
-            box-shadow: 0 8px 25px -4px rgba(99, 102, 241, 0.55), 0 0 15px rgba(124, 58, 237, 0.35);
+            box-shadow: none;
         }
 
         .btn-submit:hover i {
@@ -261,8 +260,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .btn-submit:active {
             transform: translateY(0) scale(0.985);
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
-            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            box-shadow: none;
+            transition: transform 0.15s ease;
         }
 
         /* Shimmer beam effect on hover */
@@ -318,8 +317,8 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             transition: transform 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
                         background 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
                         border-color 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
-                        color 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
-                        box-shadow 0.4s cubic-bezier(0.25, 1, 0.3, 1);
+                        color 0.4s cubic-bezier(0.25, 1, 0.3, 1);
+            box-shadow: none;
         }
 
         .auth-footer a i {
@@ -332,7 +331,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background: rgba(99, 102, 241, 0.25);
             border-color: #6366f1;
             transform: translateY(-1.5px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            box-shadow: none;
         }
 
         .auth-footer a:hover i {
