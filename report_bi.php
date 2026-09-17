@@ -57,22 +57,58 @@ if (!$currentUser) {
         .bi-header-card {
             background: var(--surface-card, #161d2a);
             border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 8px;
-            padding: 8px 12px;
+            border-radius: 10px;
+            padding: 10px 14px;
             display: flex;
             flex-direction: column;
-            gap: 6px;
-            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+            gap: 10px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
             max-width: 100%;
             box-sizing: border-box;
         }
 
-        @media (min-width: 900px) {
-            .bi-header-card {
-                flex-direction: row;
-                align-items: center;
-                justify-content: space-between;
-            }
+        .bi-header-top {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            width: 100%;
+        }
+
+        .bi-profile-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            background: var(--surface-alt, #1a2333);
+            border: 1px solid var(--border-subtle, #242f42);
+            font-size: 11.5px;
+            font-weight: 600;
+            color: #f8fafc;
+            flex-shrink: 0;
+        }
+
+        .bi-profile-pill i.fa-user-circle {
+            color: #818cf8;
+            font-size: 13px;
+        }
+
+        .bi-logout-btn {
+            color: #f87171;
+            margin-left: 4px;
+            padding: 2px 5px;
+            border-radius: 4px;
+            transition: color 0.15s ease, background 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            text-decoration: none;
+            font-size: 12px;
+        }
+
+        .bi-logout-btn:hover {
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.15);
         }
 
         .bi-title-group {
@@ -120,25 +156,37 @@ if (!$currentUser) {
 
         @media (max-width: 480px) {
             .bi-title-text h1 {
-                font-size: 14px;
-                white-space: normal;
+                font-size: 13px !important;
+                white-space: nowrap !important;
+                letter-spacing: -0.2px;
+                overflow: hidden;
+                text-overflow: ellipsis;
             }
             .bi-title-text p {
-                white-space: normal;
+                display: none;
             }
         }
 
         .bi-header-actions {
-            display: flex;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 4px;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 6px;
             width: 100%;
         }
 
         @media (min-width: 900px) {
-            .bi-header-actions {
+            .bi-header-card {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+            }
+            .bi-header-top {
                 width: auto;
+            }
+            .bi-header-actions {
+                display: flex;
+                width: auto;
+                gap: 6px;
             }
         }
 
@@ -146,14 +194,15 @@ if (!$currentUser) {
             background: var(--surface-alt, #1a2333);
             border: 1px solid var(--border-subtle, #242f42);
             color: var(--text-main, #f8fafc);
-            padding: 4px 8px;
+            padding: 6px 10px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 500;
             cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 4px;
+            justify-content: center;
+            gap: 5px;
             transition: all 0.2s ease;
             text-decoration: none;
             white-space: nowrap;
@@ -190,8 +239,8 @@ if (!$currentUser) {
 
         @media (max-width: 600px) {
             .kpi-grid {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 5px;
             }
         }
 
@@ -412,6 +461,8 @@ if (!$currentUser) {
             align-items: center;
             justify-content: center;
             gap: 8px;
+            white-space: nowrap;
+            flex-wrap: nowrap;
         }
         .prod-single-thumb {
             width: 36px;
@@ -423,6 +474,7 @@ if (!$currentUser) {
             cursor: pointer;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
             transition: transform 0.15s ease, border-color 0.15s ease;
+            flex-shrink: 0;
         }
         .prod-single-thumb:hover {
             transform: scale(1.08);
@@ -441,6 +493,7 @@ if (!$currentUser) {
             font-size: 14px;
             cursor: pointer;
             transition: transform 0.15s ease;
+            flex-shrink: 0;
         }
         .prod-single-no-img:hover {
             transform: scale(1.08);
@@ -460,11 +513,91 @@ if (!$currentUser) {
             font-weight: 600;
             cursor: pointer;
             transition: background 0.15s ease, transform 0.15s ease;
+            white-space: nowrap !important;
+            flex-shrink: 0 !important;
+            line-height: 1.2;
         }
         .prod-single-count-pill:hover {
             background: rgba(99, 102, 241, 0.3);
             color: #ffffff;
             transform: scale(1.05);
+        }
+
+        .table-scroll-container {
+            width: 100%;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: 8px;
+        }
+
+        .bi-data-table {
+            width: 100%;
+            min-width: 680px;
+            border-collapse: collapse;
+            font-size: 13px;
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .bi-page-container {
+                padding: 6px;
+                gap: 6px;
+            }
+            .bi-header-card {
+                padding: 10px;
+                gap: 8px;
+            }
+            .bi-title-text h1 {
+                font-size: 13.5px !important;
+                white-space: nowrap !important;
+            }
+            .bi-title-text p {
+                font-size: 10.5px;
+            }
+            .bi-header-actions {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 6px;
+                width: 100%;
+            }
+            .bi-btn {
+                justify-content: center;
+                font-size: 11px;
+                padding: 6px 8px;
+            }
+            .table-controls {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+            .bi-search-wrapper, .bi-search-input {
+                width: 100%;
+                box-sizing: border-box;
+            }
+            .bi-data-table th, .bi-data-table td {
+                padding: 6px 8px;
+                font-size: 11px;
+                white-space: nowrap;
+            }
+            .prod-single-wrapper {
+                gap: 6px;
+            }
+            .prod-single-thumb, .prod-single-no-img {
+                width: 32px;
+                height: 32px;
+            }
+            .prod-single-count-pill {
+                padding: 3px 8px;
+                font-size: 10.5px;
+                white-space: nowrap !important;
+            }
+            .bi-modal-card {
+                max-width: 94vw;
+                border-radius: 12px;
+            }
+            .cat-products-grid {
+                grid-template-columns: 1fr;
+            }
         }
 
         /* Lightbox & Category Product Modals */
@@ -612,13 +745,23 @@ if (!$currentUser) {
 
     <!-- Top Header Bar -->
     <div class="bi-header-card">
-        <div class="bi-title-group">
-            <div class="bi-title-icon">
-                <i class="fa-solid fa-chart-pie"></i>
+        <div class="bi-header-top">
+            <div class="bi-title-group">
+                <div class="bi-title-icon">
+                    <i class="fa-solid fa-chart-pie"></i>
+                </div>
+                <div class="bi-title-text">
+                    <h1>BI Executive Analytics</h1>
+                    <p>Real-time Business Intelligence & Inventory Valuation Overview</p>
+                </div>
             </div>
-            <div class="bi-title-text">
-                <h1>BI Executive Analytics</h1>
-                <p>Real-time Business Intelligence & Inventory Valuation Overview</p>
+
+            <div class="bi-profile-pill">
+                <i class="fa-solid fa-user-circle"></i>
+                <span class="user-profile-name" id="userNameSpan"><?php echo htmlspecialchars($currentUser['name'] ?? 'Admin'); ?></span>
+                <a href="logout.php" class="bi-logout-btn" title="Sign Out">
+                    <i class="fa-solid fa-right-from-bracket"></i>
+                </a>
             </div>
         </div>
 
@@ -636,15 +779,6 @@ if (!$currentUser) {
             <button class="bi-btn primary" onclick="window.print()" title="Print BI Report / Save PDF">
                 <i class="fa-solid fa-print"></i> Export Report
             </button>
-
-            <!-- User Badge -->
-            <div class="user-profile-badge" style="margin-left: 6px;">
-                <i class="fa-solid fa-user-circle"></i>
-                <span class="user-profile-name" id="userNameSpan"><?php echo htmlspecialchars($currentUser['name'] ?? 'Admin'); ?></span>
-            </div>
-            <a href="logout.php" class="logout-icon-btn" title="Sign Out" style="margin-left: 2px;">
-                <i class="fa-solid fa-right-from-bracket"></i>
-            </a>
         </div>
     </div>
 
@@ -919,16 +1053,26 @@ function renderKpis(summary) {
 }
 
 function renderCharts(data) {
-    // 1. Category Valuation Smooth Spline Line Chart
+    // 1. Multi-Color Gradient Wave Chart
     const catLabels = data.top_categories_by_value.map(c => c.name);
     const catValues = data.top_categories_by_value.map(c => c.total_value);
 
     const ctx1 = document.getElementById('categoryValuationChart').getContext('2d');
     if (categoryValuationChartInstance) categoryValuationChartInstance.destroy();
 
-    const gradient1 = ctx1.createLinearGradient(0, 0, 0, 180);
-    gradient1.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
-    gradient1.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+    // Horizontal multi-color stroke gradient across the wave curve
+    const strokeGradient = ctx1.createLinearGradient(0, 0, 550, 0);
+    strokeGradient.addColorStop(0, '#6366f1');   // Indigo
+    strokeGradient.addColorStop(0.25, '#38bdf8'); // Cyan
+    strokeGradient.addColorStop(0.5, '#10b981');  // Emerald Green
+    strokeGradient.addColorStop(0.75, '#f59e0b'); // Amber
+    strokeGradient.addColorStop(1, '#ec4899');    // Pink
+
+    // Vertical fill gradient under the curve
+    const fillGradient = ctx1.createLinearGradient(0, 0, 0, 180);
+    fillGradient.addColorStop(0, 'rgba(56, 189, 248, 0.35)');
+    fillGradient.addColorStop(0.5, 'rgba(99, 102, 241, 0.15)');
+    fillGradient.addColorStop(1, 'rgba(15, 23, 42, 0.0)');
 
     categoryValuationChartInstance = new Chart(ctx1, {
         type: 'line',
@@ -937,17 +1081,17 @@ function renderCharts(data) {
             datasets: [{
                 label: 'Valuation ($)',
                 data: catValues,
-                borderColor: '#6366f1',
-                borderWidth: 3.5,
-                backgroundColor: gradient1,
+                borderColor: strokeGradient,
+                borderWidth: 4,
+                backgroundColor: fillGradient,
                 fill: true,
                 tension: 0.45,
                 pointBackgroundColor: '#ffffff',
-                pointBorderColor: '#6366f1',
-                pointBorderWidth: 2.5,
-                pointRadius: 5,
-                pointHoverRadius: 7,
-                pointHoverBackgroundColor: '#6366f1',
+                pointBorderColor: '#38bdf8',
+                pointBorderWidth: 3,
+                pointRadius: 5.5,
+                pointHoverRadius: 8,
+                pointHoverBackgroundColor: '#38bdf8',
                 pointHoverBorderColor: '#ffffff'
             }]
         },
@@ -984,100 +1128,150 @@ function renderCharts(data) {
         }
     });
 
-    // 2. Stock Health Breakdown Doughnut Chart
+    // 2. Stock Health Breakdown Semi-Circle Speedometer Gauge Chart
     const ctx2 = document.getElementById('stockStatusChart').getContext('2d');
     if (stockStatusChartInstance) stockStatusChartInstance.destroy();
+
+    const inStock = Number(data.stock_status.in_stock || 0);
+    const lowStock = Number(data.stock_status.low_stock || 0);
+    const outStock = Number(data.stock_status.out_of_stock || 0);
+
     stockStatusChartInstance = new Chart(ctx2, {
         type: 'doughnut',
         data: {
             labels: ['In Stock (>10)', 'Low Stock (1-10)', 'Out of Stock (0)'],
             datasets: [{
-                data: [
-                    data.stock_status.in_stock,
-                    data.stock_status.low_stock,
-                    data.stock_status.out_of_stock
+                data: [inStock, lowStock, outStock],
+                backgroundColor: [
+                    'rgba(16, 185, 129, 0.9)',
+                    'rgba(245, 158, 11, 0.9)',
+                    'rgba(239, 68, 68, 0.9)'
                 ],
-                backgroundColor: ['#22c55e', '#f59e0b', '#ef4444'],
-                borderWidth: 2,
-                borderColor: '#161d2a'
+                borderWidth: 3,
+                borderColor: '#161d2a',
+                borderRadius: 6,
+                hoverOffset: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            circumference: 180,
+            rotation: -90,
+            cutout: '72%',
             plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 16 } }
+                legend: { 
+                    position: 'bottom',
+                    labels: { boxWidth: 12, padding: 14, color: '#94a3b8', font: { size: 11 } } 
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.raw} items`
+                    }
+                }
             }
         }
     });
 
-    // 3. Top 10 Valuable Products Horizontal Bar Chart
+    // 3. Top 10 Valuable Products 3D Gradient Column Bar Chart
     const prodLabels = data.top_products_by_value.map(p => p.product_name);
     const prodValues = data.top_products_by_value.map(p => p.total_value);
 
     const ctx3 = document.getElementById('topProductsChart').getContext('2d');
     if (topProductsChartInstance) topProductsChartInstance.destroy();
+
+    const barGradient = ctx3.createLinearGradient(0, 0, 0, 180);
+    barGradient.addColorStop(0, 'rgba(56, 189, 248, 0.95)'); // Cyan top
+    barGradient.addColorStop(1, 'rgba(99, 102, 241, 0.45)'); // Indigo bottom
+
     topProductsChartInstance = new Chart(ctx3, {
         type: 'bar',
         data: {
             labels: prodLabels,
             datasets: [{
-                axis: 'y',
                 label: 'Total Value ($)',
                 data: prodValues,
-                backgroundColor: 'rgba(245, 158, 11, 0.75)',
-                borderColor: '#f59e0b',
-                borderWidth: 1,
-                borderRadius: 6
+                backgroundColor: barGradient,
+                borderColor: '#38bdf8',
+                borderWidth: 1.5,
+                borderRadius: { topLeft: 8, topRight: 8 },
+                maxBarThickness: 36
             }]
         },
         options: {
-            indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => 'Total Value: $' + Number(ctx.raw).toLocaleString()
+                        label: ctx => ' Total Value: $' + Number(ctx.raw).toLocaleString(undefined, {minimumFractionDigits: 2})
                     }
                 }
             },
             scales: {
                 x: { 
-                    grid: { color: '#242f42' },
-                    ticks: { callback: v => '$' + v.toLocaleString() }
+                    grid: { color: '#242f42', drawBorder: false },
+                    ticks: { 
+                        color: '#94a3b8', 
+                        font: { size: 10.5 },
+                        maxRotation: 35,
+                        minRotation: 0
+                    } 
                 },
-                y: { grid: { color: '#242f42' } }
+                y: { 
+                    grid: { color: '#242f42', drawBorder: false },
+                    ticks: { 
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        callback: function(v) {
+                            if (v >= 1000) {
+                                return '$' + (v / 1000).toFixed(0) + 'K';
+                            }
+                            return '$' + v;
+                        }
+                    }
+                }
             }
         }
     });
 
-    // 4. Products Count by Category Doughnut
+    // 4. Products Count by Category Modern Doughnut Chart
     const catCountLabels = data.category_metrics.filter(c => c.product_count > 0).slice(0, 7).map(c => c.name);
     const catCountData = data.category_metrics.filter(c => c.product_count > 0).slice(0, 7).map(c => c.product_count);
 
     const ctx4 = document.getElementById('categoryCountChart').getContext('2d');
     if (categoryCountChartInstance) categoryCountChartInstance.destroy();
     categoryCountChartInstance = new Chart(ctx4, {
-        type: 'pie',
+        type: 'doughnut',
         data: {
             labels: catCountLabels,
             datasets: [{
                 data: catCountData,
                 backgroundColor: [
-                    '#6366f1', '#14b8a6', '#8b5cf6', '#3b82f6', 
-                    '#ec4899', '#f97316', '#10b981'
+                    '#6366f1', '#38bdf8', '#8b5cf6', '#10b981', 
+                    '#ec4899', '#f59e0b', '#3b82f6'
                 ],
-                borderWidth: 2,
-                borderColor: '#161d2a'
+                borderWidth: 3,
+                borderColor: '#161d2a',
+                borderRadius: 5,
+                hoverOffset: 6
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            cutout: '66%',
             plugins: {
-                legend: { position: 'bottom', labels: { boxWidth: 12, padding: 12 } }
+                legend: { 
+                    position: 'bottom', 
+                    labels: { boxWidth: 12, padding: 12, color: '#94a3b8', font: { size: 10.5 } } 
+                },
+                tooltip: {
+                    callbacks: {
+                        label: ctx => ` ${ctx.label}: ${ctx.raw} products`
+                    }
+                }
             }
         }
     });
