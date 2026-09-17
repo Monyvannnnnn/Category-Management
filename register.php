@@ -270,11 +270,65 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             transition: color 0.2s;
         }
 
-        .auth-footer a:hover {
-            color: #a78bfa;
-            text-decoration: underline;
+        @media (max-width: 480px) {
+            body {
+                padding: 10px 8px max(40px, env(safe-area-inset-bottom));
+                align-items: flex-start;
+                justify-content: center;
+            }
+            .auth-container {
+                max-width: 100%;
+                margin-top: 8px;
+            }
+            .auth-card {
+                padding: 20px 16px;
+                border-radius: 12px;
+            }
+            .auth-header {
+                margin-bottom: 16px;
+            }
+            .auth-logo-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 20px;
+                margin-bottom: 8px;
+                border-radius: 10px;
+            }
+            .auth-header h1 {
+                font-size: 20px;
+            }
+            .auth-header p {
+                font-size: 11.5px;
+            }
+            .form-group {
+                margin-bottom: 12px;
+            }
+            .form-control-custom {
+                padding: 10px 38px 10px 42px !important;
+                font-size: 13.5px;
+                border-radius: 8px;
+            }
+            .btn-submit {
+                padding: 11px;
+                font-size: 13.5px;
+                border-radius: 8px;
+            }
+            .auth-footer {
+                margin-top: 14px;
+                padding-top: 12px;
+                font-size: 12px;
+            }
         }
     </style>
+
+    <!-- Telegram Mini App WebApp SDK -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    </script>
 </head>
 <body>
 
