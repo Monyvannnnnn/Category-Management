@@ -590,82 +590,12 @@ if (!$currentUser) {
             display: flex;
             align-items: center;
             justify-content: space-between;
+            margin-top: 4px;
+        }
+        .cat-prod-price {
+            font-size: 12px;
+            font-weight: 700;
             color: #4ade80;
-        }
-
-        .table-scroll-container {
-            width: 100%;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-            border-radius: 8px;
-        }
-
-        .bi-data-table {
-            width: 100%;
-            min-width: 680px;
-            border-collapse: collapse;
-            font-size: 13px;
-            text-align: left;
-        }
-
-        @media (max-width: 768px) {
-            .bi-page-container {
-                padding: 6px;
-                gap: 6px;
-            }
-            .bi-header-card {
-                padding: 10px;
-                gap: 8px;
-            }
-            .bi-title-text h1 {
-                font-size: 16px;
-            }
-            .bi-title-text p {
-                font-size: 10.5px;
-            }
-            .bi-header-actions {
-                display: grid;
-                grid-template-columns: repeat(2, 1fr);
-                gap: 6px;
-                width: 100%;
-            }
-            .bi-btn {
-                justify-content: center;
-                font-size: 11px;
-                padding: 6px 8px;
-            }
-            .table-controls {
-                flex-direction: column;
-                align-items: stretch;
-                gap: 8px;
-            }
-            .bi-search-wrapper, .bi-search-input {
-                width: 100%;
-                box-sizing: border-box;
-            }
-            .bi-data-table th, .bi-data-table td {
-                padding: 6px 8px;
-                font-size: 11px;
-                white-space: nowrap;
-            }
-            .prod-single-wrapper {
-                gap: 5px;
-            }
-            .prod-single-thumb, .prod-single-no-img {
-                width: 30px;
-                height: 30px;
-            }
-            .prod-single-count-pill {
-                padding: 2px 7px;
-                font-size: 10px;
-            }
-            .bi-modal-card {
-                max-width: 94vw;
-                border-radius: 12px;
-            }
-            .cat-products-grid {
-                grid-template-columns: 1fr;
-            }
         }
 
         @media print {
@@ -787,8 +717,8 @@ if (!$currentUser) {
         <div class="chart-card">
             <div class="chart-card-header">
                 <div class="chart-card-title">
-                    <i class="fa-solid fa-chart-column" style="color: #6366f1;"></i>
-                    Inventory Value by Category ($)
+                    <i class="fa-solid fa-chart-line" style="color: #6366f1;"></i>
+                    Inventory Value Trend by Category ($)
                 </div>
             </div>
             <div class="chart-canvas-container">
@@ -852,7 +782,7 @@ if (!$currentUser) {
             </div>
         </div>
 
-        <div class="table-scroll-container">
+        <div style="overflow-x: auto;">
             <table class="bi-data-table" id="biTable">
                 <thead>
                     <tr>
@@ -902,9 +832,6 @@ if (!$currentUser) {
                     <div id="biLightboxQty" style="font-size: 15px; font-weight: 700; color: #f8fafc; margin-top: 2px;">0</div>
                 </div>
             </div>
-            <a id="biLightboxGoToProdBtn" href="products.php" class="bi-btn primary" style="margin-top: 14px; width: 100%; justify-content: center; text-decoration: none; border-radius: 8px;">
-                <i class="fa-solid fa-arrow-right-to-bracket"></i> Open in Products Page
-            </a>
         </div>
     </div>
 </div>
@@ -992,23 +919,36 @@ function renderKpis(summary) {
 }
 
 function renderCharts(data) {
-    // 1. Category Valuation Bar Chart
+    // 1. Category Valuation Smooth Spline Line Chart
     const catLabels = data.top_categories_by_value.map(c => c.name);
     const catValues = data.top_categories_by_value.map(c => c.total_value);
 
     const ctx1 = document.getElementById('categoryValuationChart').getContext('2d');
     if (categoryValuationChartInstance) categoryValuationChartInstance.destroy();
+
+    const gradient1 = ctx1.createLinearGradient(0, 0, 0, 180);
+    gradient1.addColorStop(0, 'rgba(99, 102, 241, 0.35)');
+    gradient1.addColorStop(1, 'rgba(99, 102, 241, 0.0)');
+
     categoryValuationChartInstance = new Chart(ctx1, {
-        type: 'bar',
+        type: 'line',
         data: {
             labels: catLabels,
             datasets: [{
                 label: 'Valuation ($)',
                 data: catValues,
-                backgroundColor: 'rgba(99, 102, 241, 0.75)',
                 borderColor: '#6366f1',
-                borderWidth: 1,
-                borderRadius: 6
+                borderWidth: 3.5,
+                backgroundColor: gradient1,
+                fill: true,
+                tension: 0.45,
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#6366f1',
+                pointBorderWidth: 2.5,
+                pointRadius: 5,
+                pointHoverRadius: 7,
+                pointHoverBackgroundColor: '#6366f1',
+                pointHoverBorderColor: '#ffffff'
             }]
         },
         options: {
@@ -1018,15 +958,27 @@ function renderCharts(data) {
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
-                        label: ctx => 'Valuation: $' + Number(ctx.raw).toLocaleString()
+                        label: ctx => 'Valuation: $' + Number(ctx.raw).toLocaleString(undefined, {minimumFractionDigits: 2})
                     }
                 }
             },
             scales: {
-                x: { grid: { color: '#242f42' } },
+                x: { 
+                    grid: { color: '#242f42', drawBorder: false },
+                    ticks: { color: '#94a3b8', font: { size: 11 } }
+                },
                 y: { 
-                    grid: { color: '#242f42' },
-                    ticks: { callback: v => '$' + v.toLocaleString() }
+                    grid: { color: '#242f42', drawBorder: false },
+                    ticks: { 
+                        color: '#94a3b8',
+                        font: { size: 11 },
+                        callback: function(v) {
+                            if (v >= 1000) {
+                                return '$' + (v / 1000).toFixed(0) + 'K';
+                            }
+                            return '$' + v;
+                        }
+                    }
                 }
             }
         }
@@ -1204,13 +1156,6 @@ function openBiImageLightbox(imgUrl, prodName, prodCode, price, qty) {
     document.getElementById('biLightboxCode').textContent = prodCode || '';
     document.getElementById('biLightboxPrice').textContent = '$' + Number(price || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
     document.getElementById('biLightboxQty').textContent = Number(qty || 0).toLocaleString();
-    
-    const goToBtn = document.getElementById('biLightboxGoToProdBtn');
-    if (goToBtn) {
-        const targetSearch = prodCode || prodName || '';
-        goToBtn.href = 'products.php?search=' + encodeURIComponent(targetSearch);
-    }
-
     document.getElementById('biImageLightboxModal').classList.add('active');
 }
 
@@ -1235,14 +1180,8 @@ function openCategoryProductsModal(categoryId) {
         cat.products.forEach(p => {
             const card = document.createElement('div');
             card.className = 'cat-prod-card';
-            card.style.cursor = 'pointer';
-            card.title = `Click to view ${escapeHtml(p.product_name)} in Products Page`;
-            card.onclick = function() {
-                window.location.href = 'products.php?search=' + encodeURIComponent(p.product_code || p.product_name);
-            };
-
             const imgHtml = p.image 
-                ? `<img src="${escapeHtml(p.image)}" class="cat-prod-img" onclick="event.stopPropagation(); openBiImageLightbox('${escapeHtml(p.image)}', '${escapeHtml(p.product_name)}', '${escapeHtml(p.product_code)}', ${p.price}, ${p.quantity})">`
+                ? `<img src="${escapeHtml(p.image)}" class="cat-prod-img" onclick="openBiImageLightbox('${escapeHtml(p.image)}', '${escapeHtml(p.product_name)}', '${escapeHtml(p.product_code)}', ${p.price}, ${p.quantity})">`
                 : `<div class="cat-prod-img" style="background:#1e293b; display:flex; flex-direction:column; align-items:center; justify-content:center;"><i class="fa-solid fa-box-open" style="font-size: 20px; color: #475569;"></i><span style="font-size: 10px; color: #64748b; margin-top: 2px;">No Image</span></div>`;
             
             let badgeClass = p.quantity === 0 ? 'danger' : (p.quantity <= 10 ? 'warning' : 'success');

@@ -2368,18 +2368,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                     });
                 }
             }
-        gridInstance = $("#gridContainer").dxDataGrid("instance");
+        });
 
-        // Handle URL search parameter from BI Dashboard or navigation links
-        (function() {
-            var urlParams = new URLSearchParams(window.location.search);
-            var searchStr = urlParams.get('search') || urlParams.get('code') || urlParams.get('product') || urlParams.get('category');
-            if (searchStr && gridInstance) {
-                setTimeout(function() {
-                    gridInstance.searchByText(searchStr);
-                }, 250);
-            }
-        })();
+        gridInstance = $("#gridContainer").dxDataGrid("instance");
 
         // Load Push Notification Settings on page load
         function loadPushSettings() {
