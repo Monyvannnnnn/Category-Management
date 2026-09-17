@@ -573,6 +573,11 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/product':
         case '/products':
         case '/orders':
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+            $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
+            $prodUrl = "{$scheme}://{$host}/products.php";
+            $biUrl   = "{$scheme}://{$host}/report_bi.php";
+
             if (empty($rawArg)) {
                 $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
                 db_stmt_bind_param($stmt, "i", $userId);
@@ -598,7 +603,16 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     $msg = "📦 <b>NO PRODUCTS FOUND</b>";
                 }
                 db_stmt_close($stmt);
-                sendTelegramMessage($chatId, $msg, $botToken);
+
+                $markup = [
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '📦 View All Products in App', 'web_app' => ['url' => $prodUrl]],
+                            ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                        ]
+                    ]
+                ];
+                sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
                 break;
             }
 
@@ -627,14 +641,34 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                      . "<b>Stock Qty:</b> {$qty} units\n"
                      . "<b>Inventory Value:</b> \${$val}";
 
+                $pSearchUrl = "{$scheme}://{$host}/products.php?search=" . urlencode($r['product_code']);
+                $markup = [
+                    'inline_keyboard' => [
+                        [
+                            ['text' => "📦 View Product Details ({$pCode})", 'web_app' => ['url' => $pSearchUrl]],
+                            ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                        ],
+                        [
+                            ['text' => '🌐 Open Web Link', 'url' => $pSearchUrl]
+                        ]
+                    ]
+                ];
+
                 if (!empty($r['image'])) {
-                    sendSingleTelegramPhoto($chatId, $r['image'], $msg, $botToken);
+                    sendSingleTelegramPhoto($chatId, $r['image'], $msg, $botToken, $markup);
                 } else {
-                    sendTelegramMessage($chatId, $msg, $botToken);
+                    sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
                 }
             } else {
                 $msg = "❌ <b>PRODUCT NOT FOUND</b> for '<b>" . htmlspecialchars($rawArg) . "</b>'";
-                sendTelegramMessage($chatId, $msg, $botToken);
+                $markup = [
+                    'inline_keyboard' => [
+                        [
+                            ['text' => '📦 View All Products', 'web_app' => ['url' => $prodUrl]]
+                        ]
+                    ]
+                ];
+                sendTelegramMessageWithMarkup($chatId, $msg, $botToken, $markup);
             }
             db_stmt_close($stmt);
             break;

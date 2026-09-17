@@ -4,7 +4,20 @@
  * Optimized for InfinityFree & Local Hosting (with DNS Resolution Bypass)
  */
 
-function sendSingleTelegramNotification($chatId, $message, $customBotToken = null) {
+if (!function_exists('getAppBaseUrl')) {
+    function getAppBaseUrl() {
+        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+        $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
+        $script = $_SERVER['SCRIPT_NAME'] ?? '';
+        $dir = rtrim(dirname($script), '/\\');
+        if ($dir === '.' || $dir === '/' || $dir === '\\') {
+            $dir = '';
+        }
+        return "{$scheme}://{$host}{$dir}";
+    }
+}
+
+function sendSingleTelegramNotification($chatId, $message, $customBotToken = null, $replyMarkup = null) {
     $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
@@ -12,6 +25,30 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         'text' => $message,
         'parse_mode' => 'HTML'
     ];
+
+    if (!empty($replyMarkup)) {
+        $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
+    } else {
+        $baseUrl = getAppBaseUrl();
+        $prodUrl = "{$baseUrl}/products.php";
+        $biUrl   = "{$baseUrl}/report_bi.php";
+        $btnText = '📦 View Products';
+
+        if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $message, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $message, $m)) {
+            $pCode = trim($m[1]);
+            $prodUrl = "{$baseUrl}/products.php?search=" . urlencode($pCode);
+            $btnText = "📦 View Product Details ({$pCode})";
+        }
+
+        $data['reply_markup'] = json_encode([
+            'inline_keyboard' => [
+                [
+                    ['text' => $btnText, 'web_app' => ['url' => $prodUrl]],
+                    ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                ]
+            ]
+        ]);
+    }
 
     $result = false;
     $curlError = '';
@@ -108,7 +145,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
 /**
  * Send a single Photo with Caption via Telegram Bot API
  */
-function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken = null) {
+function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken = null, $replyMarkup = null) {
     $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendPhoto";
 
@@ -130,6 +167,30 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
             'caption' => $caption,
             'parse_mode' => 'HTML'
         ];
+    }
+
+    if (!empty($replyMarkup)) {
+        $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
+    } else {
+        $baseUrl = getAppBaseUrl();
+        $prodUrl = "{$baseUrl}/products.php";
+        $biUrl   = "{$baseUrl}/report_bi.php";
+        $btnText = '📦 View Products';
+
+        if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $caption, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $caption, $m)) {
+            $pCode = trim($m[1]);
+            $prodUrl = "{$baseUrl}/products.php?search=" . urlencode($pCode);
+            $btnText = "📦 View Product Details ({$pCode})";
+        }
+
+        $data['reply_markup'] = json_encode([
+            'inline_keyboard' => [
+                [
+                    ['text' => $btnText, 'web_app' => ['url' => $prodUrl]],
+                    ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                ]
+            ]
+        ]);
     }
 
     $result = false;
@@ -224,7 +285,7 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
 /**
  * Send photo notification to specific user or all subscribers
  */
-function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userId = null) {
+function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userId = null, $replyMarkup = null) {
     if (!$conn) {
         global $conn;
     }
@@ -254,23 +315,23 @@ function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userI
 
                 if ($row && !empty(trim($row['chat_id']))) {
                     $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
-                    return sendSingleTelegramPhoto(trim($row['chat_id']), $photoUrl, $message, $bToken);
+                    return sendSingleTelegramPhoto(trim($row['chat_id']), $photoUrl, $message, $bToken, $replyMarkup);
                 }
             }
         }
-        return sendTelegramNotification($message, $conn, $userId);
+        return sendTelegramNotification($message, $conn, $userId, $replyMarkup);
     }
 
     $targets = getSubscriberChatIds($conn);
     if (empty($targets)) {
-        return sendTelegramNotification($message, $conn, $userId);
+        return sendTelegramNotification($message, $conn, $userId, $replyMarkup);
     }
 
     $successCount = 0;
     $lastRes = false;
 
     foreach ($targets as $cid => $bToken) {
-        $res = sendSingleTelegramPhoto($cid, $photoUrl, $message, $bToken);
+        $res = sendSingleTelegramPhoto($cid, $photoUrl, $message, $bToken, $replyMarkup);
         $lastRes = $res;
         if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
             $successCount++;
@@ -281,7 +342,7 @@ function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userI
         return json_encode(["ok" => true, "delivered_chats" => $successCount]);
     }
 
-    return $lastRes ?: sendTelegramNotification($message, $conn, $userId);
+    return $lastRes ?: sendTelegramNotification($message, $conn, $userId, $replyMarkup);
 }
 
 /**
@@ -569,7 +630,7 @@ function isUserTelegramConnected($conn = null, $userId = null) {
 /**
  * Send notification to specific user (or auto-detect logged-in user for per-user isolation)
  */
-function sendTelegramNotification($message, $conn = null, $userId = null) {
+function sendTelegramNotification($message, $conn = null, $userId = null, $replyMarkup = null) {
     if (!$conn) {
         global $conn;
     }
@@ -601,7 +662,7 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
 
                 if ($row && !empty(trim($row['chat_id']))) {
                     $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
-                    return sendSingleTelegramNotification(trim($row['chat_id']), $message, $bToken);
+                    return sendSingleTelegramNotification(trim($row['chat_id']), $message, $bToken, $replyMarkup);
                 }
             }
         }
@@ -630,7 +691,7 @@ function sendTelegramNotification($message, $conn = null, $userId = null) {
     $lastRes = false;
 
     foreach ($targets as $cid => $bToken) {
-        $res = sendSingleTelegramNotification($cid, $message, $bToken);
+        $res = sendSingleTelegramNotification($cid, $message, $bToken, $replyMarkup);
         $lastRes = $res;
         if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
             $successCount++;
