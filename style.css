@@ -381,6 +381,45 @@ label,
   transform: translateX(-50%) translateY(0);
 }
 
+/* Position variant for right-aligned top-right elements (e.g. logout button) */
+.user-profile-widget [data-tooltip]::before,
+.logout-icon-btn[data-tooltip]::before,
+[data-tooltip-pos="right-align"]::before {
+  left: auto !important;
+  right: 0 !important;
+  transform: translateY(-8px) scale(0.85) !important;
+  transform-origin: top right !important;
+}
+
+.user-profile-widget [data-tooltip]::after,
+.logout-icon-btn[data-tooltip]::after,
+[data-tooltip-pos="right-align"]::after {
+  left: auto !important;
+  right: 8px !important;
+  transform: translateY(-6px) !important;
+  transform-origin: top right !important;
+}
+
+.user-profile-widget [data-tooltip]:hover::before,
+.logout-icon-btn[data-tooltip]:hover::before,
+[data-tooltip-pos="right-align"]:hover::before {
+  transform: translateY(4px) scale(1) !important;
+}
+
+.user-profile-widget [data-tooltip]:hover::after,
+.logout-icon-btn[data-tooltip]:hover::after,
+[data-tooltip-pos="right-align"]:hover::after {
+  transform: translateY(0) !important;
+}
+
+/* Hide tooltips on mobile touch devices to prevent stuck/overlapping UI */
+@media (max-width: 768px), (hover: none) {
+  [data-tooltip]::before,
+  [data-tooltip]::after {
+    display: none !important;
+  }
+}
+
 /* Button Micro-Motion Animations (No Light Glow) */
 .add-btn,
 .telegram-file-btn,
