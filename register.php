@@ -252,16 +252,19 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background-position: 100% 50%;
             transform: translateY(-2px) scale(1.01);
             box-shadow: none;
+            transition-delay: 0.12s;
         }
 
         .btn-submit:hover i {
             transform: translateX(3px) scale(1.15);
+            transition-delay: 0.12s;
         }
 
         .btn-submit:active {
             transform: translateY(0) scale(0.985);
             box-shadow: none;
             transition: transform 0.15s ease;
+            transition-delay: 0s;
         }
 
         /* Shimmer beam effect on hover */
@@ -287,6 +290,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .btn-submit:hover::after {
             left: 130%;
             opacity: 1;
+            transition-delay: 0.15s;
         }
 
         .auth-footer {
@@ -332,10 +336,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             border-color: #6366f1;
             transform: translateY(-1.5px);
             box-shadow: none;
+            transition-delay: 0.12s;
         }
 
         .auth-footer a:hover i {
             transform: translateX(3px);
+            transition-delay: 0.12s;
         }
 
         @media (max-width: 480px) {
