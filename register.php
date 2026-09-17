@@ -222,11 +222,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .btn-submit {
             width: 100%;
-            background: #6366f1;
+            background: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #7c3aed 100%);
+            background-size: 200% 200%;
+            background-position: 0% 50%;
             color: #ffffff;
             border: none;
             border-radius: 10px;
-            padding: 12px;
+            padding: 13px;
             font-size: 14px;
             font-weight: 600;
             cursor: pointer;
@@ -235,31 +237,99 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             justify-content: center;
             gap: 8px;
             margin-top: 8px;
-            transition: all 0.2s ease;
-            box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
+        }
+
+        .btn-submit i {
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         .btn-submit:hover {
-            background: #4f46e5;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 18px rgba(99, 102, 241, 0.4);
+            background-position: 100% 50%;
+            transform: translateY(-2px) scale(1.01);
+            box-shadow: 0 8px 25px -4px rgba(99, 102, 241, 0.55), 0 0 15px rgba(124, 58, 237, 0.35);
+        }
+
+        .btn-submit:hover i {
+            transform: translateX(3px) scale(1.15);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0) scale(0.985);
+            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+        }
+
+        /* Shimmer beam effect on hover */
+        .btn-submit::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 50%;
+            height: 200%;
+            background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0) 100%
+            );
+            transform: rotate(25deg);
+            transition: all 0.6s ease;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .btn-submit:hover::after {
+            left: 130%;
+            opacity: 1;
         }
 
         .auth-footer {
-            margin-top: 20px;
-            padding-top: 16px;
+            margin-top: 24px;
+            padding-top: 18px;
             border-top: 1px solid #242f42;
             text-align: center;
             font-size: 13px;
             color: #94a3b8;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
         }
 
         .auth-footer a {
-            color: #6366f1;
+            color: #818cf8;
             text-decoration: none;
             font-weight: 600;
-            margin-left: 4px;
-            transition: color 0.2s;
+            padding: 5px 12px;
+            border-radius: 8px;
+            background: rgba(99, 102, 241, 0.1);
+            border: 1px solid rgba(99, 102, 241, 0.25);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .auth-footer a i {
+            font-size: 11px;
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .auth-footer a:hover {
+            color: #ffffff;
+            background: rgba(99, 102, 241, 0.25);
+            border-color: #6366f1;
+            transform: translateY(-1.5px);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+        }
+
+        .auth-footer a:hover i {
+            transform: translateX(3px);
         }
 
         @media (max-width: 480px) {
@@ -389,7 +459,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </form>
 
         <div class="auth-footer">
-            Already have an account? <a href="login.php">Sign In here</a>
+            Already have an account? <a href="login.php">Sign In here <i class="fa-solid fa-arrow-right"></i></a>
         </div>
     </div>
 </div>
