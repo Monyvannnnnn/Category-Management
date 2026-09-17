@@ -57,11 +57,7 @@ switch ($action) {
         $botToken = (!empty($row['bot_token']) && $row['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $row['bot_token'] : $defaultBotToken;
         $botUsername = (!empty($row['bot_username']) && $row['bot_username'] !== 'reportpush_bot') ? $row['bot_username'] : $defaultBotUsername;
 
-        // On-demand poll Telegram updates for incoming /start or code bindings
-        if (function_exists('pollTelegramUpdatesForBot')) {
-            pollTelegramUpdatesForBot($conn, $botToken);
-            $row = getUserBotRow($conn, $userId);
-        }
+        // Webhook handles updates directly via set_commands.php
 
         echo json_encode([
             'success' => true,
