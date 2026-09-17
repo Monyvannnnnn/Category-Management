@@ -124,6 +124,15 @@ foreach ($products as $p) {
         } elseif ($qty <= 10) {
             $categoryMetricsMap[$cid]['low_stock_count']++;
         }
+        $categoryMetricsMap[$cid]['products'][] = [
+            'id' => (int)$p['id'],
+            'product_code' => $p['product_code'],
+            'product_name' => $p['product_name'],
+            'price' => (float)$price,
+            'quantity' => (int)$qty,
+            'image' => !empty($p['image']) ? $p['image'] : null,
+            'total_value' => round($val, 2)
+        ];
     }
 
     $p['calc_value'] = $val;
@@ -177,6 +186,7 @@ $response = [
             'category_name' => !empty($item['category_name']) ? $item['category_name'] : 'N/A',
             'price' => (float)$item['price'],
             'quantity' => (int)$item['quantity'],
+            'image' => !empty($item['image']) ? $item['image'] : null,
             'total_value' => round($item['calc_value'], 2)
         ];
     }, $top10ValuableProducts),

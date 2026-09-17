@@ -910,11 +910,11 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                     border: "1px solid rgba(255, 255, 255, 0.15)",
                                     cursor: "pointer",
                                     verticalAlign: "middle",
-                                    transition: "transform 0.15s ease, border-color 0.15s ease"
+                                    transition: "transform 0.15s ease"
                                 })
                                 .hover(
-                                    function() { $(this).css({ transform: "scale(1.1)", borderColor: "#38bdf8" }); },
-                                    function() { $(this).css({ transform: "scale(1)", borderColor: "rgba(255, 255, 255, 0.15)" }); }
+                                    function() { $(this).css({ transform: "scale(1.15)" }); },
+                                    function() { $(this).css({ transform: "scale(1)" }); }
                                 )
                                 .on("click", function(e) {
                                     e.stopPropagation();

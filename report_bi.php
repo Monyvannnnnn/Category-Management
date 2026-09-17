@@ -405,6 +405,199 @@ if (!$currentUser) {
             border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
+        /* Product Thumbnails & Avatar Stacks in BI Table */
+        /* Single Featured Image + Count Badge Style */
+        .prod-single-wrapper {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .prod-single-thumb {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            object-fit: cover;
+            border: 1px solid #334155;
+            background: #0f172a;
+            cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            transition: transform 0.15s ease, border-color 0.15s ease;
+        }
+        .prod-single-thumb:hover {
+            transform: scale(1.08);
+            border-color: #475569;
+        }
+        .prod-single-no-img {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            border: 1px dashed rgba(148, 163, 184, 0.3);
+            background: rgba(30, 41, 59, 0.6);
+            color: #64748b;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .prod-single-no-img:hover {
+            transform: scale(1.08);
+            color: #94a3b8;
+            border-color: #475569;
+        }
+        .prod-single-count-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 10px;
+            border-radius: 12px;
+            background: rgba(99, 102, 241, 0.15);
+            color: #a5b4fc;
+            border: 1px solid rgba(99, 102, 241, 0.3);
+            font-size: 11px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.15s ease, transform 0.15s ease;
+        }
+        .prod-single-count-pill:hover {
+            background: rgba(99, 102, 241, 0.3);
+            color: #ffffff;
+            transform: scale(1.05);
+        }
+
+        /* Lightbox & Category Product Modals */
+        .bi-modal-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(8px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+        .bi-modal-backdrop.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .bi-modal-card {
+            background: #1e293b;
+            border: 1px solid #334155;
+            border-radius: 16px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.6);
+            max-width: 650px;
+            width: 100%;
+            overflow: hidden;
+            transform: scale(0.92);
+            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .bi-modal-backdrop.active .bi-modal-card {
+            transform: scale(1);
+        }
+        .bi-modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #334155;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #0f172a;
+        }
+        .bi-modal-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #f8fafc;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .bi-modal-close {
+            background: transparent;
+            border: none;
+            color: #94a3b8;
+            font-size: 18px;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        .bi-modal-close:hover {
+            color: #f8fafc;
+            background: rgba(255,255,255,0.1);
+        }
+        .bi-modal-body {
+            padding: 20px;
+            max-height: 75vh;
+            overflow-y: auto;
+        }
+        .cat-products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+            gap: 14px;
+        }
+        .cat-prod-card {
+            background: #0f172a;
+            border: 1px solid #334155;
+            border-radius: 12px;
+            padding: 12px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+        .cat-prod-card:hover {
+            border-color: #475569;
+        }
+        .cat-prod-img-wrap {
+            width: 52px;
+            height: 52px;
+            border-radius: 8px;
+            overflow: hidden;
+            flex-shrink: 0;
+            background: #1e293b;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .cat-prod-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+        }
+        .cat-prod-info {
+            flex-grow: 1;
+            min-width: 0;
+        }
+        .cat-prod-code {
+            font-size: 10px;
+            color: #38bdf8;
+        }
+        .cat-prod-name {
+            font-size: 13px;
+            font-weight: 600;
+            color: #f8fafc;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .cat-prod-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 4px;
+        }
+        .cat-prod-price {
+            font-size: 12px;
+            font-weight: 700;
+            color: #4ade80;
+        }
+
         @media print {
             body { background: #ffffff !important; color: #000000 !important; }
             .bi-page-container { padding: 0; }
@@ -595,6 +788,7 @@ if (!$currentUser) {
                     <tr>
                         <th>Category Code</th>
                         <th>Category Name</th>
+                        <th style="text-align: center;">Product Images</th>
                         <th style="text-align: right;">Product Count</th>
                         <th style="text-align: right;">Total Stock</th>
                         <th style="text-align: right;">Total Valuation ($)</th>
@@ -604,13 +798,63 @@ if (!$currentUser) {
                 </thead>
                 <tbody id="biTableBody">
                     <tr>
-                        <td colspan="7" style="text-align: center; color: var(--text-muted, #94a3b8); padding: 24px;">Loading BI analytics data...</td>
+                        <td colspan="8" style="text-align: center; color: var(--text-muted, #94a3b8); padding: 24px;">Loading BI analytics data...</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
 
+</div>
+
+<!-- Product Image Lightbox Modal -->
+<div id="biImageLightboxModal" class="bi-modal-backdrop" onclick="if(event.target===this) closeBiImageLightbox()">
+    <div class="bi-modal-card" style="max-width: 480px;">
+        <div class="bi-modal-header">
+            <div class="bi-modal-title">
+                <i class="fa-solid fa-image" style="color: #38bdf8;"></i>
+                <span id="biLightboxTitle">Product Image</span>
+                <span id="biLightboxCode" class="badge-status success" style="font-size: 10px; margin-left: 6px;"></span>
+            </div>
+            <button type="button" class="bi-modal-close" onclick="closeBiImageLightbox()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="bi-modal-body" style="text-align: center; padding: 24px;">
+            <div style="background: #0f172a; border-radius: 12px; padding: 12px; border: 1px solid #334155; display: inline-block;">
+                <img id="biLightboxImg" src="" alt="Product Image Preview" style="max-width: 100%; max-height: 320px; border-radius: 8px; object-fit: contain;">
+            </div>
+            <div style="margin-top: 16px; display: flex; justify-content: space-around; background: #0f172a; padding: 12px; border-radius: 10px; border: 1px solid #334155;">
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">Unit Price</div>
+                    <div id="biLightboxPrice" style="font-size: 15px; font-weight: 700; color: #4ade80; margin-top: 2px;">$0.00</div>
+                </div>
+                <div>
+                    <div style="font-size: 11px; color: #94a3b8;">Stock Quantity</div>
+                    <div id="biLightboxQty" style="font-size: 15px; font-weight: 700; color: #f8fafc; margin-top: 2px;">0</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Category Products Showcase Modal -->
+<div id="biCategoryProductsModal" class="bi-modal-backdrop" onclick="if(event.target===this) closeCategoryProductsModal()">
+    <div class="bi-modal-card" style="max-width: 720px;">
+        <div class="bi-modal-header">
+            <div>
+                <div class="bi-modal-title">
+                    <i class="fa-solid fa-boxes-stacked" style="color: #6366f1;"></i>
+                    <span id="biCatModalTitle">Category Products</span>
+                </div>
+                <div id="biCatModalSubtitle" style="font-size: 12px; color: #94a3b8; margin-top: 2px;"></div>
+            </div>
+            <button type="button" class="bi-modal-close" onclick="closeCategoryProductsModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="bi-modal-body">
+            <div id="biCatProductsGrid" class="cat-products-grid">
+                <!-- Dynamically populated product cards -->
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -819,7 +1063,7 @@ function renderTable(categories) {
     tbody.innerHTML = '';
 
     if (!categories || categories.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted, #94a3b8); padding: 24px;">No categories found.</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: var(--text-muted, #94a3b8); padding: 24px;">No categories found.</td></tr>';
         return;
     }
 
@@ -833,11 +1077,44 @@ function renderTable(categories) {
             statusBadge = `<span class="badge-status success"><i class="fa-solid fa-circle-check"></i> Healthy</span>`;
         }
 
+        // Build Single Featured Image + Count Badge
+        let imagesHtml = '';
+        const products = c.products || [];
+        if (products.length === 0) {
+            imagesHtml = `<span style="font-size: 11px; color: #64748b; font-style: italic;"><i class="fa-regular fa-image"></i> No products</span>`;
+        } else {
+            const featuredProd = products.find(p => p.image) || products[0];
+            const titleAttr = `${escapeHtml(featuredProd.product_name)} (${featuredProd.product_code}) - $${Number(featuredProd.price).toFixed(2)} | Qty: ${featuredProd.quantity}`;
+
+            let imgElement = '';
+            if (featuredProd.image) {
+                imgElement = `<img src="${escapeHtml(featuredProd.image)}" class="prod-single-thumb" title="${titleAttr}" onclick="event.stopPropagation(); openBiImageLightbox('${escapeHtml(featuredProd.image)}', '${escapeHtml(featuredProd.product_name)}', '${escapeHtml(featuredProd.product_code)}', ${featuredProd.price}, ${featuredProd.quantity})">`;
+            } else {
+                imgElement = `<div class="prod-single-no-img" title="${titleAttr}" onclick="event.stopPropagation(); openCategoryProductsModal(${c.id})"><i class="fa-solid fa-box-open"></i></div>`;
+            }
+
+            let pillHtml = '';
+            if (products.length > 1) {
+                pillHtml = `<span class="prod-single-count-pill" onclick="event.stopPropagation(); openCategoryProductsModal(${c.id})" title="View all ${products.length} products in this category"><i class="fa-solid fa-boxes-stacked"></i> ${products.length} items</span>`;
+            } else {
+                pillHtml = `<span class="prod-single-count-pill" onclick="event.stopPropagation(); openCategoryProductsModal(${c.id})" title="View product details" style="background: rgba(148, 163, 184, 0.1); color: #94a3b8; border-color: rgba(148, 163, 184, 0.2);"><i class="fa-solid fa-box"></i> 1 item</span>`;
+            }
+
+            imagesHtml = `<div class="prod-single-wrapper">${imgElement} ${pillHtml}</div>`;
+        }
+
         const tr = document.createElement('tr');
         tr.className = 'bi-row';
+        tr.style.cursor = 'pointer';
+        tr.onclick = function(e) {
+            if (c.products && c.products.length > 0) {
+                openCategoryProductsModal(c.id);
+            }
+        };
         tr.innerHTML = `
             <td><code>${escapeHtml(c.code)}</code></td>
             <td style="font-weight: 600; color: var(--text-main, #f8fafc);">${escapeHtml(c.name)}</td>
+            <td style="text-align: center;">${imagesHtml}</td>
             <td style="text-align: right;">${Number(c.product_count).toLocaleString()}</td>
             <td style="text-align: right;">${Number(c.total_stock).toLocaleString()}</td>
             <td style="text-align: right; font-weight: 600; color: #4ade80;">$${Number(c.total_value).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
@@ -847,6 +1124,72 @@ function renderTable(categories) {
         tbody.appendChild(tr);
     });
 }
+
+function openBiImageLightbox(imgUrl, prodName, prodCode, price, qty) {
+    document.getElementById('biLightboxImg').src = imgUrl;
+    document.getElementById('biLightboxTitle').textContent = prodName || 'Product Image';
+    document.getElementById('biLightboxCode').textContent = prodCode || '';
+    document.getElementById('biLightboxPrice').textContent = '$' + Number(price || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+    document.getElementById('biLightboxQty').textContent = Number(qty || 0).toLocaleString();
+    document.getElementById('biImageLightboxModal').classList.add('active');
+}
+
+function closeBiImageLightbox() {
+    document.getElementById('biImageLightboxModal').classList.remove('active');
+}
+
+function openCategoryProductsModal(categoryId) {
+    if (!biDataRaw || !biDataRaw.category_metrics) return;
+    const cat = biDataRaw.category_metrics.find(c => c.id == categoryId);
+    if (!cat) return;
+
+    document.getElementById('biCatModalTitle').textContent = `${cat.name} (${cat.code})`;
+    document.getElementById('biCatModalSubtitle').textContent = `${cat.product_count} products | Total Stock: ${cat.total_stock} units | Valuation: $${Number(cat.total_value).toLocaleString(undefined, {minimumFractionDigits:2})}`;
+    
+    const container = document.getElementById('biCatProductsGrid');
+    container.innerHTML = '';
+
+    if (!cat.products || cat.products.length === 0) {
+        container.innerHTML = '<div style="text-align: center; color: #94a3b8; padding: 24px; grid-column: 1/-1;">No products found in this category.</div>';
+    } else {
+        cat.products.forEach(p => {
+            const card = document.createElement('div');
+            card.className = 'cat-prod-card';
+            const imgHtml = p.image 
+                ? `<img src="${escapeHtml(p.image)}" class="cat-prod-img" onclick="openBiImageLightbox('${escapeHtml(p.image)}', '${escapeHtml(p.product_name)}', '${escapeHtml(p.product_code)}', ${p.price}, ${p.quantity})">`
+                : `<div class="cat-prod-img" style="background:#1e293b; display:flex; flex-direction:column; align-items:center; justify-content:center;"><i class="fa-solid fa-box-open" style="font-size: 20px; color: #475569;"></i><span style="font-size: 10px; color: #64748b; margin-top: 2px;">No Image</span></div>`;
+            
+            let badgeClass = p.quantity === 0 ? 'danger' : (p.quantity <= 10 ? 'warning' : 'success');
+            let badgeText = p.quantity === 0 ? 'Out of Stock' : (p.quantity <= 10 ? `Low (${p.quantity})` : `In Stock (${p.quantity})`);
+
+            card.innerHTML = `
+                <div class="cat-prod-img-wrap">${imgHtml}</div>
+                <div class="cat-prod-info">
+                    <div class="cat-prod-code"><code>${escapeHtml(p.product_code)}</code></div>
+                    <div class="cat-prod-name" title="${escapeHtml(p.product_name)}">${escapeHtml(p.product_name)}</div>
+                    <div class="cat-prod-meta">
+                        <span class="cat-prod-price">$${Number(p.price).toLocaleString(undefined, {minimumFractionDigits:2})}</span>
+                        <span class="badge-status ${badgeClass}" style="font-size: 10px;">${badgeText}</span>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    }
+
+    document.getElementById('biCategoryProductsModal').classList.add('active');
+}
+
+function closeCategoryProductsModal() {
+    document.getElementById('biCategoryProductsModal').classList.remove('active');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeBiImageLightbox();
+        closeCategoryProductsModal();
+    }
+});
 
 function filterBiTable() {
     const q = document.getElementById('tableSearchInput').value.toLowerCase().trim();
