@@ -902,6 +902,9 @@ if (!$currentUser) {
                     <div id="biLightboxQty" style="font-size: 15px; font-weight: 700; color: #f8fafc; margin-top: 2px;">0</div>
                 </div>
             </div>
+            <a id="biLightboxGoToProdBtn" href="products.php" class="bi-btn primary" style="margin-top: 14px; width: 100%; justify-content: center; text-decoration: none; border-radius: 8px;">
+                <i class="fa-solid fa-arrow-right-to-bracket"></i> Open in Products Page
+            </a>
         </div>
     </div>
 </div>
@@ -1201,6 +1204,13 @@ function openBiImageLightbox(imgUrl, prodName, prodCode, price, qty) {
     document.getElementById('biLightboxCode').textContent = prodCode || '';
     document.getElementById('biLightboxPrice').textContent = '$' + Number(price || 0).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
     document.getElementById('biLightboxQty').textContent = Number(qty || 0).toLocaleString();
+    
+    const goToBtn = document.getElementById('biLightboxGoToProdBtn');
+    if (goToBtn) {
+        const targetSearch = prodCode || prodName || '';
+        goToBtn.href = 'products.php?search=' + encodeURIComponent(targetSearch);
+    }
+
     document.getElementById('biImageLightboxModal').classList.add('active');
 }
 
@@ -1225,8 +1235,14 @@ function openCategoryProductsModal(categoryId) {
         cat.products.forEach(p => {
             const card = document.createElement('div');
             card.className = 'cat-prod-card';
+            card.style.cursor = 'pointer';
+            card.title = `Click to view ${escapeHtml(p.product_name)} in Products Page`;
+            card.onclick = function() {
+                window.location.href = 'products.php?search=' + encodeURIComponent(p.product_code || p.product_name);
+            };
+
             const imgHtml = p.image 
-                ? `<img src="${escapeHtml(p.image)}" class="cat-prod-img" onclick="openBiImageLightbox('${escapeHtml(p.image)}', '${escapeHtml(p.product_name)}', '${escapeHtml(p.product_code)}', ${p.price}, ${p.quantity})">`
+                ? `<img src="${escapeHtml(p.image)}" class="cat-prod-img" onclick="event.stopPropagation(); openBiImageLightbox('${escapeHtml(p.image)}', '${escapeHtml(p.product_name)}', '${escapeHtml(p.product_code)}', ${p.price}, ${p.quantity})">`
                 : `<div class="cat-prod-img" style="background:#1e293b; display:flex; flex-direction:column; align-items:center; justify-content:center;"><i class="fa-solid fa-box-open" style="font-size: 20px; color: #475569;"></i><span style="font-size: 10px; color: #64748b; margin-top: 2px;">No Image</span></div>`;
             
             let badgeClass = p.quantity === 0 ? 'danger' : (p.quantity <= 10 ? 'warning' : 'success');
