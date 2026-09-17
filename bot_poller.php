@@ -49,9 +49,19 @@ function registerBotCommands($botToken) {
 
 if (!function_exists('getCustomReplyKeyboard')) {
     function getCustomReplyKeyboard() {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
-        $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
-        $baseUrl = "{$scheme}://{$host}";
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if (empty($host) || strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false || strpos($host, '::1') !== false) {
+            $baseUrl = "https://report-push-v2.vercel.app";
+        } else {
+            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
+            $script = $_SERVER['SCRIPT_NAME'] ?? '';
+            $dir = rtrim(dirname($script), '/\\');
+            if ($dir === '.' || $dir === '/' || $dir === '\\') {
+                $dir = '';
+            }
+            $baseUrl = "{$scheme}://{$host}{$dir}";
+        }
+
         $biUrl   = "{$baseUrl}/report_bi.php";
         $prodUrl = "{$baseUrl}/products.php";
         $catUrl  = "{$baseUrl}/index.php";
@@ -62,8 +72,8 @@ if (!function_exists('getCustomReplyKeyboard')) {
                     ['text' => '📊 BI Dashboard Mini App', 'web_app' => ['url' => $biUrl]]
                 ],
                 [
-                    ['text' => '📦 All Products', 'web_app' => ['url' => $prodUrl]],
-                    ['text' => '🏷️ Categories', 'web_app' => ['url' => $catUrl]]
+                    ['text' => '📦 All Products'],
+                    ['text' => '🏷️ Categories']
                 ],
                 [
                     ['text' => '⚠️ Low Stock'],
@@ -333,9 +343,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     // 3. Process commands for connected user
     switch ($command) {
         case '/start':
-            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
-            $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
-            $biUrl  = "{$scheme}://{$host}/report_bi.php";
+            $baseUrl = getAppBaseUrl();
+            $biUrl  = "{$baseUrl}/report_bi.php";
             $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
                  . "═════════════════════════════\n"
                  . "Status: <b>Connected ✅</b>\n"
@@ -345,7 +354,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
+                        ['text' => '🌐 Open BI Link', 'url' => $biUrl]
                     ]
                 ]
             ];
@@ -355,9 +365,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/bi':
         case '/report':
         case '/miniapp':
-            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
-            $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
-            $biUrl  = "{$scheme}://{$host}/report_bi.php";
+            $baseUrl = getAppBaseUrl();
+            $biUrl  = "{$baseUrl}/report_bi.php";
             $msg = "📊 <b>LIVE BI REPORT & ANALYTICS MINI APP</b>\n"
                  . "═════════════════════════════\n"
                  . "Tap the button below to launch the live Business Intelligence Dashboard directly inside Telegram!\n\n"
@@ -365,11 +374,12 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
+                        ['text' => '🌐 Open BI Link', 'url' => $biUrl]
                     ],
                     [
-                        ['text' => '🏷 View Categories', 'url' => "{$scheme}://{$host}/index.php"],
-                        ['text' => '📦 View Products', 'url' => "{$scheme}://{$host}/products.php"]
+                        ['text' => '🏷 View Categories', 'url' => "{$baseUrl}/index.php"],
+                        ['text' => '📦 View Products', 'url' => "{$baseUrl}/products.php"]
                     ]
                 ]
             ];
@@ -631,10 +641,9 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/product':
         case '/products':
         case '/orders':
-            $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
-            $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
-            $prodUrl = "{$scheme}://{$host}/products.php";
-            $biUrl   = "{$scheme}://{$host}/report_bi.php";
+            $baseUrl = getAppBaseUrl();
+            $prodUrl = "{$baseUrl}/products.php";
+            $biUrl   = "{$baseUrl}/report_bi.php";
 
             if (empty($rawArg)) {
                 $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");
@@ -699,7 +708,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                      . "<b>Stock Qty:</b> {$qty} units\n"
                      . "<b>Inventory Value:</b> \${$val}";
 
-                $pSearchUrl = "{$scheme}://{$host}/products.php?search=" . urlencode($r['product_code']);
+                $pSearchUrl = "{$baseUrl}/products.php?search=" . urlencode($r['product_code']);
                 $markup = [
                     'inline_keyboard' => [
                         [

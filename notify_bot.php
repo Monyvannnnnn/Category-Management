@@ -6,8 +6,11 @@
 
 if (!function_exists('getAppBaseUrl')) {
     function getAppBaseUrl() {
+        $host = $_SERVER['HTTP_HOST'] ?? '';
+        if (empty($host) || strpos($host, 'localhost') !== false || strpos($host, '127.0.0.1') !== false || strpos($host, '::1') !== false) {
+            return "https://report-push-v2.vercel.app";
+        }
         $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
-        $host   = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
         $script = $_SERVER['SCRIPT_NAME'] ?? '';
         $dir = rtrim(dirname($script), '/\\');
         if ($dir === '.' || $dir === '/' || $dir === '\\') {
@@ -37,13 +40,16 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $message, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $message, $m)) {
             $pCode = trim($m[1]);
             $prodUrl = "{$baseUrl}/products.php?search=" . urlencode($pCode);
-            $btnText = "📦 View Product Details ({$pCode})";
+            $btnText = "📦 View Details ({$pCode})";
         }
 
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
                 [
                     ['text' => $btnText, 'web_app' => ['url' => $prodUrl]],
+                    ['text' => '🌐 Open Link', 'url' => $prodUrl]
+                ],
+                [
                     ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
                 ]
             ]
@@ -187,6 +193,9 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
             'inline_keyboard' => [
                 [
                     ['text' => $btnText, 'web_app' => ['url' => $prodUrl]],
+                    ['text' => '🌐 Open Link', 'url' => $prodUrl]
+                ],
+                [
                     ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
                 ]
             ]
