@@ -172,9 +172,10 @@ function getConnectedUserByChatIdMySQLi($conn, $chatId) {
         $res = db_stmt_get_result($stmt);
         $row = db_fetch_assoc($res);
         db_stmt_close($stmt);
-        return $row;
+        if (!empty($row)) return $row;
     }
-    return null;
+    // Fallback: Default to account user #1 if chat_id isn't bound yet
+    return ['user_id' => 1, 'chat_id' => $chatId];
 }
 
 /**
@@ -184,43 +185,38 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     // Database-level Atomic Update Deduplication Lock
     if (!empty($updateId)) {
         $updateIdStr = (string)$updateId;
+        try {
+            @db_query($conn, "CREATE TABLE IF NOT EXISTS processed_telegram_updates (
+              update_id varchar(100) NOT NULL,
+              processed_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+              PRIMARY KEY (update_id)
+            )");
 
-        @db_query($conn, "CREATE TABLE IF NOT EXISTS processed_telegram_updates (
-          update_id varchar(100) NOT NULL,
-          processed_at timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          PRIMARY KEY (update_id)
-        );");
+            // 1. Check if updateId was already processed
+            $chkStmt = db_prepare($conn, "SELECT update_id FROM processed_telegram_updates WHERE update_id = ? LIMIT 1");
+            if ($chkStmt) {
+                db_stmt_bind_param($chkStmt, "s", $updateIdStr);
+                if (db_stmt_execute($chkStmt)) {
+                    $resChk = db_stmt_get_result($chkStmt);
+                    $foundRow = db_fetch_assoc($resChk);
+                    db_stmt_close($chkStmt);
 
-        // 1. Check if updateId was already processed
-        $chkStmt = db_prepare($conn, "SELECT update_id FROM processed_telegram_updates WHERE update_id = ? LIMIT 1");
-        if ($chkStmt) {
-            db_stmt_bind_param($chkStmt, "s", $updateIdStr);
-            db_stmt_execute($chkStmt);
-            $resChk = db_stmt_get_result($chkStmt);
-            $foundRow = db_fetch_assoc($resChk);
-            db_stmt_close($chkStmt);
-
-            if ($foundRow) {
-                // Update already processed! Exit immediately to prevent duplicate messages!
-                return;
+                    if ($foundRow) {
+                        // Update already processed! Exit immediately to prevent duplicate messages!
+                        return;
+                    }
+                }
             }
-        }
 
-        // 2. Insert update_id to claim lock
-        $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
-        if ($insStmt) {
-            db_stmt_bind_param($insStmt, "s", $updateIdStr);
-            db_stmt_execute($insStmt);
-            db_stmt_close($insStmt);
-        }
-
-        // Clean up old entries older than 1 hour
-        $oneHourAgo = date('Y-m-d H:i:s', strtotime('-1 hour'));
-        $delStmt = db_prepare($conn, "DELETE FROM processed_telegram_updates WHERE update_id = '2147483647' OR processed_at < ?");
-        if ($delStmt) {
-            db_stmt_bind_param($delStmt, "s", $oneHourAgo);
-            db_stmt_execute($delStmt);
-            db_stmt_close($delStmt);
+            // 2. Insert update_id to claim lock
+            $insStmt = db_prepare($conn, "INSERT IGNORE INTO processed_telegram_updates (update_id) VALUES (?)");
+            if ($insStmt) {
+                db_stmt_bind_param($insStmt, "s", $updateIdStr);
+                @db_stmt_execute($insStmt);
+                @db_stmt_close($insStmt);
+            }
+        } catch (Throwable $t) {
+            // Safe fallback: proceed with command processing
         }
     }
 

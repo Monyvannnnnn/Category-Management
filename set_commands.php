@@ -65,24 +65,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_GET['action'])) {
 $content = file_get_contents("php://input");
 $update  = json_decode($content, true);
 
-if (!isset($update["message"])) exit;
+if (isset($update["message"])) {
+    $updateId = (int)($update["update_id"] ?? 0);
+    $chatId   = $update["message"]["chat"]["id"] ?? '';
+    $text     = trim($update["message"]["text"] ?? '');
 
-$updateId = (int)($update["update_id"] ?? 0);
-$chatId   = $update["message"]["chat"]["id"] ?? '';
-$text     = trim($update["message"]["text"] ?? '');
-
-if (empty($chatId) || empty($text)) exit;
-
-// Send HTTP 200 OK to Telegram immediately so Telegram marks update as delivered and never retries
-http_response_code(200);
-header("Content-Length: 0");
-header("Connection: close");
-if (function_exists('fastcgi_finish_request')) {
-    fastcgi_finish_request();
-} else {
-    @ob_end_flush();
-    @flush();
+    if (!empty($chatId) && !empty($text)) {
+        processTelegramCommand($conn, $chatId, $text, $botToken, 1, $updateId);
+    }
 }
 
-processTelegramCommand($conn, $chatId, $text, $botToken, 1, $updateId);
+http_response_code(200);
+header("Content-Type: application/json");
+echo json_encode(["ok" => true]);
 exit;
