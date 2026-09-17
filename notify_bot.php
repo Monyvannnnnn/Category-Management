@@ -57,7 +57,11 @@ if (!function_exists('editTelegramMessageText')) {
             'parse_mode' => 'HTML'
         ];
         if (!empty($replyMarkup)) {
-            $payload['reply_markup'] = is_string($replyMarkup) ? json_decode($replyMarkup, true) : $replyMarkup;
+            $markupArr = is_string($replyMarkup) ? json_decode($replyMarkup, true) : $replyMarkup;
+            // Telegram editMessageText strictly ONLY accepts inline_keyboard arrays!
+            if (is_array($markupArr) && isset($markupArr['inline_keyboard'])) {
+                $payload['reply_markup'] = $markupArr;
+            }
         }
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
