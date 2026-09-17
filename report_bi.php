@@ -79,15 +79,14 @@ if (!$currentUser) {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 5px 10px;
-            border-radius: 6px;
+            padding: 4px 10px;
+            border-radius: 20px;
             background: var(--surface-alt, #1a2333);
             border: 1px solid var(--border-subtle, #242f42);
-            font-size: 11px;
+            font-size: 11.5px;
             font-weight: 600;
             color: #f8fafc;
             flex-shrink: 0;
-            white-space: nowrap;
         }
 
         .bi-profile-pill i.fa-user-circle {
@@ -169,9 +168,8 @@ if (!$currentUser) {
         }
 
         .bi-header-actions {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
             gap: 6px;
             width: 100%;
         }
@@ -189,7 +187,6 @@ if (!$currentUser) {
                 display: flex;
                 width: auto;
                 gap: 6px;
-                justify-content: flex-end;
             }
         }
 
@@ -432,29 +429,61 @@ if (!$currentUser) {
         .badge-status {
             display: inline-flex;
             align-items: center;
-            gap: 6px;
-            padding: 3px 8px;
+            justify-content: center;
+            gap: 5px;
+            padding: 4px 10px;
             border-radius: 20px;
             font-size: 11px;
-            font-weight: 500;
+            font-weight: 600;
+            white-space: nowrap !important;
+            flex-shrink: 0;
+            letter-spacing: 0.2px;
+            transition: all 0.2s ease;
+        }
+
+        .badge-status i {
+            font-size: 11px;
+            flex-shrink: 0;
         }
 
         .badge-status.success {
-            background: rgba(34, 197, 94, 0.15);
-            color: #4ade80;
-            border: 1px solid rgba(34, 197, 94, 0.3);
+            background: rgba(16, 185, 129, 0.14);
+            color: #34d399;
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            box-shadow: 0 0 8px rgba(16, 185, 129, 0.1);
         }
 
         .badge-status.warning {
-            background: rgba(245, 158, 11, 0.15);
+            background: rgba(245, 158, 11, 0.14);
             color: #fbbf24;
-            border: 1px solid rgba(245, 158, 11, 0.3);
+            border: 1px solid rgba(245, 158, 11, 0.35);
+            box-shadow: 0 0 8px rgba(245, 158, 11, 0.1);
         }
 
         .badge-status.danger {
-            background: rgba(239, 68, 68, 0.15);
+            background: rgba(239, 68, 68, 0.14);
             color: #f87171;
-            border: 1px solid rgba(239, 68, 68, 0.3);
+            border: 1px solid rgba(239, 68, 68, 0.35);
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
+        }
+
+        .badge-text-mobile {
+            display: none;
+        }
+
+        @media (max-width: 600px) {
+            .badge-status {
+                padding: 3px 8px;
+                font-size: 10px;
+                gap: 4px;
+            }
+            .badge-text-full {
+                display: none;
+            }
+            .badge-text-mobile {
+                display: inline;
+                font-weight: 700;
+            }
         }
 
         /* Product Thumbnails & Avatar Stacks in BI Table */
@@ -758,10 +787,7 @@ if (!$currentUser) {
                     <p>Real-time Business Intelligence & Inventory Valuation Overview</p>
                 </div>
             </div>
-        </div>
 
-        <div class="bi-header-actions">
-            <!-- User Profile -->
             <div class="bi-profile-pill">
                 <i class="fa-solid fa-user-circle"></i>
                 <span class="user-profile-name" id="userNameSpan"><?php echo htmlspecialchars($currentUser['name'] ?? 'Admin'); ?></span>
@@ -769,6 +795,9 @@ if (!$currentUser) {
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
             </div>
+        </div>
+
+        <div class="bi-header-actions">
             <!-- Navigation Links -->
             <a href="index.php" class="bi-btn" title="Categories Management">
                 <i class="fa-solid fa-layer-group"></i> Categories
@@ -1292,11 +1321,11 @@ function renderTable(categories) {
     categories.forEach(c => {
         let statusBadge = '';
         if (c.out_of_stock_count > 0) {
-            statusBadge = `<span class="badge-status danger"><i class="fa-solid fa-circle-xmark"></i> ${c.out_of_stock_count} Out of Stock</span>`;
+            statusBadge = `<span class="badge-status danger" title="${c.out_of_stock_count} Out of Stock"><i class="fa-solid fa-circle-xmark"></i> <span class="badge-text-full">${c.out_of_stock_count} Out of Stock</span><span class="badge-text-mobile">${c.out_of_stock_count} Out</span></span>`;
         } else if (c.low_stock_count > 0) {
-            statusBadge = `<span class="badge-status warning"><i class="fa-solid fa-triangle-exclamation"></i> ${c.low_stock_count} Low Stock</span>`;
+            statusBadge = `<span class="badge-status warning" title="${c.low_stock_count} Low Stock"><i class="fa-solid fa-triangle-exclamation"></i> <span class="badge-text-full">${c.low_stock_count} Low Stock</span><span class="badge-text-mobile">${c.low_stock_count} Low</span></span>`;
         } else {
-            statusBadge = `<span class="badge-status success"><i class="fa-solid fa-circle-check"></i> Healthy</span>`;
+            statusBadge = `<span class="badge-status success" title="Healthy Stock"><i class="fa-solid fa-circle-check"></i> <span class="badge-text-full">Healthy</span><span class="badge-text-mobile">Healthy</span></span>`;
         }
 
         // Build Single Featured Image + Count Badge
