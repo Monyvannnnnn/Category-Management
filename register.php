@@ -239,12 +239,14 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             margin-top: 8px;
             position: relative;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.45s cubic-bezier(0.25, 1, 0.3, 1), 
+                        background-position 0.65s cubic-bezier(0.25, 1, 0.3, 1), 
+                        box-shadow 0.45s cubic-bezier(0.25, 1, 0.3, 1);
             box-shadow: 0 4px 15px rgba(99, 102, 241, 0.35);
         }
 
         .btn-submit i {
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.3, 1);
         }
 
         .btn-submit:hover {
@@ -260,6 +262,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         .btn-submit:active {
             transform: translateY(0) scale(0.985);
             box-shadow: 0 2px 8px rgba(99, 102, 241, 0.4);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
         }
 
         /* Shimmer beam effect on hover */
@@ -273,11 +276,11 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             background: linear-gradient(
                 90deg,
                 rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 0.3) 50%,
+                rgba(255, 255, 255, 0.35) 50%,
                 rgba(255, 255, 255, 0) 100%
             );
             transform: rotate(25deg);
-            transition: all 0.6s ease;
+            transition: left 0.85s cubic-bezier(0.25, 1, 0.3, 1), opacity 0.85s cubic-bezier(0.25, 1, 0.3, 1);
             opacity: 0;
             pointer-events: none;
         }
@@ -312,12 +315,16 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
+                        background 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
+                        border-color 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
+                        color 0.4s cubic-bezier(0.25, 1, 0.3, 1), 
+                        box-shadow 0.4s cubic-bezier(0.25, 1, 0.3, 1);
         }
 
         .auth-footer a i {
             font-size: 11px;
-            transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.4s cubic-bezier(0.25, 1, 0.3, 1);
         }
 
         .auth-footer a:hover {
