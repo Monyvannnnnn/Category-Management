@@ -79,14 +79,15 @@ if (!$currentUser) {
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 10px;
-            border-radius: 20px;
+            padding: 5px 10px;
+            border-radius: 6px;
             background: var(--surface-alt, #1a2333);
             border: 1px solid var(--border-subtle, #242f42);
-            font-size: 11.5px;
+            font-size: 11px;
             font-weight: 600;
             color: #f8fafc;
             flex-shrink: 0;
+            white-space: nowrap;
         }
 
         .bi-profile-pill i.fa-user-circle {
@@ -168,8 +169,9 @@ if (!$currentUser) {
         }
 
         .bi-header-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
             gap: 6px;
             width: 100%;
         }
@@ -187,6 +189,7 @@ if (!$currentUser) {
                 display: flex;
                 width: auto;
                 gap: 6px;
+                justify-content: flex-end;
             }
         }
 
@@ -755,7 +758,10 @@ if (!$currentUser) {
                     <p>Real-time Business Intelligence & Inventory Valuation Overview</p>
                 </div>
             </div>
+        </div>
 
+        <div class="bi-header-actions">
+            <!-- User Profile -->
             <div class="bi-profile-pill">
                 <i class="fa-solid fa-user-circle"></i>
                 <span class="user-profile-name" id="userNameSpan"><?php echo htmlspecialchars($currentUser['name'] ?? 'Admin'); ?></span>
@@ -763,9 +769,6 @@ if (!$currentUser) {
                     <i class="fa-solid fa-right-from-bracket"></i>
                 </a>
             </div>
-        </div>
-
-        <div class="bi-header-actions">
             <!-- Navigation Links -->
             <a href="index.php" class="bi-btn" title="Categories Management">
                 <i class="fa-solid fa-layer-group"></i> Categories
