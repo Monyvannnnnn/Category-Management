@@ -225,28 +225,54 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         sendTelegramChatAction($chatId, 'typing', $botToken);
     }
 
-    // Custom Persistent Reply Keyboard button text mapping
+    // Robust Button Text Normalization (Strips emojis & unicode variations)
+    $cleanText = strtolower(trim($text));
+    $normText  = strtolower(trim(preg_replace('/[^\w\s]/u', '', $text)));
+
     $buttonMap = [
-        '📦 all products'          => '/products',
-        '📦 products'              => '/products',
-        '🏷️ categories'            => '/categories',
-        '🏷️ category list'         => '/categories',
-        '📊 bi analytics mini app' => '/bi',
-        '📊 bi dashboard mini app' => '/bi',
-        '📊 bi dashboard'          => '/bi',
-        '🔍 search product'        => '/search',
-        '⚠️ low stock'              => '/lowstock',
-        '🚫 out of stock'           => '/outofstock',
-        '📈 inventory summary'      => '/summary',
-        '❓ help & commands'        => '/help',
-        '❓ help'                  => '/help'
+        'all products'            => '/products',
+        'products'                => '/products',
+        'categories'              => '/categories',
+        'category list'           => '/categories',
+        'bi analytics mini app'   => '/bi',
+        'bi dashboard mini app'   => '/bi',
+        'bi dashboard'            => '/bi',
+        'search product'          => '/search',
+        'low stock'               => '/lowstock',
+        'out of stock'            => '/outofstock',
+        'inventory summary'       => '/summary',
+        'help commands'           => '/help',
+        'help'                    => '/help'
     ];
 
-    $cleanText = strtolower(trim($text));
     if (isset($buttonMap[$cleanText])) {
         $command = $buttonMap[$cleanText];
-        $rawArg = '';
-        $arg = '';
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (isset($buttonMap[$normText])) {
+        $command = $buttonMap[$normText];
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (strpos($normText, 'out of stock') !== false) {
+        $command = '/outofstock';
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (strpos($normText, 'low stock') !== false) {
+        $command = '/lowstock';
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (strpos($normText, 'inventory summary') !== false || strpos($normText, 'summary') !== false) {
+        $command = '/summary';
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (strpos($normText, 'all products') !== false) {
+        $command = '/products';
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (strpos($normText, 'categories') !== false) {
+        $command = '/categories';
+        $rawArg  = '';
+        $arg     = '';
     } else {
         $parts   = explode(' ', $text, 2);
         $command = strtolower($parts[0]);

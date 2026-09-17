@@ -24,14 +24,15 @@ if (!function_exists('sendTelegramChatAction')) {
     function sendTelegramChatAction($chatId, $action = 'typing', $customBotToken = null) {
         $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
         $url = "https://api.telegram.org/bot{$botToken}/sendChatAction";
-        $data = [
+        $payload = [
             'chat_id' => $chatId,
             'action'  => $action
         ];
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, http_build_query($data));
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
         curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
