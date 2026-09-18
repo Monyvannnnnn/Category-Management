@@ -739,7 +739,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/orders':
             $baseUrl = getAppBaseUrl();
             $prodUrl = "{$baseUrl}/products.php";
-            $biUrl   = "{$baseUrl}/report_bi.php";
+            $biUrl   = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
 
             if (empty($rawArg)) {
                 $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.price, p.quantity, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC LIMIT 10");

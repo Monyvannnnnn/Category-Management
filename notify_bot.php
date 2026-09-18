@@ -118,7 +118,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
     } else {
         $baseUrl = getAppBaseUrl();
         $prodUrl    = "{$baseUrl}/products.php";
-        $biUrl      = "{$baseUrl}/report_bi.php";
+        $biUrl      = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $btnText    = '📦 View Products';
 
@@ -265,7 +265,7 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     } else {
         $baseUrl    = getAppBaseUrl();
         $prodUrl    = "{$baseUrl}/products.php";
-        $biUrl      = "{$baseUrl}/report_bi.php";
+        $biUrl      = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $btnText    = '📦 View Products';
 
