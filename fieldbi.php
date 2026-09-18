@@ -1,17 +1,7 @@
 <?php
-// fieldbi.php - Field BI Platform Mini App View (Dark Glassmorphic Theme)
-header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
-header("Pragma: no-cache");
-header("Expires: 0");
-
-require_once "database.php";
-require_once "includes/auth_helper.php";
-
-$currentUser = getCurrentUser();
-if (!$currentUser) {
-    // Fallback profile when accessed directly inside Telegram Mini App webview
-    $currentUser = ['id' => 1, 'name' => 'Telegram User', 'role' => 'admin'];
-}
+// fieldbi.php - Ultra-Fast High-Performance Field BI Telegram Mini App Page
+header("Cache-Control: public, max-age=3600");
+header("X-Frame-Options: ALLOWALL");
 
 $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
 ?>
@@ -20,16 +10,24 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Field BI Web App - Telegram Mini App</title>
+    <title>Field BI Web App</title>
+
+    <!-- DNS Prefetch & Preconnect for Instant Domain Warmup -->
+    <link rel="dns-prefetch" href="https://app.fieldbi.com">
+    <link rel="preconnect" href="https://app.fieldbi.com" crossorigin>
 
     <!-- Telegram Mini App WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Immediate Telegram WebApp expansion (0ms delay)
+        if (window.Telegram && window.Telegram.WebApp) {
+            window.Telegram.WebApp.ready();
+            window.Telegram.WebApp.expand();
+        }
+    </script>
 
     <!-- Font Awesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
-    
-    <!-- Base Stylesheet -->
-    <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" media="print" onload="this.media='all'">
 
     <style>
         html, body {
@@ -37,8 +35,8 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
             margin: 0 !important;
             padding: 0 !important;
             overflow: hidden !important;
-            background-color: var(--bg-main, #0f141c);
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #0f141c;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
 
         .fieldbi-container {
@@ -47,21 +45,20 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
             display: flex;
             flex-direction: column;
             box-sizing: border-box;
-            background-color: var(--bg-main, #0f141c);
-            padding: 6px;
-            gap: 6px;
+            background-color: #0f141c;
+            padding: 4px;
+            gap: 4px;
         }
 
         .fieldbi-header {
-            background: var(--surface-card, #161d2a);
-            border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 10px;
-            padding: 8px 12px;
+            background: #161d2a;
+            border: 1px solid #242f42;
+            border-radius: 8px;
+            padding: 6px 10px;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            gap: 10px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+            gap: 8px;
             flex-shrink: 0;
         }
 
@@ -73,53 +70,38 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
         }
 
         .fieldbi-icon {
-            width: 32px;
-            height: 32px;
-            border-radius: 8px;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            width: 28px;
+            height: 28px;
+            border-radius: 6px;
+            background: #10b981;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 14px;
+            font-size: 13px;
             flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(16, 185, 129, 0.35);
-        }
-
-        .fieldbi-title-text {
-            min-width: 0;
         }
 
         .fieldbi-title-text h1 {
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 700;
-            color: var(--text-main, #f8fafc);
+            color: #f8fafc;
             margin: 0;
             line-height: 1.2;
             white-space: nowrap;
-        }
-
-        .fieldbi-title-text p {
-            font-size: 10px;
-            color: var(--text-muted, #94a3b8);
-            margin: 1px 0 0 0;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
         }
 
         .fieldbi-nav-actions {
             display: flex;
             align-items: center;
             gap: 6px;
-            flex-wrap: nowrap;
         }
 
         .bi-btn {
-            background: var(--surface-alt, #1a2333);
-            border: 1px solid var(--border-subtle, #242f42);
-            color: var(--text-main, #f8fafc);
-            padding: 5px 10px;
+            background: #1a2333;
+            border: 1px solid #242f42;
+            color: #f8fafc;
+            padding: 4px 8px;
             border-radius: 6px;
             font-size: 11px;
             font-weight: 600;
@@ -127,37 +109,20 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 5px;
-            transition: all 0.2s ease;
+            gap: 4px;
             text-decoration: none;
             white-space: nowrap;
-        }
-
-        .bi-btn:hover {
-            background: var(--border-subtle, #242f42);
-            color: #ffffff;
-            border-color: var(--primary-color, #10b981);
-        }
-
-        .bi-btn.primary {
-            background: #10b981;
-            border-color: #10b981;
-            color: #ffffff;
-        }
-
-        .bi-btn.primary:hover {
-            background: #059669;
         }
 
         .fieldbi-frame-wrapper {
             flex: 1;
             width: 100%;
             height: 100%;
-            border-radius: 10px;
+            border-radius: 8px;
             overflow: hidden;
             position: relative;
             background: #161d2a;
-            border: 1px solid var(--border-subtle, #242f42);
+            border: 1px solid #242f42;
         }
 
         .fieldbi-iframe {
@@ -170,100 +135,59 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
         .loading-overlay {
             position: absolute;
             top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(15, 20, 28, 0.9);
+            background: #0f141c;
             display: flex;
-            flex-direction: column;
             align-items: center;
             justify-content: center;
-            gap: 12px;
+            gap: 8px;
             color: #94a3b8;
-            font-size: 13px;
+            font-size: 12px;
             z-index: 10;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.2s ease;
         }
 
         .spinner {
-            width: 32px;
-            height: 32px;
-            border: 3px solid rgba(16, 185, 129, 0.2);
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(16, 185, 129, 0.2);
             border-top-color: #10b981;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
+            animation: spin 0.6s linear infinite;
         }
 
         @keyframes spin {
             to { transform: rotate(360deg); }
-        }
-
-        @media (max-width: 600px) {
-            .fieldbi-container {
-                padding: 4px;
-                gap: 4px;
-            }
-            .fieldbi-header {
-                padding: 6px 8px;
-            }
-            .fieldbi-title-text p {
-                display: none;
-            }
-            .fieldbi-title-text h1 {
-                font-size: 12.5px;
-            }
-            .bi-btn {
-                padding: 4px 7px;
-                font-size: 10.5px;
-            }
         }
     </style>
 </head>
 <body>
 
 <div class="fieldbi-container">
-    <!-- Top Header Navigation Bar -->
     <div class="fieldbi-header">
         <div class="fieldbi-title-group">
-            <div class="fieldbi-icon">
-                <i class="fa-solid fa-wheat-field"></i>
-            </div>
+            <div class="fieldbi-icon">🌾</div>
             <div class="fieldbi-title-text">
                 <h1>Field BI App</h1>
-                <p>Prompt Demo Page • Field BI Integration</p>
             </div>
         </div>
 
         <div class="fieldbi-nav-actions">
-            <!-- Switch Website Tab 1 -->
-            <a href="report_bi.php" class="bi-btn" title="Switch to Inventory BI Analytics">
-                <i class="fa-solid fa-chart-pie"></i> 📊 Inventory BI
-            </a>
-
-            <!-- Switch Website Tab 2 (Active) -->
-            <button class="bi-btn primary" title="Currently viewing Field BI App">
-                <i class="fa-solid fa-wheat-field"></i> 🌾 Field BI
-            </button>
-
-            <!-- Refresh Button -->
-            <button class="bi-btn" onclick="refreshIframe()" title="Reload Web View">
-                <i class="fa-solid fa-rotate"></i>
-            </button>
-
-            <!-- External Link -->
-            <a href="<?php echo htmlspecialchars($fieldBiTargetUrl); ?>" target="_blank" class="bi-btn" title="Open in Browser">
-                <i class="fa-solid fa-arrow-up-right-from-square"></i>
-            </a>
+            <button class="bi-btn" onclick="refreshIframe()" title="Reload">🔄</button>
+            <a href="<?php echo htmlspecialchars($fieldBiTargetUrl); ?>" target="_blank" class="bi-btn" title="External Browser">↗️</a>
         </div>
     </div>
 
-    <!-- Embedded Web View Container -->
     <div class="fieldbi-frame-wrapper">
         <div class="loading-overlay" id="loadingOverlay">
             <div class="spinner"></div>
-            <span>Loading Field BI App...</span>
+            <span>Fast Loading Field BI...</span>
         </div>
         <iframe 
             id="fieldbiIframe"
             class="fieldbi-iframe" 
             src="<?php echo htmlspecialchars($fieldBiTargetUrl); ?>" 
+            loading="eager"
+            fetchpriority="high"
             allow="geolocation; microphone; camera; clipboard-read; clipboard-write; autoplay; fullscreen"
             onload="hideLoading()">
         </iframe>
@@ -271,17 +195,11 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
 </div>
 
 <script>
-    // Initialize Telegram WebApp SDK if running inside Telegram
-    if (window.Telegram && window.Telegram.WebApp) {
-        window.Telegram.WebApp.ready();
-        window.Telegram.WebApp.expand();
-    }
-
     function hideLoading() {
         const overlay = document.getElementById('loadingOverlay');
         if (overlay) {
             overlay.style.opacity = '0';
-            setTimeout(() => { overlay.style.display = 'none'; }, 300);
+            setTimeout(() => { overlay.style.display = 'none'; }, 200);
         }
     }
 
@@ -291,12 +209,10 @@ $fieldBiTargetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&act
             overlay.style.display = 'flex';
             overlay.style.opacity = '1';
         }
-        const iframe = document.getElementById('fieldbiIframe');
-        iframe.src = iframe.src;
+        document.getElementById('fieldbiIframe').src = '<?php echo htmlspecialchars($fieldBiTargetUrl); ?>';
     }
 
-    // Auto-hide spinner fallback after 5s if iframe onload event is restricted by cross-origin policy
-    setTimeout(hideLoading, 5000);
+    setTimeout(hideLoading, 2500);
 </script>
 
 </body>

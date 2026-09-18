@@ -63,7 +63,7 @@ if (!function_exists('getCustomReplyKeyboard')) {
             $baseUrl = "{$scheme}://{$host}{$dir}";
         }
 
-        $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+        $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $prodUrl    = "{$baseUrl}/products.php";
         $catUrl     = "{$baseUrl}/index.php";
 
@@ -420,7 +420,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     switch ($command) {
         case '/start':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
                  . "═════════════════════════════\n"
                  . "Status: <b>Connected ✅</b>\n"
@@ -441,7 +441,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/report':
         case '/miniapp':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $msg = "🌾 <b>FIELD BI MINI APP</b>\n"
                  . "═════════════════════════════\n"
                  . "Tap below to launch Field BI directly inside Telegram!\n\n"
@@ -463,7 +463,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/fieldbi':
         case '/field':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $msg = "🌾 <b>FIELD BI MINI APP & PLATFORM</b>\n"
                  . "═════════════════════════════\n"
@@ -866,7 +866,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/report':
         case '/summary':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $prodUrl    = "{$baseUrl}/products.php";
 
             $catStmt = db_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
@@ -912,7 +912,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         // 11. /valuation
         case '/valuation':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $stmt = db_prepare($conn, "SELECT COUNT(*) as total_prods, COALESCE(SUM(quantity), 0) as total_stock, COALESCE(SUM(price * quantity), 0) as total_val, COALESCE(AVG(price), 0) as avg_price FROM product WHERE user_id = ?");
             db_stmt_bind_param($stmt, "i", $userId);
             db_stmt_execute($stmt);
@@ -1112,7 +1112,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         default:
             $baseUrl    = getAppBaseUrl();
             $biUrl      = "{$baseUrl}/report_bi.php";
-            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $prodUrl    = "{$baseUrl}/products.php";
 
             $msg = "⚡ <b>INVENTORY BOT COMMAND CENTER</b>\n"

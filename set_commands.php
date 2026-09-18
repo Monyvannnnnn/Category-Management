@@ -28,8 +28,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' || isset($_GET['action'])) {
 
     $cmdRes = registerBotCommands($botToken);
 
-    // Set Telegram Chat Menu Button to open Field BI Mini App
-    $fieldBiAppUrl = "{$scheme}://{$host}/fieldbi.php";
+    // Set Telegram Chat Menu Button to open Field BI Mini App directly (instant native render)
+    $fieldBiAppUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
     $menuBtnUrl = "https://api.telegram.org/bot{$botToken}/setChatMenuButton";
     $menuBtnPayload = [
         'menu_button' => [

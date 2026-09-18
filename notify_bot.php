@@ -119,7 +119,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         $baseUrl = getAppBaseUrl();
         $prodUrl    = "{$baseUrl}/products.php";
         $biUrl      = "{$baseUrl}/report_bi.php";
-        $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+        $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $btnText    = '📦 View Products';
 
         if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $message, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $message, $m)) {
@@ -266,7 +266,7 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
         $baseUrl    = getAppBaseUrl();
         $prodUrl    = "{$baseUrl}/products.php";
         $biUrl      = "{$baseUrl}/report_bi.php";
-        $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+        $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
         $btnText    = '📦 View Products';
 
         if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $caption, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $caption, $m)) {
