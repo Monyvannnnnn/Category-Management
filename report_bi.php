@@ -168,8 +168,8 @@ if (!$currentUser) {
         }
 
         .bi-header-actions {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            display: flex;
+            flex-wrap: wrap;
             gap: 6px;
             width: 100%;
         }
@@ -809,6 +809,9 @@ if (!$currentUser) {
 
         <div class="bi-header-actions">
             <!-- Navigation Links -->
+            <a href="fieldbi.php" class="bi-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;" title="Switch to Field BI App">
+                <i class="fa-solid fa-wheat-field"></i> 🌾 Field BI
+            </a>
             <a href="index.php" class="bi-btn" title="Categories Management">
                 <i class="fa-solid fa-layer-group"></i> Categories
             </a>

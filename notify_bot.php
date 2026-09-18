@@ -117,9 +117,10 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
     } else {
         $baseUrl = getAppBaseUrl();
-        $prodUrl = "{$baseUrl}/products.php";
-        $biUrl   = "{$baseUrl}/report_bi.php";
-        $btnText = '📦 View Products';
+        $prodUrl    = "{$baseUrl}/products.php";
+        $biUrl      = "{$baseUrl}/report_bi.php";
+        $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+        $btnText    = '📦 View Products';
 
         if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $message, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $message, $m)) {
             $pCode = trim($m[1]);
@@ -134,7 +135,8 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
                     ['text' => '🌐 Open Link', 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                    ['text' => '📊 Executive BI', 'web_app' => ['url' => $biUrl]],
+                    ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                 ]
             ]
         ]);
@@ -262,10 +264,11 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     if (!empty($replyMarkup)) {
         $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
     } else {
-        $baseUrl = getAppBaseUrl();
-        $prodUrl = "{$baseUrl}/products.php";
-        $biUrl   = "{$baseUrl}/report_bi.php";
-        $btnText = '📦 View Products';
+        $baseUrl    = getAppBaseUrl();
+        $prodUrl    = "{$baseUrl}/products.php";
+        $biUrl      = "{$baseUrl}/report_bi.php";
+        $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+        $btnText    = '📦 View Products';
 
         if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $caption, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $caption, $m)) {
             $pCode = trim($m[1]);
@@ -280,7 +283,8 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
                     ['text' => '🌐 Open Link', 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                    ['text' => '📊 Executive BI', 'web_app' => ['url' => $biUrl]],
+                    ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                 ]
             ]
         ]);
