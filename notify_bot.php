@@ -117,16 +117,8 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
     } else {
         $baseUrl = getAppBaseUrl();
-        $prodUrl    = "{$baseUrl}/products.php";
-        $biUrl      = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
-        $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
-        $btnText    = '📦 View Products';
-
-        if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $message, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $message, $m)) {
-            $pCode = trim($m[1]);
-            $prodUrl = "{$baseUrl}/products.php?search=" . urlencode($pCode);
-            $btnText = "📦 View Details ({$pCode})";
-        }
+        $miniAppUrl = "{$baseUrl}/fieldbi.php";
+        $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
 
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
@@ -134,7 +126,8 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
                     ['text' => $btnText, 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
+                    ['text' => '📱 Open in Mini App', 'web_app' => ['url' => $miniAppUrl]],
+                    ['text' => '🌐 Direct Browser', 'url' => $directUrl]
                 ]
             ]
         ]);
@@ -262,17 +255,8 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     if (!empty($replyMarkup)) {
         $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
     } else {
-        $baseUrl    = getAppBaseUrl();
-        $prodUrl    = "{$baseUrl}/products.php";
-        $biUrl      = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
-        $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
-        $btnText    = '📦 View Products';
-
-        if (preg_match('/Code:<\/b>\s*<code>?([^<\s\n]+)/i', $caption, $m) || preg_match('/Code:\s*([^<\s\n]+)/i', $caption, $m)) {
-            $pCode = trim($m[1]);
-            $prodUrl = "{$baseUrl}/products.php?search=" . urlencode($pCode);
-            $btnText = "📦 View Product Details ({$pCode})";
-        }
+        $miniAppUrl = "{$baseUrl}/fieldbi.php";
+        $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
 
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
@@ -280,7 +264,8 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
                     ['text' => $btnText, 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
+                    ['text' => '📱 Open in Mini App', 'web_app' => ['url' => $miniAppUrl]],
+                    ['text' => '🌐 Direct Browser', 'url' => $directUrl]
                 ]
             ]
         ]);

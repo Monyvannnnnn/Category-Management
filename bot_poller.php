@@ -420,17 +420,19 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     switch ($command) {
         case '/start':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
+            $miniAppUrl = "{$baseUrl}/fieldbi.php";
+            $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
                  . "═════════════════════════════\n"
                  . "Status: <b>Connected ✅</b>\n"
                  . "Account User ID: <code>#{$userId}</code>\n"
                  . "Connected Chat ID: <code>{$chatId}</code>\n\n"
-                 . "Tap below to launch <b>Field BI Mini App</b> or type /help for all commands!";
+                 . "Tap below to launch <b>Field BI Mini App</b> or open in <b>Direct Browser</b>!";
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
+                        ['text' => '📱 Open in Mini App', 'web_app' => ['url' => $miniAppUrl]],
+                        ['text' => '🌐 Open Direct Browser', 'url' => $directUrl]
                     ]
                 ]
             ];
@@ -441,15 +443,17 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/report':
         case '/miniapp':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
-            $msg = "🌾 <b>FIELD BI MINI APP</b>\n"
+            $miniAppUrl = "{$baseUrl}/fieldbi.php";
+            $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
+            $msg = "🌾 <b>FIELD BI ANALYTICS & REPORTING</b>\n"
                  . "═════════════════════════════\n"
-                 . "Tap below to launch Field BI directly inside Telegram!\n\n"
+                 . "Tap below to launch Field BI directly inside Telegram Mini App or open in Direct Browser!\n\n"
                  . "⚡ <i>Real-time Field BI Platform Integration.</i>";
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
+                        ['text' => '📱 Open in Mini App', 'web_app' => ['url' => $miniAppUrl]],
+                        ['text' => '🌐 Open Direct Browser', 'url' => $directUrl]
                     ],
                     [
                         ['text' => '🏷 View Categories', 'url' => "{$baseUrl}/index.php"],
@@ -463,16 +467,17 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/fieldbi':
         case '/field':
             $baseUrl    = getAppBaseUrl();
-            $fieldBiUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
+            $miniAppUrl = "{$baseUrl}/fieldbi.php";
             $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $msg = "🌾 <b>FIELD BI MINI APP & PLATFORM</b>\n"
                  . "═════════════════════════════\n"
-                 . "Tap below to view Field BI directly inside Telegram Mini App!\n\n"
+                 . "Tap below to view Field BI directly inside Telegram Mini App or open in Direct Browser!\n\n"
                  . "🔗 <b>Target URL:</b> <code>{$directUrl}</code>";
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
+                        ['text' => '📱 Open in Mini App', 'web_app' => ['url' => $miniAppUrl]],
+                        ['text' => '🌐 Open Direct Browser', 'url' => $directUrl]
                     ]
                 ]
             ];
