@@ -135,7 +135,6 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
                     ['text' => '🌐 Open Link', 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '📊 Executive BI', 'web_app' => ['url' => $biUrl]],
                     ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                 ]
             ]
@@ -283,7 +282,6 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
                     ['text' => '🌐 Open Link', 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '📊 Executive BI', 'web_app' => ['url' => $biUrl]],
                     ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                 ]
             ]

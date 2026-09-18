@@ -63,7 +63,6 @@ if (!function_exists('getCustomReplyKeyboard')) {
             $baseUrl = "{$scheme}://{$host}{$dir}";
         }
 
-        $biUrl      = "{$baseUrl}/report_bi.php";
         $fieldBiUrl = "{$baseUrl}/fieldbi.php";
         $prodUrl    = "{$baseUrl}/products.php";
         $catUrl     = "{$baseUrl}/index.php";
@@ -71,7 +70,6 @@ if (!function_exists('getCustomReplyKeyboard')) {
         return [
             'keyboard' => [
                 [
-                    ['text' => '📊 BI Dashboard Mini App', 'web_app' => ['url' => $biUrl]],
                     ['text' => '🌾 Field BI Mini App', 'web_app' => ['url' => $fieldBiUrl]]
                 ],
                 [
@@ -422,18 +420,16 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
     switch ($command) {
         case '/start':
             $baseUrl    = getAppBaseUrl();
-            $biUrl      = "{$baseUrl}/report_bi.php";
             $fieldBiUrl = "{$baseUrl}/fieldbi.php";
             $msg = "🚀 <b>WELCOME TO INVENTORY MANAGEMENT BOT</b>\n"
                  . "═════════════════════════════\n"
                  . "Status: <b>Connected ✅</b>\n"
                  . "Account User ID: <code>#{$userId}</code>\n"
                  . "Connected Chat ID: <code>{$chatId}</code>\n\n"
-                 . "Tap below to launch <b>Executive BI Analytics</b> or <b>Field BI Mini App</b>!";
+                 . "Tap below to launch <b>Field BI Mini App</b> or type /help for all commands!";
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Open Executive BI', 'web_app' => ['url' => $biUrl]],
                         ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                     ]
                 ]
@@ -445,16 +441,14 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/report':
         case '/miniapp':
             $baseUrl    = getAppBaseUrl();
-            $biUrl      = "{$baseUrl}/report_bi.php";
             $fieldBiUrl = "{$baseUrl}/fieldbi.php";
-            $msg = "📊 <b>LIVE BI REPORT & ANALYTICS MINI APPS</b>\n"
+            $msg = "🌾 <b>FIELD BI MINI APP</b>\n"
                  . "═════════════════════════════\n"
-                 . "Tap below to launch Mini Apps directly inside Telegram!\n\n"
-                 . "⚡ <i>Real-time Inventory Valuation, KPI Metrics & Field BI Integration.</i>";
+                 . "Tap below to launch Field BI directly inside Telegram!\n\n"
+                 . "⚡ <i>Real-time Field BI Platform Integration.</i>";
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Open Executive BI', 'web_app' => ['url' => $biUrl]],
                         ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                     ],
                     [
@@ -469,7 +463,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         case '/fieldbi':
         case '/field':
             $baseUrl    = getAppBaseUrl();
-            $biUrl      = "{$baseUrl}/report_bi.php";
             $fieldBiUrl = "{$baseUrl}/fieldbi.php";
             $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
             $msg = "🌾 <b>FIELD BI MINI APP & PLATFORM</b>\n"
@@ -479,8 +472,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]],
-                        ['text' => '📊 Open Executive BI', 'web_app' => ['url' => $biUrl]]
+                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                     ],
                     [
                         ['text' => '🌐 Open Field BI Link', 'url' => $directUrl]
@@ -873,9 +865,9 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         // 10. /summary & /report
         case '/report':
         case '/summary':
-            $baseUrl = getAppBaseUrl();
-            $biUrl   = "{$baseUrl}/report_bi.php";
-            $prodUrl = "{$baseUrl}/products.php";
+            $baseUrl    = getAppBaseUrl();
+            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
+            $prodUrl    = "{$baseUrl}/products.php";
 
             $catStmt = db_prepare($conn, "SELECT COUNT(*) as cat_cnt FROM category WHERE user_id = ?");
             db_stmt_bind_param($catStmt, "i", $userId);
@@ -906,8 +898,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Launch Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
-                        ['text' => '🌐 Open BI Link', 'url' => $biUrl]
+                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                     ],
                     [
                         ['text' => '📦 View All Products', 'web_app' => ['url' => $prodUrl]],
@@ -920,8 +911,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
 
         // 11. /valuation
         case '/valuation':
-            $baseUrl = getAppBaseUrl();
-            $biUrl   = "{$baseUrl}/report_bi.php";
+            $baseUrl    = getAppBaseUrl();
+            $fieldBiUrl = "{$baseUrl}/fieldbi.php";
             $stmt = db_prepare($conn, "SELECT COUNT(*) as total_prods, COALESCE(SUM(quantity), 0) as total_stock, COALESCE(SUM(price * quantity), 0) as total_val, COALESCE(AVG(price), 0) as avg_price FROM product WHERE user_id = ?");
             db_stmt_bind_param($stmt, "i", $userId);
             db_stmt_execute($stmt);
@@ -948,8 +939,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Open Live BI Dashboard', 'web_app' => ['url' => $biUrl]],
-                        ['text' => '🌐 Open BI Link', 'url' => $biUrl]
+                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                     ]
                 ]
             ];
@@ -1160,7 +1150,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '📊 Executive BI App', 'web_app' => ['url' => $biUrl]],
                         ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
                     ],
                     [
