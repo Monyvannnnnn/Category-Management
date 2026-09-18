@@ -436,7 +436,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            $logoPath = __DIR__ . '/assets/fieldbi_logo.jpg';
+            if (file_exists($logoPath)) {
+                if (function_exists('deleteTelegramMessage')) { deleteTelegramMessage($chatId, $loadingMsgId, $botToken); }
+                sendSingleTelegramPhoto($chatId, $logoPath, $msg, $botToken, $markup);
+            } else {
+                replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            }
             break;
 
         case '/bi':
@@ -461,7 +467,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            $logoPath = __DIR__ . '/assets/fieldbi_logo.jpg';
+            if (file_exists($logoPath)) {
+                if (function_exists('deleteTelegramMessage')) { deleteTelegramMessage($chatId, $loadingMsgId, $botToken); }
+                sendSingleTelegramPhoto($chatId, $logoPath, $msg, $botToken, $markup);
+            } else {
+                replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            }
             break;
 
         case '/fieldbi':
@@ -481,7 +493,13 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                     ]
                 ]
             ];
-            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            $logoPath = __DIR__ . '/assets/fieldbi_logo.jpg';
+            if (file_exists($logoPath)) {
+                if (function_exists('deleteTelegramMessage')) { deleteTelegramMessage($chatId, $loadingMsgId, $botToken); }
+                sendSingleTelegramPhoto($chatId, $logoPath, $msg, $botToken, $markup);
+            } else {
+                replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            }
             break;
 
         // 1. /search <keyword>
