@@ -430,7 +430,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]],
+                        ['text' => '⚡ Direct Link', 'url' => $fieldBiUrl]
                     ]
                 ]
             ];
@@ -449,7 +450,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]],
+                        ['text' => '⚡ Direct Link', 'url' => $fieldBiUrl]
                     ],
                     [
                         ['text' => '🏷 View Categories', 'url' => "{$baseUrl}/index.php"],
