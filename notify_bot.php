@@ -131,11 +131,10 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
                 [
-                    ['text' => $btnText, 'web_app' => ['url' => $prodUrl]],
-                    ['text' => '🌐 Open Link', 'url' => $prodUrl]
+                    ['text' => $btnText, 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                    ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                 ]
             ]
         ]);
@@ -278,11 +277,10 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
                 [
-                    ['text' => $btnText, 'web_app' => ['url' => $prodUrl]],
-                    ['text' => '🌐 Open Link', 'url' => $prodUrl]
+                    ['text' => $btnText, 'url' => $prodUrl]
                 ],
                 [
-                    ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                    ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                 ]
             ]
         ]);

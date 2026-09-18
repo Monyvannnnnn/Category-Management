@@ -430,8 +430,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]],
-                        ['text' => '⚡ Direct Link', 'url' => $fieldBiUrl]
+                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                     ]
                 ]
             ];
@@ -450,8 +449,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]],
-                        ['text' => '⚡ Direct Link', 'url' => $fieldBiUrl]
+                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                     ],
                     [
                         ['text' => '🏷 View Categories', 'url' => "{$baseUrl}/index.php"],
@@ -474,10 +472,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
-                    ],
-                    [
-                        ['text' => '🌐 Open Field BI Link', 'url' => $directUrl]
+                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                     ]
                 ]
             ];
@@ -772,8 +767,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $markup = [
                     'inline_keyboard' => [
                         [
-                            ['text' => '📦 View All Products in App', 'web_app' => ['url' => $prodUrl]],
-                            ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
+                            ['text' => '📦 View All Products', 'url' => $prodUrl],
+                            ['text' => '🌾 Field BI Report', 'url' => $biUrl]
                         ]
                     ]
                 ];
@@ -810,11 +805,8 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $markup = [
                     'inline_keyboard' => [
                         [
-                            ['text' => "📦 View Product Details ({$pCode})", 'web_app' => ['url' => $pSearchUrl]],
-                            ['text' => '📊 BI Dashboard', 'web_app' => ['url' => $biUrl]]
-                        ],
-                        [
-                            ['text' => '🌐 Open Web Link', 'url' => $pSearchUrl]
+                            ['text' => "📦 View Details ({$pCode})", 'url' => $pSearchUrl],
+                            ['text' => '🌾 Field BI Report', 'url' => $biUrl]
                         ]
                     ]
                 ];
@@ -832,7 +824,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
                 $markup = [
                     'inline_keyboard' => [
                         [
-                            ['text' => '📦 View All Products', 'web_app' => ['url' => $prodUrl]]
+                            ['text' => '📦 View All Products', 'url' => $prodUrl]
                         ]
                     ]
                 ];
@@ -900,11 +892,11 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                     ],
                     [
-                        ['text' => '📦 View All Products', 'web_app' => ['url' => $prodUrl]],
-                        ['text' => '🏷️ View Categories', 'web_app' => ['url' => "{$baseUrl}/index.php"]]
+                        ['text' => '📦 View All Products', 'url' => $prodUrl],
+                        ['text' => '🏷️ View Categories', 'url' => "{$baseUrl}/index.php"]
                     ]
                 ]
             ];
@@ -941,7 +933,7 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Open Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                     ]
                 ]
             ];
@@ -1152,11 +1144,11 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             $markup = [
                 'inline_keyboard' => [
                     [
-                        ['text' => '🌾 Field BI App', 'web_app' => ['url' => $fieldBiUrl]]
+                        ['text' => '🌾 Open Field BI Report', 'url' => $fieldBiUrl]
                     ],
                     [
-                        ['text' => '📦 All Products', 'web_app' => ['url' => $prodUrl]],
-                        ['text' => '🏷️ Categories', 'web_app' => ['url' => "{$baseUrl}/index.php"]]
+                        ['text' => '📦 All Products', 'url' => $prodUrl],
+                        ['text' => '🏷️ Categories', 'url' => "{$baseUrl}/index.php"]
                     ]
                 ]
             ];
