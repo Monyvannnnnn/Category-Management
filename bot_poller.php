@@ -21,7 +21,6 @@ function registerBotCommands($botToken) {
         ['command' => 'sort',       'description' => '↕️ Sort items (/sort price|stock|date)'],
         ['command' => 'lowstock',   'description' => '⚠️ Low stock items (<= 5)'],
         ['command' => 'topstock',   'description' => '📊 Top 10 highest stock'],
-        ['command' => 'pdf',        'description' => '📄 Export & Download PDF Report'],
         ['command' => 'product',    'description' => '📦 Product info (/product <code|name>)'],
         ['command' => 'outofstock', 'description' => '🚫 Out of stock items'],
         ['command' => 'summary',    'description' => '📊 Live inventory summary'],
@@ -71,7 +70,7 @@ if (!function_exists('getCustomReplyKeyboard')) {
         return [
             'keyboard' => [
                 [
-                    ['text' => '🌾 Field BI Mini App', 'web_app' => ['url' => $fieldBiUrl]]
+                    ['text' => '📊 BI Dashboard Mini App', 'web_app' => ['url' => $fieldBiUrl]]
                 ],
                 [
                     ['text' => '📦 All Products'],
@@ -83,6 +82,9 @@ if (!function_exists('getCustomReplyKeyboard')) {
                 ],
                 [
                     ['text' => '📈 Inventory Summary'],
+                    ['text' => '📄 Export PDF']
+                ],
+                [
                     ['text' => '❓ Help & Commands']
                 ]
             ],
@@ -277,9 +279,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         'low stock'               => '/lowstock',
         'out of stock'            => '/outofstock',
         'inventory summary'       => '/summary',
-        'export pdf'              => '/pdf',
-        'pdf report'              => '/pdf',
-        'pdf'                     => '/pdf',
         'help commands'           => '/help',
         'help'                    => '/help'
     ];
@@ -310,6 +309,10 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
         $arg     = '';
     } elseif (strpos($normText, 'categories') !== false) {
         $command = '/categories';
+        $rawArg  = '';
+        $arg     = '';
+    } elseif (strpos($normText, 'pdf') !== false) {
+        $command = '/pdf';
         $rawArg  = '';
         $arg     = '';
     } else {
@@ -691,45 +694,27 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
 
         // 6. /lowstock
         case '/lowstock':
-            $threshold = function_exists('getLowStockThreshold') ? getLowStockThreshold($conn) : 5;
-            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.quantity, p.price, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND p.quantity <= ? ORDER BY p.quantity ASC");
-            db_stmt_bind_param($stmt, "ii", $userId, $threshold);
+            $stmt = db_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? AND quantity <= 5 ORDER BY quantity ASC");
+            db_stmt_bind_param($stmt, "i", $userId);
             db_stmt_execute($stmt);
             $res = db_stmt_get_result($stmt);
 
             if ($res && db_num_rows($res) > 0) {
-                $count = db_num_rows($res);
-                $msg = "⚠️ <b>LOW STOCK WARNING (&le; {$threshold} units)</b>\n"
-                     . "<i>Found <b>{$count} item(s)</b> requiring restock:</i>\n"
+                $msg = "⚠️ <b>LOW STOCK WARNING (&le; 5 units)</b>\n"
                      . "═════════════════════════════\n\n";
                 while ($r = db_fetch_assoc($res)) {
                     $code = htmlspecialchars($r['product_code']);
                     $name = htmlspecialchars($r['product_name']);
-                    $cat  = htmlspecialchars($r['category_name'] ?? 'General');
                     $qty  = (int)$r['quantity'];
                     $price = number_format((float)$r['price'], 2);
-                    $statusEmoji = ($qty == 0) ? "🔴 <b>OUT OF STOCK</b>" : "⚠️ <b>LOW</b> ({$qty} left)";
-                    $msg .= "<b>{$name}</b> (<code>{$code}</code>)\n"
-                          . "├ 🏷️ Category: {$cat}\n"
-                          . "└ 🔢 Stock: {$statusEmoji} │ \${$price}\n\n";
+                    $msg .= "⚠️ <b>{$name}</b> (<code>{$code}</code>)\n"
+                          . "   └ Stock: <b>{$qty} units</b> | \${$price}\n";
                 }
             } else {
-                $msg = "✅ <b>ALL STOCK LEVELS HEALTHY!</b>\nNo products currently at or below {$threshold} units.";
+                $msg = "✅ <b>ALL STOCK LEVELS HEALTHY!</b>\nNo items with quantity &le; 5.";
             }
             db_stmt_close($stmt);
-
-            $baseUrl = getAppBaseUrl();
-            $dashboardUrl = $baseUrl . "/report_bi.php";
-            $productsUrl = $baseUrl . "/products.php";
-            $markup = [
-                'inline_keyboard' => [
-                    [
-                        ['text' => '📊 View FieldBI Dashboard', 'url' => $dashboardUrl],
-                        ['text' => '📦 Manage Products', 'url' => $productsUrl]
-                    ]
-                ]
-            ];
-            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
+            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
             break;
 
         // 7. /topstock
@@ -755,56 +740,6 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
             }
             db_stmt_close($stmt);
             replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
-            break;
-
-        // 8. /pdf or /exportpdf
-        case '/pdf':
-        case '/exportpdf':
-            require_once __DIR__ . '/includes/pdf_generator.php';
-            
-            $stmt = db_prepare($conn, "SELECT p.*, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? ORDER BY p.id DESC");
-            db_stmt_bind_param($stmt, "i", $userId);
-            db_stmt_execute($stmt);
-            $res = db_stmt_get_result($stmt);
-            
-            $rows = [];
-            $totalVal = 0;
-            if ($res) {
-                while ($r = db_fetch_assoc($res)) {
-                    $rows[] = $r;
-                    $totalVal += ((float)($r['price'] ?? 0) * (int)($r['quantity'] ?? 0));
-                }
-            }
-            db_stmt_close($stmt);
-
-            $pdfGen = new InventoryPDF();
-            $pdfContent = $pdfGen->generateProductsPDF("Inventory Products Report", $rows, $totalVal);
-
-            $tempPdfPath = sys_get_temp_dir() . "/inventory_report_" . time() . ".pdf";
-            file_put_contents($tempPdfPath, $pdfContent);
-
-            $baseUrl = getAppBaseUrl();
-            $exportUrl = "{$baseUrl}/export_pdf.php";
-            $caption = "📄 <b>INVENTORY PDF REPORT GENERATED</b>\n"
-                     . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
-                     . "Total Items: <b>" . count($rows) . "</b>\n"
-                     . "Total Valuation: <b>\$" . number_format($totalVal, 2) . "</b>\n"
-                     . "Generated: <b>" . date('d/m/Y H:i:s') . "</b>";
-
-            $replyMarkup = [
-                'inline_keyboard' => [
-                    [
-                        ['text' => '📄 Open HTML PDF Export', 'url' => $exportUrl],
-                        ['text' => '📊 FieldBI Dashboard', 'url' => "{$baseUrl}/report_bi.php"]
-                    ]
-                ]
-            ];
-
-            if (function_exists('deleteTelegramMessage')) {
-                deleteTelegramMessage($chatId, $loadingMsgId, $botToken);
-            }
-            sendSingleTelegramDocument($chatId, $tempPdfPath, $caption, $botToken, "Inventory_Report_" . date('Ymd_His') . ".pdf", $replyMarkup);
-            @unlink($tempPdfPath);
             break;
 
         // 8. /product <code|name>
