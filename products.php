@@ -3290,7 +3290,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             <button type="button" id="btnQuickRefreshTelegram" title="Quick Refresh Status" style="background: rgba(255, 255, 255, 0.08); color: #cbd5e1; border: 1px solid rgba(255, 255, 255, 0.15); font-size: 12px; font-weight: 600; padding: 8px 12px; border-radius: 8px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
                                 <i class="fa-solid fa-arrows-rotate" style="font-size: 12px;"></i> Refresh
                             </button>
-                            <button type="button" id="btnConnectTelegramAccount" style="background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(56, 189, 248, 0.35); transition: all 0.2s ease;">
+                            <button type="button" id="btnConnectTelegramAccount" style="background: #38bdf8; color: #0f172a; font-weight: 700; font-size: 13px; padding: 10px 18px; border-radius: 8px; border: none; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25); transition: all 0.2s ease;">
                                 <i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram
                             </button>
                             <button type="button" id="btnDisconnectTelegramAccount" style="display: none; background: rgba(239, 68, 68, 0.15); color: #fca5a5; font-weight: 600; font-size: 12px; padding: 8px 14px; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.3); cursor: pointer;">

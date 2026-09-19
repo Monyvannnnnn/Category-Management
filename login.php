@@ -194,7 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
         .form-control-custom:focus {
             border-color: #6366f1;
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+            box-shadow: none;
         }
 
         .form-control-custom:focus ~ .input-icon,

@@ -129,7 +129,7 @@ if (!$currentUser) {
             color: #ffffff;
             font-size: 14px;
             flex-shrink: 0;
-            box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
         }
 
         .bi-title-text {
@@ -450,21 +450,21 @@ if (!$currentUser) {
             background: rgba(16, 185, 129, 0.14);
             color: #34d399;
             border: 1px solid rgba(16, 185, 129, 0.35);
-            box-shadow: 0 0 8px rgba(16, 185, 129, 0.1);
+            box-shadow: none;
         }
 
         .badge-status.warning {
             background: rgba(245, 158, 11, 0.14);
             color: #fbbf24;
             border: 1px solid rgba(245, 158, 11, 0.35);
-            box-shadow: 0 0 8px rgba(245, 158, 11, 0.1);
+            box-shadow: none;
         }
 
         .badge-status.danger {
             background: rgba(239, 68, 68, 0.14);
             color: #f87171;
             border: 1px solid rgba(239, 68, 68, 0.35);
-            box-shadow: 0 0 8px rgba(239, 68, 68, 0.1);
+            box-shadow: none;
         }
 
         .badge-text-mobile {

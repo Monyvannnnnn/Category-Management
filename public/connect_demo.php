@@ -49,9 +49,9 @@
             animation: pulse 1.5s infinite ease-in-out;
         }
         @keyframes pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.7); }
-            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+            0% { transform: scale(0.95); }
+            70% { transform: scale(1); }
+            100% { transform: scale(0.95); }
         }
         .status-connected {
             color: #10b981;
