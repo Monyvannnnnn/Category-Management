@@ -1,5 +1,5 @@
 <?php
-// fieldbi.php - 100% Full-Screen Telegram Mini App Container View
+// fieldbi.php - Instant Direct Navigation to Field BI Website inside Telegram Mini App
 $targetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
 ?>
 <!DOCTYPE html>
@@ -8,11 +8,9 @@ $targetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=pag
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Field BI Mini App</title>
-
     <!-- Telegram Mini App WebApp SDK -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Expand Telegram Mini App to 100% full screen height immediately
         if (window.Telegram && window.Telegram.WebApp) {
             window.Telegram.WebApp.ready();
             window.Telegram.WebApp.expand();
@@ -23,35 +21,28 @@ $targetUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=pag
                 window.Telegram.WebApp.setBackgroundColor('#0f141c');
             }
         }
+        // Direct top-level location replace for instant Field BI website loading inside Telegram Mini App
+        window.location.replace("<?php echo $targetUrl; ?>");
     </script>
-
     <style>
-        * {
-            box-sizing: border-box;
+        html, body {
+            width: 100%;
+            height: 100vh;
             margin: 0;
             padding: 0;
-        }
-        html, body {
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 100vh !important;
-            overflow: hidden !important;
             background-color: #0f141c;
-        }
-        iframe {
-            width: 100% !important;
-            height: 100% !important;
-            min-height: 100vh !important;
-            border: none !important;
-            display: block !important;
+            color: #ffffff;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
     </style>
 </head>
 <body>
-    <iframe 
-        src="<?php echo htmlspecialchars($targetUrl); ?>" 
-        allow="geolocation; microphone; camera; clipboard-read; clipboard-write; autoplay; fullscreen"
-        loading="eager">
-    </iframe>
+    <div style="text-align: center;">
+        <h2 style="font-weight: 500; margin-bottom: 8px;">🌾 Opening Field BI...</h2>
+        <p style="color: #94a3b8; font-size: 14px;">Redirecting to Field BI Platform</p>
+    </div>
 </body>
 </html>

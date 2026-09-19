@@ -694,27 +694,45 @@ function processTelegramCommand($conn, $chatId, $text, $botToken, $userId = 1, $
 
         // 6. /lowstock
         case '/lowstock':
-            $stmt = db_prepare($conn, "SELECT product_code, product_name, quantity, price FROM product WHERE user_id = ? AND quantity <= 5 ORDER BY quantity ASC");
-            db_stmt_bind_param($stmt, "i", $userId);
+            $threshold = function_exists('getLowStockThreshold') ? getLowStockThreshold($conn) : 5;
+            $stmt = db_prepare($conn, "SELECT p.product_code, p.product_name, p.quantity, p.price, c.category_name FROM product p LEFT JOIN category c ON p.category_id = c.id WHERE p.user_id = ? AND p.quantity <= ? ORDER BY p.quantity ASC");
+            db_stmt_bind_param($stmt, "ii", $userId, $threshold);
             db_stmt_execute($stmt);
             $res = db_stmt_get_result($stmt);
 
             if ($res && db_num_rows($res) > 0) {
-                $msg = "⚠️ <b>LOW STOCK WARNING (&le; 5 units)</b>\n"
+                $count = db_num_rows($res);
+                $msg = "⚠️ <b>LOW STOCK WARNING (&le; {$threshold} units)</b>\n"
+                     . "<i>Found <b>{$count} item(s)</b> requiring restock:</i>\n"
                      . "═════════════════════════════\n\n";
                 while ($r = db_fetch_assoc($res)) {
                     $code = htmlspecialchars($r['product_code']);
                     $name = htmlspecialchars($r['product_name']);
+                    $cat  = htmlspecialchars($r['category_name'] ?? 'General');
                     $qty  = (int)$r['quantity'];
                     $price = number_format((float)$r['price'], 2);
-                    $msg .= "⚠️ <b>{$name}</b> (<code>{$code}</code>)\n"
-                          . "   └ Stock: <b>{$qty} units</b> | \${$price}\n";
+                    $statusEmoji = ($qty == 0) ? "🔴 <b>OUT OF STOCK</b>" : "⚠️ <b>LOW</b> ({$qty} left)";
+                    $msg .= "<b>{$name}</b> (<code>{$code}</code>)\n"
+                          . "├ 🏷️ Category: {$cat}\n"
+                          . "└ 🔢 Stock: {$statusEmoji} │ \${$price}\n\n";
                 }
             } else {
-                $msg = "✅ <b>ALL STOCK LEVELS HEALTHY!</b>\nNo items with quantity &le; 5.";
+                $msg = "✅ <b>ALL STOCK LEVELS HEALTHY!</b>\nNo products currently at or below {$threshold} units.";
             }
             db_stmt_close($stmt);
-            replyOrEditMessage($chatId, $msg, $botToken, null, $loadingMsgId);
+
+            $baseUrl = getAppBaseUrl();
+            $dashboardUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
+            $productsUrl = $baseUrl . "/products.php";
+            $markup = [
+                'inline_keyboard' => [
+                    [
+                        ['text' => '🌾 View FieldBI Website', 'url' => $dashboardUrl],
+                        ['text' => '📦 Manage Products', 'url' => $productsUrl]
+                    ]
+                ]
+            ];
+            replyOrEditMessage($chatId, $msg, $botToken, $markup, $loadingMsgId);
             break;
 
         // 7. /topstock

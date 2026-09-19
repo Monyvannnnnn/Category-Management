@@ -46,7 +46,7 @@ if ($count === 0) {
 
 // Build digest alert message
 $baseUrl = getAppBaseUrl();
-$dashboardUrl = $baseUrl . "/report_bi.php";
+$dashboardUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
 $productsUrl = $baseUrl . "/products.php";
 
 $msg = "⚠️ <b>LOW STOCK INVENTORY SUMMARY</b> ⚠️\n"
@@ -71,7 +71,7 @@ $msg .= "\n━━━━━━━━━━━━━━━━━━━━━━━
 $replyMarkup = [
     'inline_keyboard' => [
         [
-            ['text' => '📊 View FieldBI Dashboard', 'url' => $dashboardUrl],
+            ['text' => '🌾 View FieldBI Website', 'url' => $dashboardUrl],
             ['text' => '📦 Manage Products', 'url' => $productsUrl]
         ]
     ]

@@ -438,7 +438,7 @@ function sendPhotoToTelegram($param1, $param2, $param3, $param4 = null) {
 /**
  * Send a single Document (Excel, PDF, CSV, TXT) via Telegram Bot API
  */
-function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBotToken = null, $fileName = null, $replyMarkup = null) {
+function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBotToken = null, $fileName = null) {
     if (!file_exists($filePath)) {
         return json_encode(["ok" => false, "description" => "Document file not found."]);
     }
@@ -456,10 +456,6 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
         'caption' => $caption,
         'parse_mode' => 'HTML'
     ];
-
-    if (!empty($replyMarkup)) {
-        $postData['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
-    }
 
     $result = false;
     $curlError = '';
@@ -920,13 +916,13 @@ function sendLowStockAlert($product, $conn = null, $userId = null) {
               . "⚡ <i>Action Required: Please restock this item immediately!</i>";
 
     $baseUrl = getAppBaseUrl();
-    $dashboardUrl = $baseUrl . "/report_bi.php";
+    $dashboardUrl = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
     $productsUrl = $baseUrl . "/products.php";
 
     $replyMarkup = [
         'inline_keyboard' => [
             [
-                ['text' => '📊 View FieldBI Dashboard', 'url' => $dashboardUrl],
+                ['text' => '🌾 View FieldBI Website', 'url' => $dashboardUrl],
                 ['text' => '📦 Manage Products', 'url' => $productsUrl]
             ]
         ]
@@ -948,6 +944,10 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     $inputJSON = json_decode(file_get_contents('php://input'), true);
     $message = $_REQUEST['message'] ?? $inputJSON['message'] ?? "🔔 <b>Inventory System Connected!</b>\nTelegram notifications are active.";
 
+    $result = sendTelegramNotification($message);
+    echo $result;
+}
+?>
     $result = sendTelegramNotification($message);
     echo $result;
 }
