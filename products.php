@@ -283,7 +283,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             <i class="fa-solid fa-gear"></i>
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='report_bi.php'" data-tooltip="BI Analytics Report" aria-label="BI Analytics Report">
-                            <i class="fa-solid fa-chart-pie"></i>
+                            <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='index.php'" data-tooltip="Manage Categories" aria-label="Manage Categories">
                             <i class="fa-solid fa-list"></i>

@@ -790,7 +790,7 @@ if (!$currentUser) {
         <div class="bi-header-top">
             <div class="bi-title-group">
                 <div class="bi-title-icon">
-                    <i class="fa-solid fa-chart-pie"></i>
+                    <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" style="width: 22px; height: 22px; filter: brightness(0) invert(1); vertical-align: middle;">
                 </div>
                 <div class="bi-title-text">
                     <h1>BI Executive Analytics</h1>
