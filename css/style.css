@@ -936,10 +936,13 @@ label,
 }
 
 /* Rows and Cells */
-.dx-datagrid .dx-row>td {
+.dx-datagrid .dx-row>td,
+.dx-datagrid-rowsview .dx-data-row>td,
+.dx-datagrid-rowsview .dx-row>td {
   padding: 12px 14px !important;
   background-color: #121824;
   border-bottom: 1px solid var(--border-subtle) !important;
+  vertical-align: middle !important;
 }
 
 .dx-datagrid-rowsview .dx-row {

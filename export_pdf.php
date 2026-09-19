@@ -69,10 +69,10 @@ function fmt($dt) {
         }
         #htmlData th {
             background: #ef4444; color: #fff; padding: 8px 10px; text-align: left;
-            border: 1px solid #cbd5e1; white-space: nowrap;
+            border: 1px solid #cbd5e1; white-space: nowrap; vertical-align: middle !important;
         }
         #htmlData td {
-            padding: 7px 10px; border: 1px solid #e2e8f0; white-space: nowrap;
+            padding: 7px 10px; border: 1px solid #e2e8f0; white-space: nowrap; vertical-align: middle !important;
         }
         #htmlData tr:nth-child(even) td { background: #fef2f2; }
         #rowCount { color: #64748b; margin: 8px 0; font-size: 13px; }

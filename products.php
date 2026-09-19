@@ -122,6 +122,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     <script src="js/app.js?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/js/app.js')); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
     <style>
+    /* Force vertical centering for all data grid cells, action buttons, text, and icons */
+    .dx-datagrid .dx-row > td,
+    .dx-datagrid-rowsview .dx-data-row > td,
+    .dx-datagrid-rowsview .dx-row > td,
+    .dx-datagrid .actions-cell {
+        vertical-align: middle !important;
+    }
+    .dx-datagrid .actions-wrapper,
+    .dx-datagrid .desktop-actions-wrapper,
+    .dx-datagrid .actions {
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        vertical-align: middle !important;
+    }
+
     .img-lightbox-modal {
         position: fixed;
         top: 0;
