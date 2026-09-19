@@ -1415,18 +1415,27 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         window._currentImagePreviewDataUrl = null;
                                         if (formData) formData.image = null;
                                         if (typeof data.setValue === "function") data.setValue(null);
-                                        $statusMsg.hide();
-                                        $prevBox.hide();
+                                        $(".dx-overlay-content .form-preview-container, .form-preview-container").hide();
+                                        $(".dx-overlay-content .upload-status-msg, .upload-status-msg").hide();
                                         return;
                                     }
 
                                     window._currentSelectedImageFile = file;
                                     var pendingVal = "pending_upload_" + Date.now();
                                     if (formData) formData.image = pendingVal;
+
+                                    // 1. Immediately create local preview URL and set global state BEFORE any grid re-render
+                                    try {
+                                        var immediateUrl = URL.createObjectURL(file);
+                                        window._currentImagePreviewDataUrl = immediateUrl;
+                                    } catch(e) {}
+
+                                    // 2. Set DevExtreme form value
                                     if (typeof data.setValue === "function") {
                                         data.setValue(pendingVal);
                                     }
 
+                                    // 3. Register change in DevExtreme Grid editing option
                                     var grid = $("#gridContainer").dxDataGrid("instance");
                                     if (grid) {
                                         var editRowKey = grid.option("editing.editRowKey");
@@ -1444,34 +1453,33 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         grid.option("editing.changes", changes);
                                     }
 
-                                    // Render immediate preview thumbnail safely in active DOM element
-                                    try {
-                                        var immediateUrl = URL.createObjectURL(file);
-                                        window._currentImagePreviewDataUrl = immediateUrl;
-                                        var $livePrev = itemElement.find(".form-preview-container");
-                                        var $liveStatus = itemElement.find(".upload-status-msg");
-                                        var $targetBox = $livePrev.length ? $livePrev : $prevBox;
-                                        var $targetStatus = $liveStatus.length ? $liveStatus : $statusMsg;
+                                    // 4. Render immediate preview thumbnail safely in active DOM element
+                                    if (window._currentImagePreviewDataUrl) {
+                                        var $livePrev = $(".dx-overlay-content .form-preview-container");
+                                        var $liveStatus = $(".dx-overlay-content .upload-status-msg");
+                                        var $targetBox = $livePrev.length ? $livePrev : (itemElement.find(".form-preview-container").length ? itemElement.find(".form-preview-container") : $prevBox);
+                                        var $targetStatus = $liveStatus.length ? $liveStatus : (itemElement.find(".upload-status-msg").length ? itemElement.find(".upload-status-msg") : $statusMsg);
 
                                         $targetBox.empty().css({ display: "flex" }).show();
-                                        var $img = $("<img>").attr("src", immediateUrl).css({
+                                        var $img = $("<img>").attr("src", window._currentImagePreviewDataUrl).css({
                                             width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #34d399", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
                                         });
                                         var fileSizeKb = (file.size / 1024).toFixed(1);
                                         $targetBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Processing 300x300 canvas frame...</div>'));
                                         $targetStatus.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
-                                    } catch(e) {}
+                                    }
 
+                                    // 5. Standardize image on canvas asynchronously
                                     standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
                                         if (standardizedFile) {
                                             window._currentSelectedImageFile = standardizedFile;
                                         }
                                         if (previewDataUrl) {
                                             window._currentImagePreviewDataUrl = previewDataUrl;
-                                            var $livePrev = itemElement.find(".form-preview-container");
-                                            var $liveStatus = itemElement.find(".upload-status-msg");
-                                            var $targetBox = $livePrev.length ? $livePrev : $prevBox;
-                                            var $targetStatus = $liveStatus.length ? $liveStatus : $statusMsg;
+                                            var $livePrev = $(".dx-overlay-content .form-preview-container");
+                                            var $liveStatus = $(".dx-overlay-content .upload-status-msg");
+                                            var $targetBox = $livePrev.length ? $livePrev : (itemElement.find(".form-preview-container").length ? itemElement.find(".form-preview-container") : $prevBox);
+                                            var $targetStatus = $liveStatus.length ? $liveStatus : (itemElement.find(".upload-status-msg").length ? itemElement.find(".upload-status-msg") : $statusMsg);
 
                                             $targetBox.empty().css({ display: "flex" }).show();
                                             var $img = $("<img>").attr("src", previewDataUrl).css({
