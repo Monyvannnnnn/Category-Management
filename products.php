@@ -3811,31 +3811,36 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
         if (btnConnect) {
             btnConnect.addEventListener('click', function() {
-                const newWindow = window.open('about:blank', '_blank');
+                var tgUrl = "https://t.me/enginebi_bot";
+                const newWindow = window.open(tgUrl, '_blank');
                 btnConnect.classList.add("btn-loading");
-            LoadingOverlay.show("Generating...");
+                if (window.LoadingOverlay && LoadingOverlay.show) LoadingOverlay.show("Connecting Telegram...");
                 fetch('telegram_settings.php?action=generate_code', { method: 'POST' })
                     .then(r => r.json())
                     .then(data => {
+                        if (window.LoadingOverlay && LoadingOverlay.hide) LoadingOverlay.hide();
+                        btnConnect.classList.remove("btn-loading");
                         btnConnect.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram';
                         if (data.success) {
                             wasConnectingTelegram = true;
-                            codeDisplay.textContent = data.code;
-                            deepLinkBtn.href = data.deep_link;
-                            codeBox.style.display = 'block';
-                            if (newWindow) {
+                            if (codeDisplay) codeDisplay.textContent = data.code;
+                            if (deepLinkBtn) deepLinkBtn.href = data.deep_link;
+                            if (codeBox) codeBox.style.display = 'block';
+                            if (newWindow && !newWindow.closed) {
                                 newWindow.location.href = data.deep_link;
                             } else {
                                 window.open(data.deep_link, '_blank');
                             }
                             startAutoPollingTelegram();
                         } else {
-                            if (newWindow) newWindow.close();
+                            if (newWindow && !newWindow.closed) newWindow.close();
                             alert("Error: " + (data.message || "Failed to generate connection code."));
                         }
                     })
                     .catch(() => {
-                        if (newWindow) newWindow.close();
+                        if (window.LoadingOverlay && LoadingOverlay.hide) LoadingOverlay.hide();
+                        btnConnect.classList.remove("btn-loading");
+                        if (newWindow && !newWindow.closed) newWindow.close();
                         btnConnect.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram';
                     });
             });

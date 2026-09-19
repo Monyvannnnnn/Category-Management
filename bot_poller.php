@@ -48,6 +48,42 @@ function registerBotCommands($botToken) {
     return $res;
 }
 
+/**
+ * Poll Telegram API once for pending updates (Fast listener for local/on-demand binding)
+ */
+function pollTelegramUpdatesOnce($conn, $botToken = null) {
+    if (empty($botToken)) {
+        $botToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+    }
+
+    $url = "https://api.telegram.org/bot{$botToken}/getUpdates?limit=20&timeout=2";
+    $ch = curl_init();
+    curl_setopt($ch, CURLOPT_URL, $url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 3);
+    $response = curl_exec($ch);
+    curl_close($ch);
+
+    if ($response !== false) {
+        $data = json_decode($response, true);
+        if ($data && isset($data['result']) && is_array($data['result'])) {
+            foreach ($data['result'] as $update) {
+                $updateId = (int)($update['update_id'] ?? 0);
+                if (isset($update['message'])) {
+                    $msgObj = $update['message'];
+                    $chatId = $msgObj['chat']['id'] ?? '';
+                    $text   = trim($msgObj['text'] ?? '');
+                    if (!empty($chatId) && !empty($text)) {
+                        processTelegramCommand($conn, $chatId, $text, $botToken, 1, $updateId);
+                    }
+                }
+            }
+        }
+    }
+}
+
 if (!function_exists('getCustomReplyKeyboard')) {
     function getCustomReplyKeyboard() {
         $host = $_SERVER['HTTP_HOST'] ?? '';

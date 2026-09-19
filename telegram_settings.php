@@ -57,7 +57,11 @@ switch ($action) {
         $botToken = (!empty($row['bot_token']) && $row['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $row['bot_token'] : $defaultBotToken;
         $botUsername = (!empty($row['bot_username']) && $row['bot_username'] !== 'reportpush_bot') ? $row['bot_username'] : $defaultBotUsername;
 
-        // Webhook handles updates directly via set_commands.php
+        // Auto-poll once if chat_id is empty to instantly bind Telegram START messages on localhost/web
+        if (empty($row['chat_id']) && function_exists('pollTelegramUpdatesOnce')) {
+            pollTelegramUpdatesOnce($conn, $botToken);
+            $row = getUserBotRow($conn, $userId);
+        }
 
         echo json_encode([
             'success' => true,
