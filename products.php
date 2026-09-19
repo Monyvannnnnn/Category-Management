@@ -122,95 +122,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     <script src="js/app.js?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/js/app.js')); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
     <style>
-    /* Force 100% transparent zero background on all toolbar & row action buttons */
-    .action-buttons-group button,
-    .action-buttons-group .add-btn,
-    .action-buttons-group .telegram-file-btn,
-    .action-buttons-group .telegram-push-btn,
-    .action-buttons-group .nav-link-btn,
-    .action-buttons-group .export-btn,
-    .action-buttons-group #masterExportTrigger,
-    #openAddModalBtn,
-    #openPushExcelPdfBtn,
-    #openPushModalBtn,
-    #masterExportTrigger,
-    .export-btn,
-    .telegram-file-btn,
-    .telegram-push-btn,
-    .nav-link-btn,
-    .add-btn,
-    .actions-cell a,
-    .actions-cell button,
-    .actions-cell .dx-link-telegram,
-    .actions-cell .dx-link-edit,
-    .actions-cell .dx-link-delete,
-    .telegram-btn,
-    .edit-btn,
-    .delete-btn {
-        background: transparent !important;
-        background-color: transparent !important;
-        background-image: none !important;
-        box-shadow: none !important;
-        backdrop-filter: none !important;
-        -webkit-backdrop-filter: none !important;
-        border: 1px solid #a78bfa !important;
-        color: #a78bfa !important;
-    }
-
-    .actions-cell a i,
-    .actions-cell button i,
-    .actions-cell .dx-link-telegram i,
-    .actions-cell .dx-link-edit i,
-    .actions-cell .dx-link-delete i,
-    .telegram-btn i,
-    .edit-btn i,
-    .delete-btn i {
-        color: #a78bfa !important;
-    }
-
-    .action-buttons-group button:hover,
-    .action-buttons-group .add-btn:hover,
-    .action-buttons-group .telegram-file-btn:hover,
-    .action-buttons-group .telegram-push-btn:hover,
-    .action-buttons-group .nav-link-btn:hover,
-    .action-buttons-group .export-btn:hover,
-    .action-buttons-group #masterExportTrigger:hover,
-    #openAddModalBtn:hover,
-    #openPushExcelPdfBtn:hover,
-    #openPushModalBtn:hover,
-    #masterExportTrigger:hover,
-    .export-btn:hover,
-    .telegram-file-btn:hover,
-    .telegram-push-btn:hover,
-    .nav-link-btn:hover,
-    .add-btn:hover,
-    .actions-cell a:hover,
-    .actions-cell button:hover,
-    .actions-cell .dx-link-telegram:hover,
-    .actions-cell .dx-link-edit:hover,
-    .actions-cell .dx-link-delete:hover,
-    .telegram-btn:hover,
-    .edit-btn:hover,
-    .delete-btn:hover {
-        background: transparent !important;
-        background-color: transparent !important;
-        background-image: none !important;
-        border-color: #c4b5fd !important;
-        color: #ffffff !important;
-        box-shadow: none !important;
-    }
-
-    .actions-cell a:hover i,
-    .actions-cell button:hover i,
-    .actions-cell .dx-link-telegram:hover i,
-    .actions-cell .dx-link-edit:hover i,
-    .actions-cell .dx-link-delete:hover i,
-    .telegram-btn:hover i,
-    .edit-btn:hover i,
-    .delete-btn:hover i {
-        color: #ffffff !important;
-    }
-
     /* Force vertical centering for all data grid cells, action buttons, text, and icons */
     .dx-datagrid .dx-row > td,
     .dx-datagrid-rowsview .dx-data-row > td,
@@ -372,7 +283,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             <i class="fa-solid fa-gear"></i>
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='report_bi.php'" data-tooltip="BI Analytics Report" aria-label="BI Analytics Report">
-                            <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" class="toolbar-img-icon" style="width: 20px; height: 20px; vertical-align: middle;">
+                            <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='index.php'" data-tooltip="Manage Categories" aria-label="Manage Categories">
                             <i class="fa-solid fa-list"></i>
@@ -3994,6 +3905,95 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             btnDisconnect.addEventListener('click', function() {
                 showCustomConfirmDialog({
                     title: "Disconnect Telegram Account",
+                    message: "Are you sure you want to disconnect your Telegram account? You will stop receiving real-time stock alerts.",
+                    confirmText: "Disconnect",
+                    cancelText: "Cancel",
+                    icon: "fa-plug-circle-xmark",
+                    iconColor: "#ef4444",
+                    confirmBg: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    onConfirm: function() {
+                        fetch('telegram_settings.php?action=disconnect', { method: 'POST' })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success) {
+                                    fetchTelegramStatus();
+                                    if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                                        DevExpress.ui.notify("Telegram account disconnected.", "info", 3000);
+                                    }
+                                }
+                            });
+                    }
+                });
+            });
+        }
+
+        if (customBotForm) {
+            customBotForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const token = cfgToken.value.trim();
+                const username = cfgUsername.value.trim();
+
+                fetch('telegram_settings.php?action=save_bot', {
+                    method: 'POST',
+                    body: JSON.stringify({ bot_token: token, bot_username: username }),
+                    headers: { 'Content-Type': 'application/json' }
+                })
+                .then(r => r.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Custom Telegram Bot saved successfully!');
+                        fetchTelegramStatus();
+                    }
+                });
+            });
+        }
+    });
+    </script>
+
+<script>
+// Disabled Loading Overlay per user request
+var LoadingOverlay = window.LoadingOverlay || { show() {}, hide() {} };
+
+window.setCardLoading = window.setCardLoading || function($btn, isLoading, statusText) {
+    if (!$btn || !$btn.length) return;
+    if (isLoading) {
+        if (!$btn.data("orig-html")) {
+            $btn.data("orig-html", $btn.html());
+        }
+        $btn.addClass("is-loading btn-loading").prop("disabled", true);
+        var $arrow = $btn.find(".report-arrow");
+        if ($arrow.length) {
+            $arrow.removeClass("fa-chevron-right").addClass("fa-spinner fa-spin").css({ "color": "#38bdf8", "font-size": "16px" });
+        }
+        if (statusText) {
+            $btn.find(".report-desc").text(statusText);
+        }
+    } else {
+        var origHtml = $btn.data("orig-html");
+        if (origHtml) {
+            $btn.html(origHtml);
+            $btn.removeData("orig-html");
+        }
+        $btn.removeClass("is-loading btn-loading").prop("disabled", false);
+    }
+};
+
+// Button loading for push buttons
+$(document).on('click', '[id^="btnPush"]', function() {
+    const btn = $(this);
+    if (btn.hasClass('push-report-card')) return;
+    const originalText = btn.html();
+    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Pushing...');
+    
+    setTimeout(() => {
+        btn.prop('disabled', false).html(originalText);
+    }, 2500);
+});
+</script>
+
+</body>
+
+</html>             title: "Disconnect Telegram Account",
                     message: "Are you sure you want to disconnect your Telegram account? You will stop receiving real-time stock alerts.",
                     confirmText: "Disconnect",
                     cancelText: "Cancel",
