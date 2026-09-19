@@ -438,7 +438,7 @@ function sendPhotoToTelegram($param1, $param2, $param3, $param4 = null) {
 /**
  * Send a single Document (Excel, PDF, CSV, TXT) via Telegram Bot API
  */
-function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBotToken = null, $fileName = null) {
+function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBotToken = null, $fileName = null, $replyMarkup = null) {
     if (!file_exists($filePath)) {
         return json_encode(["ok" => false, "description" => "Document file not found."]);
     }
@@ -456,6 +456,10 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
         'caption' => $caption,
         'parse_mode' => 'HTML'
     ];
+
+    if (!empty($replyMarkup)) {
+        $postData['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
+    }
 
     $result = false;
     $curlError = '';
@@ -838,6 +842,101 @@ function setAutoTelegramEnabled($conn, $status) {
     $valEsc = db_real_escape_string($conn, $val);
     @db_query($conn, "UPDATE system_settings SET setting_value = '$valEsc' WHERE setting_key = 'auto_telegram_notify'");
     return true;
+}
+
+/**
+ * Get system Low Stock Threshold (default 5 if not set)
+ */
+function getLowStockThreshold($conn = null) {
+    if (!$conn) {
+        global $conn;
+    }
+    if ($conn) {
+        ensureSettingsTableExists($conn);
+        $res = @db_query($conn, "SELECT setting_value FROM system_settings WHERE setting_key = 'low_stock_threshold'");
+        if ($res && $row = db_fetch_assoc($res)) {
+            $val = (int)$row['setting_value'];
+            if ($val >= 0) return $val;
+        }
+    }
+    return 5; // Default threshold fallback
+}
+
+/**
+ * Set system Low Stock Threshold
+ */
+function setLowStockThreshold($conn, $threshold) {
+    if (!$conn) return false;
+    ensureSettingsTableExists($conn);
+    $val = max(0, (int)$threshold);
+
+    if ($conn instanceof PgSqlConnWrapper) {
+        $stmt = db_prepare($conn, "INSERT INTO system_settings (setting_key, setting_value) VALUES ('low_stock_threshold', ?) ON CONFLICT (setting_key) DO UPDATE SET setting_value = EXCLUDED.setting_value");
+        if ($stmt) {
+            $sVal = (string)$val;
+            db_stmt_bind_param($stmt, "s", $sVal);
+            db_stmt_execute($stmt);
+            db_stmt_close($stmt);
+            return true;
+        }
+    }
+
+    $stmt = db_prepare($conn, "INSERT INTO system_settings (setting_key, setting_value) VALUES ('low_stock_threshold', ?) ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)");
+    if ($stmt) {
+        $sVal = (string)$val;
+        db_stmt_bind_param($stmt, "s", $sVal);
+        db_stmt_execute($stmt);
+        db_stmt_close($stmt);
+        return true;
+    }
+
+    return false;
+}
+
+/**
+ * Send Low Stock Alert for a single product to Telegram subscribers/user
+ */
+function sendLowStockAlert($product, $conn = null, $userId = null) {
+    if (!$conn) {
+        global $conn;
+    }
+
+    $threshold = getLowStockThreshold($conn);
+    $name = htmlspecialchars($product['product_name'] ?? 'N/A');
+    $code = htmlspecialchars($product['product_code'] ?? 'N/A');
+    $category = htmlspecialchars($product['category_name'] ?? 'General');
+    $price = number_format((float)($product['price'] ?? 0), 2);
+    $qty = (int)($product['quantity'] ?? 0);
+    $imgUrl = $product['image'] ?? null;
+
+    $alertMsg = "⚠️ <b>CRITICAL LOW STOCK ALERT!</b> ⚠️\n"
+              . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+              . "📦 <b>Product:</b> {$name}\n"
+              . "🏷️ <b>Code:</b> <code>{$code}</code>\n"
+              . "📊 <b>Category:</b> {$category}\n"
+              . "💵 <b>Price:</b> \${$price}\n"
+              . "📉 <b>Current Stock:</b> <b>{$qty}</b> unit(s) <i>(Threshold: {$threshold})</i>\n"
+              . "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+              . "⚡ <i>Action Required: Please restock this item immediately!</i>";
+
+    $baseUrl = getAppBaseUrl();
+    $dashboardUrl = $baseUrl . "/report_bi.php";
+    $productsUrl = $baseUrl . "/products.php";
+
+    $replyMarkup = [
+        'inline_keyboard' => [
+            [
+                ['text' => '📊 View FieldBI Dashboard', 'url' => $dashboardUrl],
+                ['text' => '📦 Manage Products', 'url' => $productsUrl]
+            ]
+        ]
+    ];
+
+    if (!empty($imgUrl)) {
+        return sendTelegramPhotoNotification($alertMsg, $imgUrl, $conn, $userId, $replyMarkup);
+    } else {
+        return sendTelegramNotification($alertMsg, $conn, $userId, $replyMarkup);
+    }
 }
 
 
