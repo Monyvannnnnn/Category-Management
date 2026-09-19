@@ -131,10 +131,7 @@ if ($stmt) {
         }
         if (isAutoTelegramEnabled($conn)) {
             try {
-                $threshold = function_exists('getLowStockThreshold') ? getLowStockThreshold($conn) : 5;
-                if ($quantity <= $threshold && function_exists('sendLowStockAlert')) {
-                    sendLowStockAlert($data, $conn, $userId);
-                } elseif (!empty($imageUrl)) {
+                if (!empty($imageUrl)) {
                     sendTelegramPhotoNotification($msg, $imageUrl, $conn, $userId);
                 } else {
                     sendTelegramNotification($msg, $conn, $userId);

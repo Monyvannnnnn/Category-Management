@@ -2893,6 +2893,12 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             } else {
                                 window.open(data.deep_link, '_blank');
                             }
+                            // Auto fade out connection modal when user clicks Connect Telegram
+                            setTimeout(function() {
+                                if ($("#pushModal").is(":visible")) {
+                                    $("#pushModal").fadeOut(300);
+                                }
+                            }, 500);
                             startAutoPollingTelegram();
                         } else {
                             if (newWindow && !newWindow.closed) newWindow.close();
