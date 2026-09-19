@@ -1368,7 +1368,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                     .addClass("form-preview-container")
                                     .css({ display: "flex", alignItems: "center", gap: "12px", background: "rgba(15, 23, 42, 0.6)", border: "1px solid rgba(52, 211, 153, 0.3)", borderRadius: "8px", padding: "10px 14px" });
 
-                                var $statusMsg = $("<div>").css({ fontSize: "11px", display: "none" });
+                                var $statusMsg = $("<div>").addClass("upload-status-msg").css({ fontSize: "11px", display: "none" });
 
                                 if (window._currentImagePreviewDataUrl) {
                                     var $img = $("<img>").attr("src", window._currentImagePreviewDataUrl).css({
@@ -1414,6 +1414,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         window._currentSelectedImageFile = null;
                                         window._currentImagePreviewDataUrl = null;
                                         if (formData) formData.image = null;
+                                        if (typeof data.setValue === "function") data.setValue(null);
                                         $statusMsg.hide();
                                         $prevBox.hide();
                                         return;
@@ -1426,17 +1427,39 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         data.setValue(pendingVal);
                                     }
 
-                                    // Render immediate preview thumbnail
+                                    var grid = $("#gridContainer").dxDataGrid("instance");
+                                    if (grid) {
+                                        var editRowKey = grid.option("editing.editRowKey");
+                                        var changes = $.extend(true, [], grid.option("editing.changes") || []);
+                                        if (changes.length === 0) {
+                                            if (editRowKey !== null && editRowKey !== undefined) {
+                                                changes = [{ key: editRowKey, type: "update", data: { image: pendingVal } }];
+                                            } else {
+                                                changes = [{ type: "insert", data: { image: pendingVal } }];
+                                            }
+                                        } else {
+                                            changes[0].data = changes[0].data || {};
+                                            changes[0].data.image = pendingVal;
+                                        }
+                                        grid.option("editing.changes", changes);
+                                    }
+
+                                    // Render immediate preview thumbnail safely in active DOM element
                                     try {
                                         var immediateUrl = URL.createObjectURL(file);
                                         window._currentImagePreviewDataUrl = immediateUrl;
-                                        $prevBox.empty().css({ display: "flex" }).show();
+                                        var $livePrev = itemElement.find(".form-preview-container");
+                                        var $liveStatus = itemElement.find(".upload-status-msg");
+                                        var $targetBox = $livePrev.length ? $livePrev : $prevBox;
+                                        var $targetStatus = $liveStatus.length ? $liveStatus : $statusMsg;
+
+                                        $targetBox.empty().css({ display: "flex" }).show();
                                         var $img = $("<img>").attr("src", immediateUrl).css({
                                             width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #34d399", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
                                         });
                                         var fileSizeKb = (file.size / 1024).toFixed(1);
-                                        $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Processing 300x300 canvas frame...</div>'));
-                                        $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
+                                        $targetBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Processing 300x300 canvas frame...</div>'));
+                                        $targetStatus.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
                                     } catch(e) {}
 
                                     standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
@@ -1445,14 +1468,19 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                         }
                                         if (previewDataUrl) {
                                             window._currentImagePreviewDataUrl = previewDataUrl;
-                                            $prevBox.empty().css({ display: "flex" }).show();
+                                            var $livePrev = itemElement.find(".form-preview-container");
+                                            var $liveStatus = itemElement.find(".upload-status-msg");
+                                            var $targetBox = $livePrev.length ? $livePrev : $prevBox;
+                                            var $targetStatus = $liveStatus.length ? $liveStatus : $statusMsg;
+
+                                            $targetBox.empty().css({ display: "flex" }).show();
                                             var $img = $("<img>").attr("src", previewDataUrl).css({
                                                 width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #34d399", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
                                             });
                                             var fileSizeKb = (file.size / 1024).toFixed(1);
-                                            $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>'));
+                                            $targetBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Resized & Border Framed (300x300)</div>'));
+                                            $targetStatus.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
                                         }
-                                        $statusMsg.text("✨ Image framed & standardized (300x300)").css({ color: "#34d399", display: "block" });
                                     });
                                 }
 
@@ -1477,6 +1505,23 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             },
             onInitNewRow: function(e) {
                 // Handled in popup.onShowing
+            },
+            onSaving: function(e) {
+                if (window._currentSelectedImageFile) {
+                    var pendingVal = "pending_upload_" + Date.now();
+                    if (!e.changes || e.changes.length === 0) {
+                        var grid = $("#gridContainer").dxDataGrid("instance");
+                        var editRowKey = grid ? grid.option("editing.editRowKey") : null;
+                        if (editRowKey !== null && editRowKey !== undefined) {
+                            e.changes = [{ key: editRowKey, type: "update", data: { image: pendingVal } }];
+                        } else {
+                            e.changes = [{ type: "insert", data: { image: pendingVal } }];
+                        }
+                    } else {
+                        e.changes[0].data = e.changes[0].data || {};
+                        e.changes[0].data.image = pendingVal;
+                    }
+                }
             },
             onRowUpdating: function(e) {
                 if (window._currentSelectedImageFile) {
