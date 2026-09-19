@@ -1420,29 +1420,22 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                     }
 
                                     window._currentSelectedImageFile = file;
+                                    var pendingVal = "pending_upload_" + Date.now();
+                                    if (formData) formData.image = pendingVal;
 
-                                    var grid = $("#gridContainer").dxDataGrid("instance");
-                                    if (grid) {
-                                        var editRowKey = grid.option("editing.editRowKey");
-                                        var changes = $.extend(true, [], grid.option("editing.changes") || []);
-                                        var pendingVal = "pending_upload_" + Date.now();
+                                    // Render immediate preview thumbnail
+                                    try {
+                                        var immediateUrl = URL.createObjectURL(file);
+                                        window._currentImagePreviewDataUrl = immediateUrl;
+                                        $prevBox.empty().css({ display: "flex" }).show();
+                                        var $img = $("<img>").attr("src", immediateUrl).css({
+                                            width: "52px", height: "52px", objectFit: "contain", background: "#ffffff", borderRadius: "6px", border: "2px solid #34d399", padding: "2px", boxShadow: "0 4px 10px rgba(0,0,0,0.3)"
+                                        });
+                                        var fileSizeKb = (file.size / 1024).toFixed(1);
+                                        $prevBox.append($img).append($("<div>").html('<div style="font-size:12px; font-weight:600; color:#34d399;">' + file.name + ' (' + fileSizeKb + ' KB)</div><div style="font-size:11px; color:#94a3b8;">Processing 300x300 canvas frame...</div>'));
+                                        $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
+                                    } catch(e) {}
 
-                                        if (changes.length === 0) {
-                                            if (editRowKey !== null && editRowKey !== undefined) {
-                                                changes = [{ key: editRowKey, type: "update", data: { image: pendingVal } }];
-                                            } else {
-                                                changes = [{ type: "insert", data: { image: pendingVal } }];
-                                            }
-                                        } else {
-                                            changes[0].data = changes[0].data || {};
-                                            changes[0].data.image = pendingVal;
-                                        }
-
-                                        grid.option("editing.changes", changes);
-                                        if (formData) formData.image = pendingVal;
-                                    }
-
-                                    $statusMsg.text("🎨 Standardizing image to 300x300 framed square box...").css({ color: "#38bdf8", display: "block" });
                                     standardizeImageFile(file, function(standardizedFile, previewDataUrl) {
                                         if (standardizedFile) {
                                             window._currentSelectedImageFile = standardizedFile;
