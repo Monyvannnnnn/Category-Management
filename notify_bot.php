@@ -232,7 +232,22 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
     $url = "https://api.telegram.org/bot$botToken/sendPhoto";
 
-    $isLocalFile = (is_string($photoUrl) && file_exists($photoUrl));
+    $isLocalFile = false;
+    if (is_string($photoUrl) && !empty($photoUrl)) {
+        if (file_exists($photoUrl)) {
+            $isLocalFile = true;
+        } else {
+            $absPath = __DIR__ . '/' . ltrim($photoUrl, '/');
+            if (file_exists($absPath)) {
+                $photoUrl = $absPath;
+                $isLocalFile = true;
+            } elseif (!preg_match('~^https?://~i', $photoUrl)) {
+                $baseUrl = getAppBaseUrl();
+                $photoUrl = rtrim($baseUrl, '/') . '/' . ltrim($photoUrl, '/');
+            }
+        }
+    }
+
     if ($isLocalFile) {
         $mime = function_exists('mime_content_type') ? @mime_content_type($photoUrl) : 'image/jpeg';
         if (!$mime) $mime = 'image/jpeg';
@@ -393,7 +408,13 @@ function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userI
 
                 if ($row && !empty(trim($row['chat_id']))) {
                     $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
-                    return sendSingleTelegramPhoto(trim($row['chat_id']), $photoUrl, $message, $bToken, $replyMarkup);
+                    $photoRes = sendSingleTelegramPhoto(trim($row['chat_id']), $photoUrl, $message, $bToken, $replyMarkup);
+                    $resDec = json_decode($photoRes, true);
+                    if (is_array($resDec) && !empty($resDec['ok'])) {
+                        return $photoRes;
+                    }
+                    // Fallback to text notification if photo delivery fails (e.g. invalid photo URL or network error)
+                    return sendSingleTelegramNotification(trim($row['chat_id']), $message, $bToken, $replyMarkup);
                 }
             }
         }
