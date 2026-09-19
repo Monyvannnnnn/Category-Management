@@ -31,6 +31,22 @@ body {
   -webkit-text-size-adjust: 100%;
 }
 
+/* GPU Hardware Acceleration & 60fps Ultra-Fast Interactions */
+button,
+.dx-button,
+.dx-datagrid-rowsview .dx-row,
+.dx-overlay-content,
+.kebab-menu,
+.kebab-item {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.dx-datagrid-rowsview {
+  contain: layout style;
+}
+
 /* Prevent mobile browser auto-zoom when tapping inputs/buttons */
 @media (max-width: 768px) {
 

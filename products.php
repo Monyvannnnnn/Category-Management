@@ -706,8 +706,10 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
             // Plain internal row scrolling (no virtualization). The fixed height
             // makes ONLY the rows scroll inside the grid; the page itself stays put.
+            renderAsync: true,
             scrolling: {
-                mode: "standard"
+                mode: "standard",
+                renderAsync: true
             },
 
             dataSource: new DevExpress.data.CustomStore({
@@ -750,10 +752,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         }).done(function(data) {
                             window._currentSelectedImageFile = null;
                             window._currentImagePreviewDataUrl = null;
-                            setTimeout(function() {
-                                var grid = $("#gridContainer").dxDataGrid("instance");
-                                if (grid) grid.refresh();
-                            }, 150);
+                            var grid = $("#gridContainer").dxDataGrid("instance");
+                            if (grid) grid.refresh();
                             resolve(data);
                         }).fail(function(xhr) {
                             window._currentSelectedImageFile = null;
@@ -787,10 +787,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         }).done(function(data) {
                             window._currentSelectedImageFile = null;
                             window._currentImagePreviewDataUrl = null;
-                            setTimeout(function() {
-                                var grid = $("#gridContainer").dxDataGrid("instance");
-                                if (grid) grid.refresh();
-                            }, 150);
+                            var grid = $("#gridContainer").dxDataGrid("instance");
+                            if (grid) grid.refresh();
                             resolve(data);
                         }).fail(function(xhr) {
                             window._currentSelectedImageFile = null;
@@ -925,6 +923,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                             $("<img>")
                                 .attr("src", options.data.image)
                                 .attr("alt", options.data.product_name || "Product Image")
+                                .attr("loading", "lazy")
+                                .attr("decoding", "async")
                                 .css({
                                     width: "40px",
                                     height: "40px",
@@ -1265,6 +1265,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
             ],
             editing: {
                 mode: "popup",
+                repaintChangesOnly: true,
                 allowUpdating: true,
                 allowDeleting: true,
                 useIcons: true,
