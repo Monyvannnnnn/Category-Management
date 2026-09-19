@@ -1306,12 +1306,16 @@ label,
   width: 32px !important;
   height: 32px !important;
   border-radius: 7px !important;
-  background: #1e293b !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #38bdf8 !important;
-  border: 1px solid #334155 !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  border: 1px solid #38bdf8 !important;
+  transition: all 0.18s ease !important;
   text-decoration: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .actions-cell .dx-link-telegram.is-loading,
@@ -1329,21 +1333,24 @@ label,
 
 .actions-cell .dx-link-telegram i,
 .telegram-btn i {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  color: #38bdf8 !important;
+  transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
 .actions-cell .dx-link-telegram:hover,
 .telegram-btn:hover {
-  background: #0284c7 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #ffffff !important;
   border-color: #38bdf8 !important;
-  transform: translateY(-2px) scale(1.08) !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: none !important;
 }
 
 .actions-cell .dx-link-telegram:hover i,
 .telegram-btn:hover i {
-  transform: translateY(-2px) translateX(2px) rotate(-10deg) scale(1.18) !important;
+  color: #ffffff !important;
 }
 
 /* Custom File Upload Dropzone */
@@ -1459,31 +1466,38 @@ label,
   width: 32px !important;
   height: 32px !important;
   border-radius: 7px !important;
-  background: #1e293b !important;
-  color: #34d399 !important;
-  border: 1px solid #334155 !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #38bdf8 !important;
+  border: 1px solid #38bdf8 !important;
+  transition: all 0.18s ease !important;
   text-decoration: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .actions-cell .dx-link-edit i,
 .edit-btn i {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  color: #38bdf8 !important;
+  transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
 .actions-cell .dx-link-edit:hover,
 .edit-btn:hover {
-  background: #059669 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #ffffff !important;
-  border-color: #34d399 !important;
-  transform: translateY(-2px) scale(1.08) !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25) !important;
+  border-color: #38bdf8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: none !important;
 }
 
 .actions-cell .dx-link-edit:hover i,
 .edit-btn:hover i {
-  transform: rotate(15deg) scale(1.22) !important;
+  color: #ffffff !important;
 }
 
 .actions-cell .dx-link-delete,
@@ -1494,31 +1508,38 @@ label,
   width: 32px !important;
   height: 32px !important;
   border-radius: 7px !important;
-  background: #1e293b !important;
-  color: #f87171 !important;
-  border: 1px solid #334155 !important;
-  transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  color: #38bdf8 !important;
+  border: 1px solid #38bdf8 !important;
+  transition: all 0.18s ease !important;
   text-decoration: none !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 
 .actions-cell .dx-link-delete i,
 .delete-btn i {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) !important;
+  color: #38bdf8 !important;
+  transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
 .actions-cell .dx-link-delete:hover,
 .delete-btn:hover {
-  background: #dc2626 !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #ffffff !important;
-  border-color: #f87171 !important;
-  transform: translateY(-2px) scale(1.08) !important;
-  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25) !important;
+  border-color: #38bdf8 !important;
+  transform: translateY(-2px) !important;
+  box-shadow: none !important;
 }
 
 .actions-cell .dx-link-delete:hover i,
 .delete-btn:hover i {
-  transform: translateY(-2px) scale(1.2) !important;
+  color: #ffffff !important;
 }
 
 .dx-datagrid .dx-cell-focus-disabled,

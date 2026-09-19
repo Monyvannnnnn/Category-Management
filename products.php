@@ -122,7 +122,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     <script src="js/app.js?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/js/app.js')); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
     <style>
-    /* Force 100% transparent zero background on all toolbar action buttons */
+    /* Force 100% transparent zero background on all toolbar & row action buttons */
     .action-buttons-group button,
     .action-buttons-group .add-btn,
     .action-buttons-group .telegram-file-btn,
@@ -138,7 +138,15 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     .telegram-file-btn,
     .telegram-push-btn,
     .nav-link-btn,
-    .add-btn {
+    .add-btn,
+    .actions-cell a,
+    .actions-cell button,
+    .actions-cell .dx-link-telegram,
+    .actions-cell .dx-link-edit,
+    .actions-cell .dx-link-delete,
+    .telegram-btn,
+    .edit-btn,
+    .delete-btn {
         background: transparent !important;
         background-color: transparent !important;
         background-image: none !important;
@@ -148,6 +156,18 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         border: 1px solid #38bdf8 !important;
         color: #38bdf8 !important;
     }
+
+    .actions-cell a i,
+    .actions-cell button i,
+    .actions-cell .dx-link-telegram i,
+    .actions-cell .dx-link-edit i,
+    .actions-cell .dx-link-delete i,
+    .telegram-btn i,
+    .edit-btn i,
+    .delete-btn i {
+        color: #38bdf8 !important;
+    }
+
     .action-buttons-group button:hover,
     .action-buttons-group .add-btn:hover,
     .action-buttons-group .telegram-file-btn:hover,
@@ -163,13 +183,32 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     .telegram-file-btn:hover,
     .telegram-push-btn:hover,
     .nav-link-btn:hover,
-    .add-btn:hover {
+    .add-btn:hover,
+    .actions-cell a:hover,
+    .actions-cell button:hover,
+    .actions-cell .dx-link-telegram:hover,
+    .actions-cell .dx-link-edit:hover,
+    .actions-cell .dx-link-delete:hover,
+    .telegram-btn:hover,
+    .edit-btn:hover,
+    .delete-btn:hover {
         background: transparent !important;
         background-color: transparent !important;
         background-image: none !important;
         border-color: #38bdf8 !important;
         color: #ffffff !important;
         box-shadow: none !important;
+    }
+
+    .actions-cell a:hover i,
+    .actions-cell button:hover i,
+    .actions-cell .dx-link-telegram:hover i,
+    .actions-cell .dx-link-edit:hover i,
+    .actions-cell .dx-link-delete:hover i,
+    .telegram-btn:hover i,
+    .edit-btn:hover i,
+    .delete-btn:hover i {
+        color: #ffffff !important;
     }
 
     /* Force vertical centering for all data grid cells, action buttons, text, and icons */
