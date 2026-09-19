@@ -383,65 +383,21 @@ function sendTelegramPhotoNotification($message, $photoUrl, $conn = null, $userI
         global $conn;
     }
 
-    if ($userId === null || (int)$userId <= 0) {
-        if (function_exists('getCurrentUser')) {
-            $u = getCurrentUser();
-            if (!empty($u['id'])) {
-                $userId = (int)$u['id'];
-            }
+    $chat = getEffectiveTelegramChat($conn, $userId);
+    if (!empty($chat['chat_id'])) {
+        $photoRes = sendSingleTelegramPhoto($chat['chat_id'], $photoUrl, $message, $chat['bot_token'], $replyMarkup);
+        $resDec = json_decode($photoRes, true);
+        if (is_array($resDec) && !empty($resDec['ok'])) {
+            return $photoRes;
         }
-        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
-            $userId = (int)$_SESSION['user_id'];
-        }
+        return sendSingleTelegramNotification($chat['chat_id'], $message, $chat['bot_token'], $replyMarkup);
     }
 
-    if ($userId !== null && (int)$userId > 0) {
-        $uId = (int)$userId;
-        if ($conn) {
-            $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
-            if ($stmt) {
-                db_stmt_bind_param($stmt, "i", $uId);
-                db_stmt_execute($stmt);
-                $res = db_stmt_get_result($stmt);
-                $row = db_fetch_assoc($res);
-                db_stmt_close($stmt);
-
-                if ($row && !empty(trim($row['chat_id']))) {
-                    $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
-                    $photoRes = sendSingleTelegramPhoto(trim($row['chat_id']), $photoUrl, $message, $bToken, $replyMarkup);
-                    $resDec = json_decode($photoRes, true);
-                    if (is_array($resDec) && !empty($resDec['ok'])) {
-                        return $photoRes;
-                    }
-                    // Fallback to text notification if photo delivery fails (e.g. invalid photo URL or network error)
-                    return sendSingleTelegramNotification(trim($row['chat_id']), $message, $bToken, $replyMarkup);
-                }
-            }
-        }
-        return sendTelegramNotification($message, $conn, $userId, $replyMarkup);
-    }
-
-    $targets = getSubscriberChatIds($conn);
-    if (empty($targets)) {
-        return sendTelegramNotification($message, $conn, $userId, $replyMarkup);
-    }
-
-    $successCount = 0;
-    $lastRes = false;
-
-    foreach ($targets as $cid => $bToken) {
-        $res = sendSingleTelegramPhoto($cid, $photoUrl, $message, $bToken, $replyMarkup);
-        $lastRes = $res;
-        if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
-            $successCount++;
-        }
-    }
-
-    if ($successCount > 0) {
-        return json_encode(["ok" => true, "delivered_chats" => $successCount]);
-    }
-
-    return $lastRes ?: sendTelegramNotification($message, $conn, $userId, $replyMarkup);
+    return json_encode([
+        "ok" => false,
+        "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
+        "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
+    ]);
 }
 
 /**
@@ -535,73 +491,82 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
 }
 
 /**
- * Send Document file to user's connected Telegram chat(s)
+ * Get effective Telegram chat and bot token for a user or fallback
  */
-function sendTelegramDocument($filePath, $caption = '', $conn = null, $userId = 0, $fileName = null) {
+function getEffectiveTelegramChat($conn = null, $userId = null) {
     if (!$conn) {
         global $conn;
     }
-    $targetUserId = (int)$userId;
-    if ($targetUserId <= 0) {
+
+    if ($userId === null || (int)$userId <= 0) {
         if (function_exists('getCurrentUser')) {
             $u = getCurrentUser();
             if (!empty($u['id'])) {
-                $targetUserId = (int)$u['id'];
+                $userId = (int)$u['id'];
             }
         }
-        if ($targetUserId <= 0 && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
-            $targetUserId = (int)$_SESSION['user_id'];
+        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
+            $userId = (int)$_SESSION['user_id'];
         }
     }
 
-    if ($targetUserId > 0) {
-        if ($conn) {
-            $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
-            if ($stmt) {
-                db_stmt_bind_param($stmt, "i", $targetUserId);
-                db_stmt_execute($stmt);
-                $res = db_stmt_get_result($stmt);
-                $row = db_fetch_assoc($res);
-                db_stmt_close($stmt);
-
-                if ($row && !empty(trim($row['chat_id']))) {
-                    $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
-                    return sendSingleTelegramDocument(trim($row['chat_id']), $filePath, $caption, $bToken, $fileName);
-                }
+    // 1. Try specific user_id in user_telegram_bots
+    if ($userId !== null && (int)$userId > 0 && $conn) {
+        $uId = (int)$userId;
+        $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
+        if ($stmt) {
+            db_stmt_bind_param($stmt, "i", $uId);
+            db_stmt_execute($stmt);
+            $res = db_stmt_get_result($stmt);
+            $row = db_fetch_assoc($res);
+            db_stmt_close($stmt);
+            if ($row && !empty(trim($row['chat_id']))) {
+                return ['chat_id' => trim($row['chat_id']), 'bot_token' => !empty($row['bot_token']) ? trim($row['bot_token']) : null];
             }
         }
-        return json_encode([
-            "ok" => false,
-            "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
-            "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
-        ]);
     }
 
-    $targets = getSubscriberChatIds($conn);
-    if (empty($targets)) {
-        return json_encode([
-            "ok" => false,
-            "message" => "No connected Telegram account found. Please connect your Telegram bot in Settings.",
-            "description" => "No connected Telegram account found. Please connect your Telegram bot in Settings."
-        ]);
-    }
-
-    $successCount = 0;
-    $lastRes = false;
-
-    foreach ($targets as $cid => $bToken) {
-        $res = sendSingleTelegramDocument($cid, $filePath, $caption, $bToken, $fileName);
-        $lastRes = $res;
-        if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
-            $successCount++;
+    // 2. Fallback: Try ANY connected bot in user_telegram_bots
+    if ($conn) {
+        $res = db_query($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE chat_id IS NOT NULL AND chat_id != '' ORDER BY id DESC LIMIT 1");
+        if ($res && $row = db_fetch_assoc($res)) {
+            if (!empty(trim($row['chat_id']))) {
+                return ['chat_id' => trim($row['chat_id']), 'bot_token' => !empty($row['bot_token']) ? trim($row['bot_token']) : null];
+            }
         }
     }
 
-    if ($successCount > 0) {
-        return json_encode(["ok" => true, "delivered_chats" => $successCount]);
+    // 3. Fallback: Try subscribers in telegram_subscribers
+    $subs = getSubscriberChatIds($conn);
+    if (!empty($subs)) {
+        foreach ($subs as $cid => $bToken) {
+            if (!empty($cid)) {
+                return ['chat_id' => (string)$cid, 'bot_token' => $bToken];
+            }
+        }
     }
 
-    return $lastRes;
+    return null;
+}
+
+/**
+ * Send a Document (Excel, PDF, CSV, TXT, HTML) via Telegram Bot API
+ */
+function sendTelegramDocument($filePath, $caption = '', $conn = null, $userId = null, $fileName = null) {
+    if (!$conn) {
+        global $conn;
+    }
+
+    $chat = getEffectiveTelegramChat($conn, $userId);
+    if (!empty($chat['chat_id'])) {
+        return sendSingleTelegramDocument($chat['chat_id'], $filePath, $caption, $chat['bot_token'], $fileName);
+    }
+
+    return json_encode([
+        "ok" => false,
+        "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
+        "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
+    ]);
 }
 
 /**
@@ -693,37 +658,8 @@ function getSubscriberChatIds($conn = null) {
  * Helper to check if a specific user is currently connected to Telegram
  */
 function isUserTelegramConnected($conn = null, $userId = null) {
-    if (!$conn) {
-        global $conn;
-    }
-    if ($userId === null || (int)$userId <= 0) {
-        if (function_exists('getCurrentUser')) {
-            $u = getCurrentUser();
-            if (!empty($u['id'])) {
-                $userId = (int)$u['id'];
-            }
-        }
-        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
-            $userId = (int)$_SESSION['user_id'];
-        }
-    }
-    if ($userId !== null && (int)$userId > 0) {
-        $uId = (int)$userId;
-        if ($conn) {
-            $stmt = db_prepare($conn, "SELECT chat_id FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
-            if ($stmt) {
-                db_stmt_bind_param($stmt, "i", $uId);
-                db_stmt_execute($stmt);
-                $res = db_stmt_get_result($stmt);
-                $row = db_fetch_assoc($res);
-                db_stmt_close($stmt);
-                if ($row && !empty(trim($row['chat_id']))) {
-                    return true;
-                }
-            }
-        }
-    }
-    return false;
+    $chat = getEffectiveTelegramChat($conn, $userId);
+    return !empty($chat['chat_id']);
 }
 
 /**
@@ -734,74 +670,16 @@ function sendTelegramNotification($message, $conn = null, $userId = null, $reply
         global $conn;
     }
 
-    // Auto-detect logged-in user ID if not explicitly passed
-    if ($userId === null || (int)$userId <= 0) {
-        if (function_exists('getCurrentUser')) {
-            $u = getCurrentUser();
-            if (!empty($u['id'])) {
-                $userId = (int)$u['id'];
-            }
-        }
-        if (($userId === null || (int)$userId <= 0) && isset($_SESSION['user_id']) && (int)$_SESSION['user_id'] > 0) {
-            $userId = (int)$_SESSION['user_id'];
-        }
+    $chat = getEffectiveTelegramChat($conn, $userId);
+    if (!empty($chat['chat_id'])) {
+        return sendSingleTelegramNotification($chat['chat_id'], $message, $chat['bot_token'], $replyMarkup);
     }
 
-    // Per-User Isolation Mode: If userId is resolved, send to that specific user's chat_id
-    if ($userId !== null && (int)$userId > 0) {
-        $uId = (int)$userId;
-        if ($conn) {
-            $stmt = db_prepare($conn, "SELECT chat_id, bot_token FROM user_telegram_bots WHERE user_id = ? AND chat_id IS NOT NULL AND chat_id != '' LIMIT 1");
-            if ($stmt) {
-                db_stmt_bind_param($stmt, "i", $uId);
-                db_stmt_execute($stmt);
-                $res = db_stmt_get_result($stmt);
-                $row = db_fetch_assoc($res);
-                db_stmt_close($stmt);
-
-                if ($row && !empty(trim($row['chat_id']))) {
-                    $bToken = !empty($row['bot_token']) ? trim($row['bot_token']) : null;
-                    return sendSingleTelegramNotification(trim($row['chat_id']), $message, $bToken, $replyMarkup);
-                }
-            }
-        }
-
-        // If user is specified/logged-in but has not connected to Telegram, return failure
-        return json_encode([
-            "ok" => false, 
-            "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
-            "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
-        ]);
-    }
-
-    // Broadcast Mode / Fallback: Send to ALL connected Telegram users & subscribers
-    $targets = getSubscriberChatIds($conn);
-
-    if (empty($targets)) {
-        $uInfo = ($userId !== null && (int)$userId > 0) ? " for User ID {$userId}" : "";
-        return json_encode([
-            "ok" => false, 
-            "message" => "No connected Telegram account found{$uInfo}. Please connect your Telegram bot in Settings.",
-            "description" => "No connected Telegram account found{$uInfo}. Please connect your Telegram bot in Settings."
-        ]);
-    }
-
-    $successCount = 0;
-    $lastRes = false;
-
-    foreach ($targets as $cid => $bToken) {
-        $res = sendSingleTelegramNotification($cid, $message, $bToken, $replyMarkup);
-        $lastRes = $res;
-        if ($res && (strpos($res, '"ok":true') !== false || strpos($res, '"ok": true') !== false)) {
-            $successCount++;
-        }
-    }
-
-    if ($successCount > 0) {
-        return json_encode(["ok" => true, "delivered_chats" => $successCount]);
-    }
-
-    return $lastRes;
+    return json_encode([
+        "ok" => false,
+        "message" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings.",
+        "description" => "Telegram is not connected. Please connect your Telegram account first in Telegram Settings."
+    ]);
 }
 
 /**
