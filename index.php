@@ -128,23 +128,23 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                     </div>
                     <div class="action-buttons-group">
                         <button type="button" class="add-btn telegram-file-btn" id="openPushExcelPdfBtn" data-tooltip="⚡ Push Excel, PDF & HTML Reports to Telegram" aria-label="Push Excel, PDF & HTML Reports to Telegram">
-                            <img src="https://img.icons8.com/external-xnimrodx-lineal-xnimrodx/64/external-export-warehouse-xnimrodx-lineal-xnimrodx.png" alt="export" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
+                            <i class="fa-solid fa-file-arrow-up"></i>
                         </button>
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
-                            <img src="https://img.icons8.com/laces/64/settings.png" alt="settings" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
+                            <i class="fa-solid fa-gear"></i>
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='report_bi.php'" data-tooltip="BI Analytics Report" aria-label="BI Analytics Report">
                             <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
-                            <img src="https://img.icons8.com/wired/64/sorting-answers.png" alt="sorting-answers" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
+                            <i class="fa-solid fa-box"></i>
                         </button>
                         <button type="button" class="add-btn" id="openAddModalBtn" data-tooltip="Add Category" aria-label="Add Category">
-                            <img src="https://img.icons8.com/pulsar-line/48/plus.png" alt="plus" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
+                            <i class="fa-solid fa-plus"></i>
                         </button>
                         <div class="export-wrapper" id="masterExportWrapper" data-tooltip="Export">
                             <button class="export-btn" id="masterExportTrigger" type="button" aria-label="Export">
-                                <img src="https://img.icons8.com/material-outlined/24/alarms.png" alt="alarms" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
+                                <i class="fa-solid fa-download"></i>
                             </button>
                             <div class="export-menu" id="masterExportMenu">
                                 <!-- Excel -->

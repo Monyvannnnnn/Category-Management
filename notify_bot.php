@@ -116,9 +116,11 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
     if (!empty($replyMarkup)) {
         $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
     } else {
-        $baseUrl = getAppBaseUrl();
+        $baseUrl    = getAppBaseUrl();
         $miniAppUrl = "{$baseUrl}/fieldbi.php";
         $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
+        $prodUrl    = "{$baseUrl}/products.php";
+        $btnText    = "📊 View Inventory";
 
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
@@ -270,8 +272,11 @@ function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken =
     if (!empty($replyMarkup)) {
         $data['reply_markup'] = is_string($replyMarkup) ? $replyMarkup : json_encode($replyMarkup);
     } else {
+        $baseUrl    = getAppBaseUrl();
         $miniAppUrl = "{$baseUrl}/fieldbi.php";
         $directUrl  = "https://app.fieldbi.com/?page=promptdemo&rpf=zGR88xyzPD&action=page&frm=RMt_ph898";
+        $prodUrl    = "{$baseUrl}/products.php";
+        $btnText    = "📊 View Inventory";
 
         $data['reply_markup'] = json_encode([
             'inline_keyboard' => [
