@@ -187,8 +187,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   border-radius: 8px !important;
   font-size: 15px !important;
   font-weight: 700 !important;
@@ -204,7 +204,7 @@ label,
 #openAddModalBtn i,
 .nav-link-btn i,
 .add-btn[onclick*="location"] i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease !important;
 }
 
@@ -215,7 +215,7 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
@@ -460,8 +460,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   border-radius: 8px !important;
   position: relative !important;
   overflow: visible !important;
@@ -474,7 +474,7 @@ label,
 
 .telegram-file-btn i {
   display: inline-block;
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
   animation: none !important;
 }
@@ -493,7 +493,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   box-shadow: none !important;
 }
 
@@ -700,8 +700,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border: 1px solid #38bdf8 !important;
-  color: #38bdf8 !important;
+  border: 1px solid #a78bfa !important;
+  color: #a78bfa !important;
   box-shadow: none !important;
 }
 
@@ -710,7 +710,7 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   color: #ffffff !important;
   transform: none !important;
   box-shadow: none !important;
@@ -728,8 +728,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   padding: 0 !important;
   height: 36px !important;
   width: 36px !important;
@@ -753,7 +753,7 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
@@ -767,7 +767,7 @@ label,
   line-height: 1 !important;
   margin: 0 !important;
   font-size: 15px !important;
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease !important;
 }
 
@@ -781,21 +781,21 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border: 1px solid #38bdf8 !important;
-  color: #38bdf8 !important;
+  border: 1px solid #a78bfa !important;
+  color: #a78bfa !important;
   box-shadow: none !important;
 }
 
 #customFieldChooserBtn.dx-button .dx-button-text,
 #customFieldChooserBtn.dx-button .dx-icon {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
 }
 
 #customFieldChooserBtn.dx-button:hover {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
@@ -811,21 +811,21 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border: 1px solid #38bdf8 !important;
-  color: #38bdf8 !important;
+  border: 1px solid #a78bfa !important;
+  color: #a78bfa !important;
   box-shadow: none !important;
 }
 
 #customAdvancedSearchBtn.dx-button .dx-button-text,
 #customAdvancedSearchBtn.dx-button .dx-icon {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
 }
 
 #customAdvancedSearchBtn.dx-button:hover {
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
@@ -1309,8 +1309,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   transition: all 0.18s ease !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -1328,12 +1328,12 @@ label,
 
 .actions-cell .dx-link-telegram.is-loading i,
 .telegram-btn.is-loading i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
 }
 
 .actions-cell .dx-link-telegram i,
 .telegram-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
@@ -1343,7 +1343,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }
@@ -1469,8 +1469,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   transition: all 0.18s ease !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -1480,7 +1480,7 @@ label,
 
 .actions-cell .dx-link-edit i,
 .edit-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
@@ -1490,7 +1490,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }
@@ -1511,8 +1511,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   transition: all 0.18s ease !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -1522,7 +1522,7 @@ label,
 
 .actions-cell .dx-link-delete i,
 .delete-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
@@ -1532,7 +1532,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }
@@ -3506,8 +3506,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border: 1px solid #38bdf8 !important;
-  color: #38bdf8 !important;
+  border: 1px solid #a78bfa !important;
+  color: #a78bfa !important;
   box-shadow: none !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
@@ -3515,7 +3515,7 @@ label,
 }
 
 .telegram-push-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease !important;
 }
 
@@ -3523,7 +3523,7 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
@@ -3533,10 +3533,10 @@ label,
   color: #ffffff !important;
 }
 
-/* Image Icons inside Toolbar Action Buttons */
+/* Image Icons inside Toolbar Action Buttons - Soft Lavender Purple Tint */
 .action-buttons-group .nav-link-btn img,
 .toolbar-img-icon {
-  filter: invert(66%) sepia(85%) saturate(1633%) hue-rotate(174deg) brightness(101%) contrast(97%) !important;
+  filter: invert(65%) sepia(35%) saturate(1900%) hue-rotate(215deg) brightness(102%) contrast(98%) !important;
   transition: filter 0.18s ease, transform 0.18s ease !important;
 }
 

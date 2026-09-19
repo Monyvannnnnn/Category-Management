@@ -456,8 +456,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   border-radius: 8px !important;
   position: relative !important;
   overflow: visible !important;
@@ -467,7 +467,7 @@ label,
 
 .telegram-file-btn i {
   display: inline-block;
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
   animation: none !important;
 }
@@ -489,7 +489,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   box-shadow: none !important;
 }
 
@@ -1260,8 +1260,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   transition: all 0.18s ease !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -1279,12 +1279,12 @@ label,
 
 .actions-cell .dx-link-telegram.is-loading i,
 .telegram-btn.is-loading i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
 }
 
 .actions-cell .dx-link-telegram i,
 .telegram-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
@@ -1294,7 +1294,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }
@@ -1420,8 +1420,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   transition: all 0.18s ease !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -1431,7 +1431,7 @@ label,
 
 .actions-cell .dx-link-edit i,
 .edit-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
@@ -1441,7 +1441,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }
@@ -1462,8 +1462,8 @@ label,
   background: transparent !important;
   background-color: transparent !important;
   background-image: none !important;
-  color: #38bdf8 !important;
-  border: 1px solid #38bdf8 !important;
+  color: #a78bfa !important;
+  border: 1px solid #a78bfa !important;
   transition: all 0.18s ease !important;
   text-decoration: none !important;
   box-shadow: none !important;
@@ -1473,7 +1473,7 @@ label,
 
 .actions-cell .dx-link-delete i,
 .delete-btn i {
-  color: #38bdf8 !important;
+  color: #a78bfa !important;
   transition: color 0.18s ease, transform 0.18s ease !important;
 }
 
@@ -1483,7 +1483,7 @@ label,
   background-color: transparent !important;
   background-image: none !important;
   color: #ffffff !important;
-  border-color: #38bdf8 !important;
+  border-color: #c4b5fd !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }

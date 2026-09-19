@@ -153,8 +153,8 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         box-shadow: none !important;
         backdrop-filter: none !important;
         -webkit-backdrop-filter: none !important;
-        border: 1px solid #38bdf8 !important;
-        color: #38bdf8 !important;
+        border: 1px solid #a78bfa !important;
+        color: #a78bfa !important;
     }
 
     .actions-cell a i,
@@ -165,7 +165,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     .telegram-btn i,
     .edit-btn i,
     .delete-btn i {
-        color: #38bdf8 !important;
+        color: #a78bfa !important;
     }
 
     .action-buttons-group button:hover,
@@ -195,7 +195,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
         background: transparent !important;
         background-color: transparent !important;
         background-image: none !important;
-        border-color: #38bdf8 !important;
+        border-color: #c4b5fd !important;
         color: #ffffff !important;
         box-shadow: none !important;
     }
