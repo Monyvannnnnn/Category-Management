@@ -122,6 +122,56 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
     <script src="js/app.js?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/js/app.js')); ?>"></script>
     <link rel="stylesheet" href="css/style.css?v=<?php echo date('Y-m-d-H-i-s', @filemtime(__DIR__ . '/css/style.css')); ?>">
     <style>
+    /* Force 100% transparent zero background on all toolbar action buttons */
+    .action-buttons-group button,
+    .action-buttons-group .add-btn,
+    .action-buttons-group .telegram-file-btn,
+    .action-buttons-group .telegram-push-btn,
+    .action-buttons-group .nav-link-btn,
+    .action-buttons-group .export-btn,
+    .action-buttons-group #masterExportTrigger,
+    #openAddModalBtn,
+    #openPushExcelPdfBtn,
+    #openPushModalBtn,
+    #masterExportTrigger,
+    .export-btn,
+    .telegram-file-btn,
+    .telegram-push-btn,
+    .nav-link-btn,
+    .add-btn {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
+        border: 1px solid #38bdf8 !important;
+        color: #38bdf8 !important;
+    }
+    .action-buttons-group button:hover,
+    .action-buttons-group .add-btn:hover,
+    .action-buttons-group .telegram-file-btn:hover,
+    .action-buttons-group .telegram-push-btn:hover,
+    .action-buttons-group .nav-link-btn:hover,
+    .action-buttons-group .export-btn:hover,
+    .action-buttons-group #masterExportTrigger:hover,
+    #openAddModalBtn:hover,
+    #openPushExcelPdfBtn:hover,
+    #openPushModalBtn:hover,
+    #masterExportTrigger:hover,
+    .export-btn:hover,
+    .telegram-file-btn:hover,
+    .telegram-push-btn:hover,
+    .nav-link-btn:hover,
+    .add-btn:hover {
+        background: transparent !important;
+        background-color: transparent !important;
+        background-image: none !important;
+        border-color: #38bdf8 !important;
+        color: #ffffff !important;
+        box-shadow: none !important;
+    }
+
     /* Force vertical centering for all data grid cells, action buttons, text, and icons */
     .dx-datagrid .dx-row > td,
     .dx-datagrid-rowsview .dx-data-row > td,

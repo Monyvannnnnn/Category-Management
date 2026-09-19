@@ -443,19 +443,26 @@ label,
 .nav-link-btn,
 .export-btn,
 .logout-icon-btn {
-  transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: transform 0.18s ease, border-color 0.18s ease !important;
 }
 
 .telegram-file-btn {
   background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border: 1px solid #38bdf8 !important;
   border-radius: 8px !important;
   position: relative !important;
   overflow: visible !important;
   animation: none !important;
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease !important;
+  transition: transform 0.18s ease, border-color 0.18s ease !important;
 }
 
 .telegram-file-btn i {
@@ -470,12 +477,17 @@ label,
 .telegram-push-btn:hover,
 .nav-link-btn:hover,
 .logout-icon-btn:hover {
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   transform: translateY(-2px) !important;
   box-shadow: none !important;
 }
 
 .telegram-file-btn:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #ffffff !important;
   border-color: #38bdf8 !important;
   box-shadow: none !important;

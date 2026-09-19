@@ -172,8 +172,7 @@ label,
   font-family: 'Poppins', sans-serif;
 }
 
-/* Primary Button (+ Add Category / + Add Product) - Solid Indigo Icon Only */
-/* Primary & Secondary Toolbar Action Buttons - Single Color Transparent Ghost */
+/* Primary & Secondary Toolbar Action Buttons - Single Color 100% Transparent Ghost (No Filled Background) */
 .add-btn,
 #openAddModalBtn,
 .nav-link-btn,
@@ -186,15 +185,19 @@ label,
   min-width: 36px !important;
   padding: 0 !important;
   background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border: 1px solid #38bdf8 !important;
   border-radius: 8px !important;
   font-size: 15px !important;
   font-weight: 700 !important;
   font-family: inherit !important;
   cursor: pointer !important;
   box-shadow: none !important;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease !important;
 }
 
 .add-btn i,
@@ -209,7 +212,9 @@ label,
 #openAddModalBtn:hover,
 .nav-link-btn:hover,
 .add-btn[onclick*="location"]:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border-color: #38bdf8 !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -453,13 +458,18 @@ label,
 
 .telegram-file-btn {
   background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border: 1px solid #38bdf8 !important;
   border-radius: 8px !important;
   position: relative !important;
   overflow: visible !important;
   animation: none !important;
-  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: transform 0.18s ease, border-color 0.18s ease !important;
 }
 
 .telegram-file-btn i {
@@ -479,7 +489,9 @@ label,
 }
 
 .telegram-file-btn:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #ffffff !important;
   border-color: #38bdf8 !important;
   box-shadow: none !important;
@@ -686,13 +698,18 @@ label,
 #customExportBtn .dx-button,
 #customCsvExportBtn .dx-button {
   background: transparent !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid #38bdf8 !important;
   color: #38bdf8 !important;
+  box-shadow: none !important;
 }
 
 #customExportBtn .dx-button:hover,
 #customCsvExportBtn .dx-button:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border-color: #38bdf8 !important;
   color: #ffffff !important;
   transform: none !important;
@@ -709,8 +726,10 @@ label,
 .export-btn,
 #masterExportTrigger {
   background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  border: 1px solid #38bdf8 !important;
   padding: 0 !important;
   height: 36px !important;
   width: 36px !important;
@@ -724,12 +743,16 @@ label,
   cursor: pointer !important;
   font-family: inherit !important;
   box-shadow: none !important;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease !important;
 }
 
 .export-btn:hover,
 #masterExportTrigger:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border-color: #38bdf8 !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -756,8 +779,11 @@ label,
 /* Field Chooser Button: Single Color Transparent Ghost */
 #customFieldChooserBtn.dx-button {
   background: transparent !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid #38bdf8 !important;
   color: #38bdf8 !important;
+  box-shadow: none !important;
 }
 
 #customFieldChooserBtn.dx-button .dx-button-text,
@@ -766,7 +792,9 @@ label,
 }
 
 #customFieldChooserBtn.dx-button:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border-color: #38bdf8 !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -781,8 +809,11 @@ label,
 /* Search All Records Button: Single Color Transparent Ghost */
 #customAdvancedSearchBtn.dx-button {
   background: transparent !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid #38bdf8 !important;
   color: #38bdf8 !important;
+  box-shadow: none !important;
 }
 
 #customAdvancedSearchBtn.dx-button .dx-button-text,
@@ -791,7 +822,9 @@ label,
 }
 
 #customAdvancedSearchBtn.dx-button:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border-color: #38bdf8 !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
@@ -3450,9 +3483,14 @@ label,
 
 .telegram-push-btn {
   background: transparent !important;
-  border: 1px solid rgba(56, 189, 248, 0.45) !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: 1px solid #38bdf8 !important;
   color: #38bdf8 !important;
-  transition: background 0.18s ease, border-color 0.18s ease, color 0.18s ease, transform 0.18s ease !important;
+  box-shadow: none !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transition: border-color 0.18s ease, color 0.18s ease, transform 0.18s ease !important;
 }
 
 .telegram-push-btn i {
@@ -3461,10 +3499,13 @@ label,
 }
 
 .telegram-push-btn:hover {
-  background: rgba(56, 189, 248, 0.15) !important;
+  background: transparent !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border-color: #38bdf8 !important;
   color: #ffffff !important;
   transform: translateY(-2px) !important;
+  box-shadow: none !important;
 }
 
 .telegram-push-btn:hover i {
