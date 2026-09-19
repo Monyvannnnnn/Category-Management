@@ -134,7 +134,7 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                             <i class="fa-solid fa-gear"></i>
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='report_bi.php'" data-tooltip="BI Analytics Report" aria-label="BI Analytics Report">
-                            <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
+                            <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" class="toolbar-img-icon" style="width: 20px; height: 20px; vertical-align: middle;">
                         </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='products.php'" data-tooltip="Manage Products" aria-label="Manage Products">
                             <i class="fa-solid fa-box"></i>

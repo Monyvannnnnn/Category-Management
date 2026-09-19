@@ -443,24 +443,25 @@ label,
 .nav-link-btn,
 .export-btn,
 .logout-icon-btn {
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background-color 0.2s ease, border-color 0.2s ease !important;
+  transition: transform 0.18s ease, background-color 0.18s ease, border-color 0.18s ease !important;
   box-shadow: none !important;
 }
 
 .telegram-file-btn {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.25)) !important;
+  background: transparent !important;
   color: #38bdf8 !important;
-  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  border: 1px solid rgba(56, 189, 248, 0.45) !important;
   border-radius: 8px !important;
   position: relative !important;
   overflow: visible !important;
   animation: none !important;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease !important;
+  transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease !important;
 }
 
 .telegram-file-btn i {
   display: inline-block;
-  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  color: #38bdf8 !important;
+  transition: color 0.18s ease, transform 0.18s ease !important;
   animation: none !important;
 }
 
@@ -469,15 +470,19 @@ label,
 .telegram-push-btn:hover,
 .nav-link-btn:hover,
 .logout-icon-btn:hover {
-  transform: translateY(-3px) scale(1.05) !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: none !important;
 }
 
 .telegram-file-btn:hover {
-  background: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(99, 102, 241, 0.45)) !important;
+  background: rgba(56, 189, 248, 0.15) !important;
   color: #ffffff !important;
   border-color: #38bdf8 !important;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35) !important;
+  box-shadow: none !important;
+}
+
+.telegram-file-btn:hover i {
+  color: #ffffff !important;
 }
 
 .add-btn:hover i,
