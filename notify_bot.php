@@ -948,7 +948,3 @@ if (basename(__FILE__) === basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
     echo $result;
 }
 ?>
-    $result = sendTelegramNotification($message);
-    echo $result;
-}
-?>

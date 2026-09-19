@@ -3811,8 +3811,6 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
         if (btnConnect) {
             btnConnect.addEventListener('click', function() {
-                var tgUrl = "https://t.me/enginebi_bot";
-                const newWindow = window.open(tgUrl, '_blank');
                 btnConnect.classList.add("btn-loading");
                 if (window.LoadingOverlay && LoadingOverlay.show) LoadingOverlay.show("Connecting Telegram...");
                 fetch('telegram_settings.php?action=generate_code', { method: 'POST' })
@@ -3821,33 +3819,23 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                         if (window.LoadingOverlay && LoadingOverlay.hide) LoadingOverlay.hide();
                         btnConnect.classList.remove("btn-loading");
                         btnConnect.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram';
-                        if (data.success) {
+                        if (data.success && data.deep_link) {
                             wasConnectingTelegram = true;
                             if (codeDisplay) codeDisplay.textContent = data.code;
                             if (deepLinkBtn) deepLinkBtn.href = data.deep_link;
                             if (codeBox) codeBox.style.display = 'block';
-                            if (newWindow && !newWindow.closed) {
-                                newWindow.location.href = data.deep_link;
-                            } else {
-                                window.open(data.deep_link, '_blank');
-                            }
-                            // Auto fade out connection modal when user clicks Connect Telegram
-                            setTimeout(function() {
-                                if ($("#pushModal").is(":visible")) {
-                                    $("#pushModal").fadeOut(300);
-                                }
-                            }, 500);
+                            window.open(data.deep_link, '_blank');
                             startAutoPollingTelegram();
                         } else {
-                            if (newWindow && !newWindow.closed) newWindow.close();
                             alert("Error: " + (data.message || "Failed to generate connection code."));
                         }
                     })
-                    .catch(() => {
+                    .catch(err => {
                         if (window.LoadingOverlay && LoadingOverlay.hide) LoadingOverlay.hide();
                         btnConnect.classList.remove("btn-loading");
-                        if (newWindow && !newWindow.closed) newWindow.close();
                         btnConnect.innerHTML = '<i class="fa-brands fa-telegram" style="font-size: 16px;"></i> Connect Telegram';
+                        console.error("Telegram Connect Error:", err);
+                        alert("Connection failed. Please refresh and try again.");
                     });
             });
         }
@@ -3865,14 +3853,27 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
 
         if (btnDisconnect) {
             btnDisconnect.addEventListener('click', function() {
-                if (!confirm("Are you sure you want to disconnect your Telegram account?")) return;
-                fetch('telegram_settings.php?action=disconnect', { method: 'POST' })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.success) {
-                            fetchTelegramStatus();
-                        }
-                    });
+                showCustomConfirmDialog({
+                    title: "Disconnect Telegram Account",
+                    message: "Are you sure you want to disconnect your Telegram account? You will stop receiving real-time stock alerts.",
+                    confirmText: "Disconnect",
+                    cancelText: "Cancel",
+                    icon: "fa-plug-circle-xmark",
+                    iconColor: "#ef4444",
+                    confirmBg: "linear-gradient(135deg, #ef4444, #dc2626)",
+                    onConfirm: function() {
+                        fetch('telegram_settings.php?action=disconnect', { method: 'POST' })
+                            .then(r => r.json())
+                            .then(data => {
+                                if (data.success) {
+                                    fetchTelegramStatus();
+                                    if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
+                                        DevExpress.ui.notify("Telegram account disconnected.", "info", 3000);
+                                    }
+                                }
+                            });
+                    }
+                });
             });
         }
 
