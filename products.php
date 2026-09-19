@@ -1422,6 +1422,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "get_categories") {
                                     window._currentSelectedImageFile = file;
                                     var pendingVal = "pending_upload_" + Date.now();
                                     if (formData) formData.image = pendingVal;
+                                    if (typeof data.setValue === "function") {
+                                        data.setValue(pendingVal);
+                                    }
 
                                     // Render immediate preview thumbnail
                                     try {
