@@ -473,10 +473,7 @@ function processSupportBotUpdate($update) {
                 mysqli_stmt_execute($bufStmt);
             }
 
-            // Send instant receipt on FIRST message in 20s window
-            if (!$hasUnprocessed) {
-                sendMessage($chatId, "👋 <b>Thank you for contacting Support!</b>\n\nYour messages are being forwarded to our support team. An agent will respond to you shortly.");
-            }
+            // Silent buffer: Customer messages are forwarded to group for admin/recruiter reply
             return;
         }
     }
