@@ -9,14 +9,16 @@
 
 require_once __DIR__ . '/../database.php';
 
-// Telegram Bot Token
+// Telegram Bot Token (Loaded dynamically from .env via TELEGRAM_BOT_TOKEN)
 if (!defined('BOT_TOKEN')) {
-    define('BOT_TOKEN', '8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE');
+    $botTokenEnv = getenv('TELEGRAM_BOT_TOKEN') ?: ($_ENV['TELEGRAM_BOT_TOKEN'] ?? ($_SERVER['TELEGRAM_BOT_TOKEN'] ?? '8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE'));
+    define('BOT_TOKEN', $botTokenEnv);
 }
 
-// Bot Super Admin Telegram Chat ID
+// Bot Super Admin Telegram Chat ID (Loaded dynamically from .env via TELEGRAM_ADMIN_CHAT_ID)
 if (!defined('ADMIN_CHAT_ID')) {
-    define('ADMIN_CHAT_ID', '7892238736');
+    $adminChatIdEnv = getenv('TELEGRAM_ADMIN_CHAT_ID') ?: ($_ENV['TELEGRAM_ADMIN_CHAT_ID'] ?? ($_SERVER['TELEGRAM_ADMIN_CHAT_ID'] ?? '7892238736'));
+    define('ADMIN_CHAT_ID', $adminChatIdEnv);
 }
 
 /**
