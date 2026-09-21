@@ -1,6 +1,6 @@
 <?php
 /**
- * Telegram Customer Support Bot Handler (Admin Security Lock Mode)
+ * Telegram Customer Support Bot Handler (Public Username & Direct t.me Link Support)
  * 
  * Supports both Supabase (PostgreSQL) and MySQL via database.php
  * Bot Token: 8689610838:AAEwmLeWY-KZ9A7HXJjs_ancWWLMDYU4EN4
@@ -98,7 +98,7 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
 
     if (isset($driver) && $driver === 'pgsql') {
         $readyStmt = $pdo->prepare("
-            SELECT customer_chat_id, MAX(customer_name) as customer_name
+            SELECT customer_chat_id, MAX(customer_name) as customer_name, MAX(username) as username
             FROM pending_customer_messages
             WHERE processed = 0
             GROUP BY customer_chat_id
@@ -111,7 +111,7 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
         $groups = $groupStmt->fetchAll(PDO::FETCH_ASSOC);
     } else {
         $res = mysqli_query($conn, "
-            SELECT customer_chat_id, MAX(customer_name) as customer_name
+            SELECT customer_chat_id, MAX(customer_name) as customer_name, MAX(username) as username
             FROM pending_customer_messages
             WHERE processed = 0
             GROUP BY customer_chat_id
@@ -130,6 +130,7 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
     foreach ($readyCustomers as $cust) {
         $chatId       = $cust['customer_chat_id'];
         $customerName = $cust['customer_name'] ?? 'Customer';
+        $username     = trim($cust['username'] ?? '');
 
         // Fetch all pending messages for this customer
         if (isset($driver) && $driver === 'pgsql') {
@@ -160,6 +161,9 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
             if (!empty($m['doc_file_id'])) {
                 $docFileId = $m['doc_file_id'];
             }
+            if (empty($username) && !empty($m['username'])) {
+                $username = trim($m['username']);
+            }
         }
 
         $combinedText = !empty($textLines) ? implode("\n", $textLines) : '';
@@ -167,16 +171,16 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
         // Create/Update Conversation Ticket ID
         if (isset($driver) && $driver === 'pgsql') {
             $convStmt = $pdo->prepare("
-                INSERT INTO conversations (customer_chat_id, customer_name) 
-                VALUES (?, ?)
-                ON CONFLICT (customer_chat_id) DO UPDATE SET customer_name = EXCLUDED.customer_name
+                INSERT INTO conversations (customer_chat_id, customer_name, username) 
+                VALUES (?, ?, ?)
+                ON CONFLICT (customer_chat_id) DO UPDATE SET customer_name = EXCLUDED.customer_name, username = EXCLUDED.username
                 RETURNING id
             ");
-            $convStmt->execute([$chatId, $customerName]);
+            $convStmt->execute([$chatId, $customerName, $username]);
             $convId = $convStmt->fetchColumn();
         } else {
-            $stmt = mysqli_prepare($conn, "INSERT IGNORE INTO conversations (customer_chat_id, customer_name) VALUES (?, ?)");
-            mysqli_stmt_bind_param($stmt, "ss", $chatId, $customerName);
+            $stmt = mysqli_prepare($conn, "INSERT INTO conversations (customer_chat_id, customer_name, username) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE customer_name = VALUES(customer_name), username = VALUES(username)");
+            mysqli_stmt_bind_param($stmt, "sss", $chatId, $customerName, $username);
             mysqli_stmt_execute($stmt);
 
             $convStmt = mysqli_prepare($conn, "SELECT id FROM conversations WHERE customer_chat_id = ?");
@@ -186,19 +190,21 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
             $convId = $conv['id'];
         }
 
-        // Clean Full Name ONLY (Strip (@username) if stored previously)
-        $displayName = $customerName;
-        if (preg_match('/^(.*?)\s*(\(@[a-zA-Z0-9_]+\))$/', $customerName, $matches)) {
-            $displayName = trim($matches[1]);
+        // Format Contact Info with Public Username & Mention Link
+        if (!empty($username)) {
+            $cleanUsername = ltrim(trim($username), '@');
+            $contactDisplay = "<b>" . htmlspecialchars($customerName) . "</b> (@" . htmlspecialchars($cleanUsername) . ")\n"
+                            . "🔗 <b>Contact Link:</b> https://t.me/" . htmlspecialchars($cleanUsername);
+        } else {
+            $contactDisplay = "<a href=\"tg://user?id={$chatId}\"><b>" . htmlspecialchars($customerName) . "</b></a>\n"
+                            . "🆔 <b>User ID:</b> <code>{$chatId}</code>\n"
+                            . "🔗 <b>Profile Link:</b> <a href=\"tg://user?id={$chatId}\">Open Chat Profile</a>";
         }
 
-        // Build Clickable Mention Link using ONLY the Full Name
-        $userMentionLink = "<a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($displayName) . "</a>";
-
-        // Single Combined Ticket Message Header with Clickable Full Name Link ONLY
+        // Single Combined Ticket Message Header
         $ticketHeader = "📩 <b>New Support Request (#{$convId})</b>\n"
                       . "━━━━━━━━━━━━━━\n"
-                      . "👤 <b>From:</b> {$userMentionLink}\n"
+                      . "👤 <b>From:</b> {$contactDisplay}\n"
                       . (!empty($combinedText) ? $combinedText . "\n" : "")
                       . "━━━━━━━━━━━━━━\n"
                       . "<i>Reply to this message to answer.</i>";
@@ -385,7 +391,7 @@ function processSupportBotUpdate($update) {
             }
         }
 
-        // Clean customer display name ONLY (Strip (@username) if stored)
+        // Clean customer display name ONLY
         $cleanCustName = $customerName;
         if (preg_match('/^(.*?)\s*(\(@[a-zA-Z0-9_]+\))$/', $customerName, $matches)) {
             $cleanCustName = trim($matches[1]);
@@ -413,7 +419,7 @@ function processSupportBotUpdate($update) {
     }
 
     // ========================================================
-    // B. PRIVATE CHAT WORKFLOW (FULL NAME ONLY - NO USERNAME HANDLE)
+    // B. PRIVATE CHAT WORKFLOW (FULL NAME & USERNAME EXTRACTION)
     // ========================================================
     if ($chatType === 'private') {
         if ($text === '/start') {
@@ -424,6 +430,7 @@ function processSupportBotUpdate($update) {
         if (!empty($mainContent) || $hasMedia) {
             $firstName = trim($message["chat"]["first_name"] ?? '');
             $lastName  = trim($message["chat"]["last_name"] ?? '');
+            $username  = trim($message["chat"]["username"] ?? '');
 
             $customerName = trim($firstName . ' ' . $lastName);
             if (empty($customerName)) {
@@ -441,22 +448,23 @@ function processSupportBotUpdate($update) {
                 $hasUnprocessed = mysqli_num_rows($checkBuf) > 0;
             }
 
-            // Save message into pending buffer table
+            // Save message into pending buffer table (including username)
             if (isset($driver) && $driver === 'pgsql') {
                 $bufStmt = $pdo->prepare("
-                    INSERT INTO pending_customer_messages (customer_chat_id, customer_name, message_text, photo_file_id, doc_file_id)
-                    VALUES (:cid, :name, :msg, :photo, :doc)
+                    INSERT INTO pending_customer_messages (customer_chat_id, customer_name, username, message_text, photo_file_id, doc_file_id)
+                    VALUES (:cid, :name, :uname, :msg, :photo, :doc)
                 ");
                 $bufStmt->execute([
                     ':cid'   => $chatId,
                     ':name'  => $customerName,
+                    ':uname' => $username,
                     ':msg'   => $mainContent,
                     ':photo' => $photoFileId,
                     ':doc'   => $docFileId
                 ]);
             } else {
-                $bufStmt = mysqli_prepare($conn, "INSERT INTO pending_customer_messages (customer_chat_id, customer_name, message_text, photo_file_id, doc_file_id) VALUES (?, ?, ?, ?, ?)");
-                mysqli_stmt_bind_param($bufStmt, "sssss", $chatId, $customerName, $mainContent, $photoFileId, $docFileId);
+                $bufStmt = mysqli_prepare($conn, "INSERT INTO pending_customer_messages (customer_chat_id, customer_name, username, message_text, photo_file_id, doc_file_id) VALUES (?, ?, ?, ?, ?, ?)");
+                mysqli_stmt_bind_param($bufStmt, "ssssss", $chatId, $customerName, $username, $mainContent, $photoFileId, $docFileId);
                 mysqli_stmt_execute($bufStmt);
             }
 
@@ -479,6 +487,6 @@ if (basename(__FILE__) == basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
         flushPendingCustomerMessages(20);
     } else {
         header('Content-Type: application/json');
-        echo json_encode(['status' => 'online', 'bot' => 'Telegram Admin Security Lock Support Bot']);
+        echo json_encode(['status' => 'online', 'bot' => 'Telegram Username Link Customer Support Bot']);
     }
 }
