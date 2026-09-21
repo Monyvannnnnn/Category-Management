@@ -1,0 +1,484 @@
+<?php
+/**
+ * Telegram Customer Support Bot Handler (Admin Security Lock Mode)
+ * 
+ * Supports both Supabase (PostgreSQL) and MySQL via database.php
+ * Bot Token: 8689610838:AAEwmLeWY-KZ9A7HXJjs_ancWWLMDYU4EN4
+ * Admin Telegram ID: 7892238736
+ */
+
+require_once __DIR__ . '/database.php';
+
+// Telegram Bot Token
+if (!defined('BOT_TOKEN')) {
+    define('BOT_TOKEN', '8689610838:AAEwmLeWY-KZ9A7HXJjs_ancWWLMDYU4EN4');
+}
+
+// Bot Super Admin Telegram Chat ID
+if (!defined('ADMIN_CHAT_ID')) {
+    define('ADMIN_CHAT_ID', '7892238736');
+}
+
+/**
+ * Send text message to Telegram chat
+ */
+function sendMessage($chatId, $text) {
+    $url = "https://api.telegram.org/bot" . BOT_TOKEN . "/sendMessage";
+    
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query([
+            'chat_id'    => $chatId,
+            'text'       => $text,
+            'parse_mode' => 'HTML'
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+/**
+ * Send photo to Telegram chat
+ */
+function sendPhoto($chatId, $fileId, $caption = '') {
+    $url = "https://api.telegram.org/bot" . BOT_TOKEN . "/sendPhoto";
+    
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query([
+            'chat_id'    => $chatId,
+            'photo'      => $fileId,
+            'caption'    => $caption,
+            'parse_mode' => 'HTML'
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+/**
+ * Send document to Telegram chat
+ */
+function sendDocument($chatId, $fileId, $caption = '') {
+    $url = "https://api.telegram.org/bot" . BOT_TOKEN . "/sendDocument";
+    
+    $ch = curl_init();
+    curl_setopt_array($ch, [
+        CURLOPT_URL => $url,
+        CURLOPT_POST => true,
+        CURLOPT_POSTFIELDS => http_build_query([
+            'chat_id'    => $chatId,
+            'document'   => $fileId,
+            'caption'    => $caption,
+            'parse_mode' => 'HTML'
+        ]),
+        CURLOPT_RETURNTRANSFER => true,
+        CURLOPT_SSL_VERIFYPEER => false
+    ]);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    return json_decode($response, true);
+}
+
+/**
+ * Flush and group pending customer messages after 20 seconds delay
+ */
+function flushPendingCustomerMessages($forceDelaySeconds = 20) {
+    global $pdo, $conn, $driver;
+
+    if (isset($driver) && $driver === 'pgsql') {
+        $readyStmt = $pdo->prepare("
+            SELECT customer_chat_id, MAX(customer_name) as customer_name
+            FROM pending_customer_messages
+            WHERE processed = 0
+            GROUP BY customer_chat_id
+            HAVING EXTRACT(EPOCH FROM (NOW() - MAX(created_at))) >= :delay
+        ");
+        $readyStmt->execute([':delay' => $forceDelaySeconds]);
+        $readyCustomers = $readyStmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $groupStmt = $pdo->query("SELECT group_chat_id FROM support_groups WHERE is_active = 1");
+        $groups = $groupStmt->fetchAll(PDO::FETCH_ASSOC);
+    } else {
+        $res = mysqli_query($conn, "
+            SELECT customer_chat_id, MAX(customer_name) as customer_name
+            FROM pending_customer_messages
+            WHERE processed = 0
+            GROUP BY customer_chat_id
+            HAVING TIMESTAMPDIFF(SECOND, MAX(created_at), NOW()) >= {$forceDelaySeconds}
+        ");
+        $readyCustomers = mysqli_fetch_all($res, MYSQLI_ASSOC);
+
+        $groupRes = mysqli_query($conn, "SELECT group_chat_id FROM support_groups WHERE is_active = 1");
+        $groups = mysqli_fetch_all($groupRes, MYSQLI_ASSOC);
+    }
+
+    if (empty($readyCustomers) || empty($groups)) {
+        return;
+    }
+
+    foreach ($readyCustomers as $cust) {
+        $chatId       = $cust['customer_chat_id'];
+        $customerName = $cust['customer_name'] ?? 'Customer';
+
+        // Fetch all pending messages for this customer
+        if (isset($driver) && $driver === 'pgsql') {
+            $msgStmt = $pdo->prepare("SELECT * FROM pending_customer_messages WHERE customer_chat_id = ? AND processed = 0 ORDER BY id ASC");
+            $msgStmt->execute([$chatId]);
+            $pendingMsgs = $msgStmt->fetchAll(PDO::FETCH_ASSOC);
+        } else {
+            $res = mysqli_query($conn, "SELECT * FROM pending_customer_messages WHERE customer_chat_id = '{$chatId}' AND processed = 0 ORDER BY id ASC");
+            $pendingMsgs = mysqli_fetch_all($res, MYSQLI_ASSOC);
+        }
+
+        if (empty($pendingMsgs)) {
+            continue;
+        }
+
+        // Combine text lines and find photo/doc
+        $textLines = [];
+        $photoFileId = null;
+        $docFileId   = null;
+
+        foreach ($pendingMsgs as $m) {
+            if (!empty($m['message_text'])) {
+                $textLines[] = "💬 " . htmlspecialchars($m['message_text']);
+            }
+            if (!empty($m['photo_file_id'])) {
+                $photoFileId = $m['photo_file_id'];
+            }
+            if (!empty($m['doc_file_id'])) {
+                $docFileId = $m['doc_file_id'];
+            }
+        }
+
+        $combinedText = !empty($textLines) ? implode("\n", $textLines) : '';
+
+        // Create/Update Conversation Ticket ID
+        if (isset($driver) && $driver === 'pgsql') {
+            $convStmt = $pdo->prepare("
+                INSERT INTO conversations (customer_chat_id, customer_name) 
+                VALUES (?, ?)
+                ON CONFLICT (customer_chat_id) DO UPDATE SET customer_name = EXCLUDED.customer_name
+                RETURNING id
+            ");
+            $convStmt->execute([$chatId, $customerName]);
+            $convId = $convStmt->fetchColumn();
+        } else {
+            $stmt = mysqli_prepare($conn, "INSERT IGNORE INTO conversations (customer_chat_id, customer_name) VALUES (?, ?)");
+            mysqli_stmt_bind_param($stmt, "ss", $chatId, $customerName);
+            mysqli_stmt_execute($stmt);
+
+            $convStmt = mysqli_prepare($conn, "SELECT id FROM conversations WHERE customer_chat_id = ?");
+            mysqli_stmt_bind_param($convStmt, "s", $chatId);
+            mysqli_stmt_execute($convStmt);
+            $conv = mysqli_fetch_assoc(mysqli_stmt_get_result($convStmt));
+            $convId = $conv['id'];
+        }
+
+        // Clean Full Name ONLY (Strip (@username) if stored previously)
+        $displayName = $customerName;
+        if (preg_match('/^(.*?)\s*(\(@[a-zA-Z0-9_]+\))$/', $customerName, $matches)) {
+            $displayName = trim($matches[1]);
+        }
+
+        // Build Clickable Mention Link using ONLY the Full Name
+        $userMentionLink = "<a href=\"tg://user?id={$chatId}\">" . htmlspecialchars($displayName) . "</a>";
+
+        // Single Combined Ticket Message Header with Clickable Full Name Link ONLY
+        $ticketHeader = "📩 <b>New Support Request (#{$convId})</b>\n"
+                      . "━━━━━━━━━━━━━━\n"
+                      . "👤 <b>From:</b> {$userMentionLink}\n"
+                      . (!empty($combinedText) ? $combinedText . "\n" : "")
+                      . "━━━━━━━━━━━━━━\n"
+                      . "<i>Reply to this message to answer.</i>";
+
+        // Post ONE combined ticket message into each Telegram Support Group
+        foreach ($groups as $g) {
+            $gId = $g['group_chat_id'];
+            $apiRes = null;
+
+            if ($photoFileId) {
+                $apiRes = sendPhoto($gId, $photoFileId, $ticketHeader);
+            } elseif ($docFileId) {
+                $apiRes = sendDocument($gId, $docFileId, $ticketHeader);
+            } else {
+                $apiRes = sendMessage($gId, $ticketHeader);
+            }
+
+            if (!empty($apiRes['ok']) && isset($apiRes['result']['message_id'])) {
+                $groupMessageId = $apiRes['result']['message_id'];
+
+                // Map Group Message ID -> Customer Chat ID
+                if (isset($driver) && $driver === 'pgsql') {
+                    $mapStmt = $pdo->prepare("
+                        INSERT INTO group_messages (group_chat_id, group_message_id, customer_chat_id)
+                        VALUES (:gid, :gmid, :cid)
+                        ON CONFLICT (group_message_id) DO NOTHING
+                    ");
+                    $mapStmt->execute([
+                        ':gid'  => $gId,
+                        ':gmid' => $groupMessageId,
+                        ':cid'  => $chatId
+                    ]);
+                } else {
+                    $mapStmt = mysqli_prepare($conn, "INSERT IGNORE INTO group_messages (group_chat_id, group_message_id, customer_chat_id) VALUES (?, ?, ?)");
+                    mysqli_stmt_bind_param($mapStmt, "sis", $gId, $groupMessageId, $chatId);
+                    mysqli_stmt_execute($mapStmt);
+                }
+            }
+        }
+
+        // Mark pending messages as processed
+        if (isset($driver) && $driver === 'pgsql') {
+            $markStmt = $pdo->prepare("UPDATE pending_customer_messages SET processed = 1 WHERE customer_chat_id = ? AND processed = 0");
+            $markStmt->execute([$chatId]);
+        } else {
+            mysqli_query($conn, "UPDATE pending_customer_messages SET processed = 1 WHERE customer_chat_id = '{$chatId}' AND processed = 0");
+        }
+    }
+}
+
+/**
+ * Main update handler function
+ */
+function processSupportBotUpdate($update) {
+    global $pdo, $conn, $driver;
+    
+    if (!isset($update["message"])) {
+        return;
+    }
+
+    $message   = $update["message"];
+    $text      = trim($message["text"] ?? '');
+    $caption   = trim($message["caption"] ?? '');
+    $photo     = $message["photo"] ?? null;
+    $document  = $message["document"] ?? null;
+    $chatId    = (string)($message["chat"]["id"] ?? '');
+    $senderId  = (string)($message["from"]["id"] ?? '');
+    $chatType  = $message["chat"]["type"] ?? 'private';
+    $isGroup   = ($chatType === 'group' || $chatType === 'supergroup');
+
+    $photoFileId = !empty($photo) ? end($photo)["file_id"] : null;
+    $docFileId   = !empty($document) ? $document["file_id"] : null;
+    $hasMedia    = !empty($photoFileId) || !empty($docFileId);
+    $mainContent = !empty($text) ? $text : $caption;
+
+    // ========================================================
+    // A. TELEGRAM GROUP CHAT WORKFLOW (ADMIN SECURITY LOCK)
+    // ========================================================
+    if ($isGroup) {
+        $groupTitle = $message["chat"]["title"] ?? 'Support Group';
+
+        // Check if group is already authorized in Database
+        $isGroupAuthorized = false;
+        if (isset($driver) && $driver === 'pgsql') {
+            $checkG = $pdo->prepare("SELECT 1 FROM support_groups WHERE group_chat_id = ? AND is_active = 1");
+            $checkG->execute([$chatId]);
+            $isGroupAuthorized = (bool)$checkG->fetchColumn();
+        } else {
+            $resG = mysqli_query($conn, "SELECT group_chat_id FROM support_groups WHERE group_chat_id = '{$chatId}' AND is_active = 1");
+            $isGroupAuthorized = mysqli_num_rows($resG) > 0;
+        }
+
+        // 🛡️ ADMIN SECURITY LOCK: Only Super Admin (7892238736) can activate new groups!
+        if (!$isGroupAuthorized) {
+            if ($senderId === ADMIN_CHAT_ID) {
+                // Admin authorizing this group!
+                if (isset($driver) && $driver === 'pgsql') {
+                    $stmt = $pdo->prepare("
+                        INSERT INTO support_groups (group_chat_id, group_title, is_active)
+                        VALUES (:gid, :title, 1)
+                        ON CONFLICT (group_chat_id) DO UPDATE SET is_active = 1, group_title = EXCLUDED.group_title
+                    ");
+                    $stmt->execute([':gid' => $chatId, ':title' => $groupTitle]);
+                } else {
+                    $stmt = mysqli_prepare($conn, "INSERT INTO support_groups (group_chat_id, group_title, is_active) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE is_active = 1, group_title = VALUES(group_title)");
+                    mysqli_stmt_bind_param($stmt, "ss", $chatId, $groupTitle);
+                    mysqli_stmt_execute($stmt);
+                }
+                sendMessage($chatId, "🛡️ <b>Support Group Authorized by Admin!</b>\n\nThis group is now authorized to receive customer support tickets.");
+            } else {
+                // Unauthorized user added bot to a random group -> Ignore!
+                return;
+            }
+        }
+
+        // Ignore commands or empty messages
+        if (empty($mainContent) && !$hasMedia) {
+            return;
+        }
+        if (strpos($text, '/') === 0) {
+            return;
+        }
+
+        $agentFirstName = trim($message["from"]["first_name"] ?? '');
+        $agentLastName  = trim($message["from"]["last_name"] ?? '');
+        $agentName      = trim($agentFirstName . ' ' . $agentLastName);
+        if (empty($agentName)) {
+            $agentName = 'Support Agent';
+        }
+
+        $targetCustomerChatId = null;
+        $customerName         = 'Customer';
+
+        // METHOD 1: Check if Employee used Telegram "Reply" to a specific ticket
+        if (isset($message["reply_to_message"])) {
+            $replyToMessageId = $message["reply_to_message"]["message_id"];
+
+            if (isset($driver) && $driver === 'pgsql') {
+                $stmt = $pdo->prepare("
+                    SELECT gm.customer_chat_id, c.customer_name 
+                    FROM group_messages gm 
+                    LEFT JOIN conversations c ON c.customer_chat_id = gm.customer_chat_id 
+                    WHERE gm.group_message_id = ?
+                ");
+                $stmt->execute([$replyToMessageId]);
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    $targetCustomerChatId = $row['customer_chat_id'];
+                    $customerName         = $row['customer_name'] ?? 'Customer';
+                }
+            } else {
+                $stmt = mysqli_prepare($conn, "
+                    SELECT gm.customer_chat_id, c.customer_name 
+                    FROM group_messages gm 
+                    LEFT JOIN conversations c ON c.customer_chat_id = gm.customer_chat_id 
+                    WHERE gm.group_message_id = ?
+                ");
+                mysqli_stmt_bind_param($stmt, "i", $replyToMessageId);
+                mysqli_stmt_execute($stmt);
+                $res = mysqli_fetch_assoc(mysqli_stmt_get_result($stmt));
+                if ($res) {
+                    $targetCustomerChatId = $res['customer_chat_id'];
+                    $customerName         = $res['customer_name'] ?? 'Customer';
+                }
+            }
+        }
+
+        // METHOD 2: Fallback - Route to the most recent active customer
+        if (!$targetCustomerChatId) {
+            if (isset($driver) && $driver === 'pgsql') {
+                $stmt = $pdo->query("SELECT customer_chat_id, customer_name FROM conversations ORDER BY id DESC LIMIT 1");
+                $row = $stmt->fetch(PDO::FETCH_ASSOC);
+                if ($row) {
+                    $targetCustomerChatId = $row['customer_chat_id'];
+                    $customerName         = $row['customer_name'] ?? 'Customer';
+                }
+            } else {
+                $res = mysqli_query($conn, "SELECT customer_chat_id, customer_name FROM conversations ORDER BY id DESC LIMIT 1");
+                $row = mysqli_fetch_assoc($res);
+                if ($row) {
+                    $targetCustomerChatId = $row['customer_chat_id'];
+                    $customerName         = $row['customer_name'] ?? 'Customer';
+                }
+            }
+        }
+
+        // Clean customer display name ONLY (Strip (@username) if stored)
+        $cleanCustName = $customerName;
+        if (preg_match('/^(.*?)\s*(\(@[a-zA-Z0-9_]+\))$/', $customerName, $matches)) {
+            $cleanCustName = trim($matches[1]);
+        }
+
+        // Forward content (Text, Photo, or File) to Customer
+        if ($targetCustomerChatId) {
+            $userLink = "<a href=\"tg://user?id={$targetCustomerChatId}\">" . htmlspecialchars($cleanCustName) . "</a>";
+
+            if ($photoFileId) {
+                $photoCaption = "💬 <b>Support Reply:</b>" . (!empty($caption) ? "\n\n" . $caption : "");
+                sendPhoto($targetCustomerChatId, $photoFileId, $photoCaption);
+                sendMessage($chatId, "✅ <b>Photo sent to {$userLink}</b> by <i>{$agentName}</i>!");
+            } elseif ($docFileId) {
+                $docCaption = "💬 <b>Support Reply:</b>" . (!empty($caption) ? "\n\n" . $caption : "");
+                sendDocument($targetCustomerChatId, $docFileId, $docCaption);
+                sendMessage($chatId, "✅ <b>Document sent to {$userLink}</b> by <i>{$agentName}</i>!");
+            } elseif (!empty($text)) {
+                sendMessage($targetCustomerChatId, "💬 <b>Support Reply:</b>\n\n" . $text);
+                sendMessage($chatId, "✅ <b>Response sent to {$userLink}</b> by <i>{$agentName}</i>!");
+            }
+        }
+
+        return;
+    }
+
+    // ========================================================
+    // B. PRIVATE CHAT WORKFLOW (FULL NAME ONLY - NO USERNAME HANDLE)
+    // ========================================================
+    if ($chatType === 'private') {
+        if ($text === '/start') {
+            sendMessage($chatId, "👋 <b>Welcome to Customer Support!</b>\n\nPlease send your message, question, or photo below, and our support team will assist you shortly.");
+            return;
+        }
+
+        if (!empty($mainContent) || $hasMedia) {
+            $firstName = trim($message["chat"]["first_name"] ?? '');
+            $lastName  = trim($message["chat"]["last_name"] ?? '');
+
+            $customerName = trim($firstName . ' ' . $lastName);
+            if (empty($customerName)) {
+                $customerName = 'Customer';
+            }
+
+            // Check if customer already has pending un-flushed messages in buffer
+            $hasUnprocessed = false;
+            if (isset($driver) && $driver === 'pgsql') {
+                $checkBuf = $pdo->prepare("SELECT 1 FROM pending_customer_messages WHERE customer_chat_id = ? AND processed = 0 LIMIT 1");
+                $checkBuf->execute([$chatId]);
+                $hasUnprocessed = (bool)$checkBuf->fetchColumn();
+            } else {
+                $checkBuf = mysqli_query($conn, "SELECT id FROM pending_customer_messages WHERE customer_chat_id = '{$chatId}' AND processed = 0 LIMIT 1");
+                $hasUnprocessed = mysqli_num_rows($checkBuf) > 0;
+            }
+
+            // Save message into pending buffer table
+            if (isset($driver) && $driver === 'pgsql') {
+                $bufStmt = $pdo->prepare("
+                    INSERT INTO pending_customer_messages (customer_chat_id, customer_name, message_text, photo_file_id, doc_file_id)
+                    VALUES (:cid, :name, :msg, :photo, :doc)
+                ");
+                $bufStmt->execute([
+                    ':cid'   => $chatId,
+                    ':name'  => $customerName,
+                    ':msg'   => $mainContent,
+                    ':photo' => $photoFileId,
+                    ':doc'   => $docFileId
+                ]);
+            } else {
+                $bufStmt = mysqli_prepare($conn, "INSERT INTO pending_customer_messages (customer_chat_id, customer_name, message_text, photo_file_id, doc_file_id) VALUES (?, ?, ?, ?, ?)");
+                mysqli_stmt_bind_param($bufStmt, "sssss", $chatId, $customerName, $mainContent, $photoFileId, $docFileId);
+                mysqli_stmt_execute($bufStmt);
+            }
+
+            // Send instant receipt on FIRST message in 20s window
+            if (!$hasUnprocessed) {
+                sendMessage($chatId, "👋 <b>Thank you for contacting Support!</b>\n\nYour messages are being forwarded to our support team. An agent will respond to you shortly.");
+            }
+            return;
+        }
+    }
+}
+
+// Handle Direct Webhook execution if called directly
+if (basename(__FILE__) == basename($_SERVER['SCRIPT_FILENAME'] ?? '')) {
+    $content = file_get_contents("php://input");
+    $update = json_decode($content, true);
+
+    if ($update) {
+        processSupportBotUpdate($update);
+        flushPendingCustomerMessages(20);
+    } else {
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'online', 'bot' => 'Telegram Admin Security Lock Support Bot']);
+    }
+}
