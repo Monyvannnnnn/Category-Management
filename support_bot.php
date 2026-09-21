@@ -3,7 +3,7 @@
  * Telegram Customer Support Bot Handler (Public Username & Direct t.me Link Support)
  * 
  * Supports both Supabase (PostgreSQL) and MySQL via database.php
- * Bot Token: 8689610838:AAEwmLeWY-KZ9A7HXJjs_ancWWLMDYU4EN4
+ * Bot Token: 8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE
  * Admin Telegram ID: 7892238736
  */
 
@@ -11,7 +11,7 @@ require_once __DIR__ . '/database.php';
 
 // Telegram Bot Token
 if (!defined('BOT_TOKEN')) {
-    define('BOT_TOKEN', '8689610838:AAEwmLeWY-KZ9A7HXJjs_ancWWLMDYU4EN4');
+    define('BOT_TOKEN', '8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE');
 }
 
 // Bot Super Admin Telegram Chat ID

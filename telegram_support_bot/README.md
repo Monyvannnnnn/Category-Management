@@ -42,7 +42,7 @@ Ensure the tables in `schema.sql` are created in your **Supabase SQL Editor** or
 ### Webhook Mode (Production)
 Set your Webhook URL via Telegram API:
 ```text
-https://api.telegram.org/bot8689610838:AAEwmLeWY-KZ9A7HXJjs_ancWWLMDYU4EN4/setWebhook?url=https://YOUR_DOMAIN/telegram_support_bot/support_bot.php
+https://api.telegram.org/bot8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE/setWebhook?url=https://YOUR_DOMAIN/telegram_support_bot/support_bot.php
 ```
 
 ### Poller Mode (Local Development / XAMPP)
