@@ -41,7 +41,7 @@ Ensure the tables in `schema.sql` are created in your **Supabase SQL Editor** or
 
 Configure your bot credentials in `.env` (or `.env.example`):
 ```ini
-TELEGRAM_BOT_TOKEN=8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE
+TELEGRAM_BOT_TOKEN=YOUR_TELEGRAM_BOT_TOKEN
 TELEGRAM_ADMIN_CHAT_ID=7892238736
 ```
 

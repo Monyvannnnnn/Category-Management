@@ -1,17 +1,19 @@
 <?php
 /**
- * Telegram Customer Support Bot Handler (Public Username & Direct t.me Link Support)
+ * Telegram Customer Support Bot Handler
  * 
  * Supports both Supabase (PostgreSQL) and MySQL via database.php
- * Bot Token: 8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE
- * Admin Telegram ID: 7892238736
+ * Credentials configured in .env
  */
 
 require_once __DIR__ . '/../database.php';
 
 // Telegram Bot Token (Loaded dynamically from .env via TELEGRAM_BOT_TOKEN)
 if (!defined('BOT_TOKEN')) {
-    $botTokenEnv = getenv('TELEGRAM_BOT_TOKEN') ?: ($_ENV['TELEGRAM_BOT_TOKEN'] ?? ($_SERVER['TELEGRAM_BOT_TOKEN'] ?? '8689610838:AAHbgUFJfNZhUf0Zy0tZuS2FhXyPEj60WkE'));
+    $botTokenEnv = getenv('TELEGRAM_BOT_TOKEN') ?: ($_ENV['TELEGRAM_BOT_TOKEN'] ?? ($_SERVER['TELEGRAM_BOT_TOKEN'] ?? ''));
+    if (empty($botTokenEnv)) {
+        die("Error: TELEGRAM_BOT_TOKEN is not defined in .env file.");
+    }
     define('BOT_TOKEN', $botTokenEnv);
 }
 
