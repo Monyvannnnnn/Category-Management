@@ -147,13 +147,13 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
         }
 
         // Combine text lines and find photo/doc
-        $textLines = [];
-        $photoFileId = null;
-        $docFileId   = null;
+        $rawTextLines = [];
+        $photoFileId  = null;
+        $docFileId    = null;
 
         foreach ($pendingMsgs as $m) {
             if (!empty($m['message_text'])) {
-                $textLines[] = "💬 " . htmlspecialchars($m['message_text']);
+                $rawTextLines[] = htmlspecialchars($m['message_text']);
             }
             if (!empty($m['photo_file_id'])) {
                 $photoFileId = $m['photo_file_id'];
@@ -166,7 +166,8 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
             }
         }
 
-        $combinedText = !empty($textLines) ? implode("\n", $textLines) : '';
+        $messageBody  = !empty($rawTextLines) ? implode("\n", $rawTextLines) : '';
+        $combinedText = !empty($messageBody) ? "💬 <b>Message:</b>\n" . $messageBody : '';
 
         // Create/Update Conversation Ticket ID
         if (isset($driver) && $driver === 'pgsql') {
@@ -201,7 +202,7 @@ function flushPendingCustomerMessages($forceDelaySeconds = 20) {
                             . "🔗 <b>Profile Link:</b> <a href=\"tg://user?id={$chatId}\">Open Chat Profile</a>";
         }
 
-        // Single Combined Ticket Message Header
+        // Single Combined Ticket Message Header with Consolidated Formatting
         $ticketHeader = "📩 <b>New Support Request (#{$convId})</b>\n"
                       . "━━━━━━━━━━━━━━\n"
                       . "👤 <b>From:</b> {$contactDisplay}\n"
