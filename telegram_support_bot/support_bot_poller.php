@@ -13,16 +13,22 @@ $offset = 0;
 
 echo "[" . date('Y-m-d H:i:s') . "] Support Bot Poller started (Auto-Reconnect Enabled) for token: {$botToken}\n";
 
-while (true) {
-    // Ensure DB connection is active
-    try {
-        if (isset($driver) && $driver === 'pgsql' && $pdo) {
+// Helper function to maintain active DB connection
+function checkAndReconnectDb() {
+    global $pdo, $conn, $driver;
+    if (isset($driver) && $driver === 'pgsql' && $pdo) {
+        try {
             $pdo->query("SELECT 1");
+        } catch (Throwable $t) {
+            echo "[" . date('Y-m-d H:i:s') . "] Re-establishing database connection...\n";
+            $pdo = null;
+            @require __DIR__ . '/../database.php';
         }
-    } catch (Exception $e) {
-        echo "[" . date('Y-m-d H:i:s') . "] Reconnecting to Supabase database...\n";
-        @require __DIR__ . '/../database.php';
     }
+}
+
+while (true) {
+    checkAndReconnectDb();
 
     $url = "https://api.telegram.org/bot{$botToken}/getUpdates?offset={$offset}&timeout=5";
     
@@ -41,7 +47,7 @@ while (true) {
                 
                 try {
                     processSupportBotUpdate($up);
-                } catch (Exception $e) {
+                } catch (Throwable $e) {
                     echo "Error processing update: " . $e->getMessage() . "\n";
                 }
                 
@@ -53,7 +59,7 @@ while (true) {
     // Flush and group pending customer messages (20 seconds window)
     try {
         flushPendingCustomerMessages(20);
-    } catch (Exception $e) {
+    } catch (Throwable $e) {
         // Suppress & silently recover connection on next loop
     }
     
