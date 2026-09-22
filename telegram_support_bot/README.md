@@ -6,7 +6,8 @@ Complete multi-agent customer support ticketing and live-chat system powered by 
 
 ```text
 telegram_support_bot/
-├── support_bot.php         # Main Webhook update handler
+├── api.php                 # Webhook & API entrypoint for Telegram updates
+├── support_bot.php         # Main update logic and ticketing handler
 ├── support_bot_poller.php  # Real-time background poller daemon
 ├── schema.sql              # Database DDL for Supabase / MySQL
 └── README.md               # Feature guide and instructions
