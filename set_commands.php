@@ -11,20 +11,26 @@ require_once __DIR__ . '/bot_poller.php';
 
 $botToken = getDefaultBotToken();
 
-// If accessed via GET browser request, register Webhook and all 18 commands with Telegram BotFather API
-if (($_SERVER['REQUEST_METHOD'] ?? 'CLI') === 'GET' || isset($_GET['action']) || php_sapi_name() === 'cli') {
+$action = $_GET['action'] ?? ($argv[1] ?? 'setup');
+
+if (($_SERVER['REQUEST_METHOD'] ?? 'CLI') === 'GET' || !empty($action) || php_sapi_name() === 'cli') {
     header("Content-Type: application/json; charset=utf-8");
     $host = $_SERVER['HTTP_HOST'] ?? 'report-push-v2.vercel.app';
     $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'https';
     $webhookUrl = "{$scheme}://{$host}/set_commands.php";
 
-    $whApiUrl = "https://api.telegram.org/bot{$botToken}/setWebhook?url=" . urlencode($webhookUrl);
-    $ch = curl_init($whApiUrl);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
-    curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
-    $whRes = curl_exec($ch);
-    curl_close($ch);
+    $whRes = null;
+    if ($action === 'set_webhook') {
+        $whApiUrl = "https://api.telegram.org/bot{$botToken}/setWebhook?url=" . urlencode($webhookUrl);
+        $ch = curl_init($whApiUrl);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        $whRes = curl_exec($ch);
+        curl_close($ch);
+    } else if ($action === 'delete_webhook') {
+        $whRes = @file_get_contents("https://api.telegram.org/bot{$botToken}/deleteWebhook");
+    }
 
     $cmdRes = registerBotCommands($botToken);
 
@@ -52,9 +58,9 @@ if (($_SERVER['REQUEST_METHOD'] ?? 'CLI') === 'GET' || isset($_GET['action']) ||
 
     echo json_encode([
         "ok" => true,
-        "message" => "Telegram Bot Webhook, Commands, and Live BI Mini App Menu Button registered successfully!",
-        "webhook_url" => $webhookUrl,
-        "webhook_response" => json_decode($whRes, true),
+        "message" => "Telegram Bot Commands and Menu Button registered successfully!",
+        "action" => $action,
+        "webhook_response" => $whRes ? json_decode($whRes, true) : "Skipped (Use ?action=set_webhook to enable Webhook mode)",
         "commands_response" => json_decode($cmdRes, true),
         "menu_button_response" => json_decode($menuBtnRes, true)
     ]);

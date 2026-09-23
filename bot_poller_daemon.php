@@ -23,6 +23,7 @@ if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
 }
 
 $defaultBotToken = getDefaultBotToken();
+@file_get_contents("https://api.telegram.org/bot{$defaultBotToken}/deleteWebhook");
 registerBotCommands($defaultBotToken);
 
 // Auto-ensure atomic updates table exists
