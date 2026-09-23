@@ -30,8 +30,9 @@ function getUserBotRow($conn, $userId) {
         $row = db_fetch_assoc($res);
         db_stmt_close($stmt);
 
-        if ($row && $row['bot_username'] === 'reportpush_bot') {
-            $newToken = getDefaultBotToken();
+        $defaultToken = getDefaultBotToken();
+        if ($row && !empty($defaultToken) && ($row['bot_token'] !== $defaultToken || $row['bot_username'] === 'reportpush_bot')) {
+            $newToken = $defaultToken;
             $newUsername = defined('DEFAULT_BOT_USERNAME') ? DEFAULT_BOT_USERNAME : 'enginebi_bot';
             $upd = db_prepare($conn, "UPDATE user_telegram_bots SET bot_token = ?, bot_username = ? WHERE id = ?");
             if ($upd) {
