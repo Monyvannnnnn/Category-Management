@@ -20,9 +20,21 @@ if (!function_exists('getAppBaseUrl')) {
     }
 }
 
+if (!function_exists('getDefaultBotToken')) {
+    function getDefaultBotToken($customBotToken = null) {
+        if (!empty($customBotToken)) {
+            return $customBotToken;
+        }
+        if (defined('DEFAULT_BOT_TOKEN') && !empty(DEFAULT_BOT_TOKEN)) {
+            return DEFAULT_BOT_TOKEN;
+        }
+        return getenv('TELEGRAM_BOT_TOKEN') ?: '';
+    }
+}
+
 if (!function_exists('sendTelegramChatAction')) {
     function sendTelegramChatAction($chatId, $action = 'typing', $customBotToken = null) {
-        $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $botToken = getDefaultBotToken($customBotToken);
         $url = "https://api.telegram.org/bot{$botToken}/sendChatAction";
         $payload = [
             'chat_id' => $chatId,
@@ -48,7 +60,7 @@ if (!function_exists('editTelegramMessageText')) {
         if (empty($messageId)) {
             return sendSingleTelegramNotification($chatId, $text, $customBotToken, $replyMarkup);
         }
-        $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $botToken = getDefaultBotToken($customBotToken);
         $url = "https://api.telegram.org/bot{$botToken}/editMessageText";
         $payload = [
             'chat_id'    => $chatId,
@@ -86,7 +98,7 @@ if (!function_exists('editTelegramMessageText')) {
 if (!function_exists('deleteTelegramMessage')) {
     function deleteTelegramMessage($chatId, $messageId, $customBotToken = null) {
         if (empty($messageId)) return false;
-        $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+        $botToken = getDefaultBotToken($customBotToken);
         $url = "https://api.telegram.org/bot{$botToken}/deleteMessage";
         $payload = ['chat_id' => $chatId, 'message_id' => (int)$messageId];
         $ch = curl_init();
@@ -105,7 +117,7 @@ if (!function_exists('deleteTelegramMessage')) {
 }
 
 function sendSingleTelegramNotification($chatId, $message, $customBotToken = null, $replyMarkup = null) {
-    $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
+    $botToken = getDefaultBotToken($customBotToken); 
     $url = "https://api.telegram.org/bot$botToken/sendMessage";
     $data = [
         'chat_id' => $chatId,
@@ -231,7 +243,7 @@ function sendSingleTelegramNotification($chatId, $message, $customBotToken = nul
  * Send a single Photo with Caption via Telegram Bot API
  */
 function sendSingleTelegramPhoto($chatId, $photoUrl, $caption, $customBotToken = null, $replyMarkup = null) {
-    $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8"; 
+    $botToken = getDefaultBotToken($customBotToken); 
     $url = "https://api.telegram.org/bot$botToken/sendPhoto";
 
     $isLocalFile = false;
@@ -424,7 +436,7 @@ function sendSingleTelegramDocument($chatId, $filePath, $caption = '', $customBo
     if (!file_exists($filePath)) {
         return json_encode(["ok" => false, "description" => "Document file not found."]);
     }
-    $botToken = !empty($customBotToken) ? $customBotToken : "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+    $botToken = getDefaultBotToken($customBotToken);
     $url = "https://api.telegram.org/bot$botToken/sendDocument";
 
     $mimeType = function_exists('mime_content_type') ? @mime_content_type($filePath) : 'application/octet-stream';

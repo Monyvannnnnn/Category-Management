@@ -30,9 +30,9 @@ function getUserBotRow($conn, $userId) {
         $row = db_fetch_assoc($res);
         db_stmt_close($stmt);
 
-        if ($row && ($row['bot_token'] === '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc' || $row['bot_username'] === 'reportpush_bot')) {
-            $newToken = '8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8';
-            $newUsername = 'enginebi_bot';
+        if ($row && $row['bot_username'] === 'reportpush_bot') {
+            $newToken = getDefaultBotToken();
+            $newUsername = defined('DEFAULT_BOT_USERNAME') ? DEFAULT_BOT_USERNAME : 'enginebi_bot';
             $upd = db_prepare($conn, "UPDATE user_telegram_bots SET bot_token = ?, bot_username = ? WHERE id = ?");
             if ($upd) {
                 db_stmt_bind_param($upd, "ssi", $newToken, $newUsername, $row['id']);
@@ -50,11 +50,11 @@ function getUserBotRow($conn, $userId) {
 
 switch ($action) {
     case 'get':
-        $defaultBotToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
-        $defaultBotUsername = "enginebi_bot";
+        $defaultBotToken = getDefaultBotToken();
+        $defaultBotUsername = defined('DEFAULT_BOT_USERNAME') ? DEFAULT_BOT_USERNAME : "enginebi_bot";
         $row = getUserBotRow($conn, $userId);
 
-        $botToken = (!empty($row['bot_token']) && $row['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $row['bot_token'] : $defaultBotToken;
+        $botToken = !empty($row['bot_token']) ? $row['bot_token'] : $defaultBotToken;
         $botUsername = (!empty($row['bot_username']) && $row['bot_username'] !== 'reportpush_bot') ? $row['bot_username'] : $defaultBotUsername;
 
         // Auto-poll once if chat_id is empty to instantly bind Telegram START messages on localhost/web
@@ -113,12 +113,12 @@ switch ($action) {
         $code = str_pad((string)rand(100000, 999999), 6, '0', STR_PAD_LEFT);
         $expiresAt = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
-        $defaultToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
-        $defaultUsername = "enginebi_bot";
+        $defaultToken = getDefaultBotToken();
+        $defaultUsername = defined('DEFAULT_BOT_USERNAME') ? DEFAULT_BOT_USERNAME : "enginebi_bot";
 
         $existing = getUserBotRow($conn, $userId);
         $botUsername = (!empty($existing['bot_username']) && $existing['bot_username'] !== 'reportpush_bot') ? $existing['bot_username'] : $defaultUsername;
-        $botToken = (!empty($existing['bot_token']) && $existing['bot_token'] !== '8736337451:AAEtwDgtwUpWGnV4cIrMNKwNjHaAV8J18jc') ? $existing['bot_token'] : $defaultToken;
+        $botToken = !empty($existing['bot_token']) ? $existing['bot_token'] : $defaultToken;
 
         if ($existing) {
             $stmt = db_prepare($conn, "UPDATE user_telegram_bots SET connection_code = ?, code_expires_at = ?, bot_username = ?, bot_token = ? WHERE user_id = ?");

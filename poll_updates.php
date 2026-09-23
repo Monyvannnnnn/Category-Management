@@ -16,7 +16,7 @@ if (!$lockFp || !flock($lockFp, LOCK_EX | LOCK_NB)) {
 echo "Starting Telegram Bot Update Listener...\n";
 
 $offsetFile = __DIR__ . '/telegram_offset.txt';
-$defaultBotToken = "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8";
+$defaultBotToken = getDefaultBotToken();
 
 registerBotCommands($defaultBotToken);
 

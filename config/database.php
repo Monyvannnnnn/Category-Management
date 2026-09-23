@@ -29,8 +29,8 @@ if (!defined('SUPABASE_ANON_KEY')) define('SUPABASE_ANON_KEY', getenv('SUPABASE_
 if (!defined('SUPABASE_SERVICE_KEY')) define('SUPABASE_SERVICE_KEY', getenv('SUPABASE_SERVICE_KEY') ?: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndwemFlbG9lcXNpYWNlaGt4dmdxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4OTA0MTUyOSwiZXhwIjoyMTA0NjE3NTI5fQ.nJnwkopTUSnNBXtMCD_m-Fuj-vCumPnRfIjh7FhLejA');
 if (!defined('SUPABASE_BUCKET')) define('SUPABASE_BUCKET', getenv('SUPABASE_BUCKET') ?: 'products-img');
 
-define("DEFAULT_BOT_TOKEN", "8560470449:AAEuX9eLYvk0wxh65Rc0d8iNhObzVzni-x8");
-define("DEFAULT_BOT_USERNAME", "enginebi_bot");
+define("DEFAULT_BOT_TOKEN", getenv('TELEGRAM_BOT_TOKEN') ?: "");
+define("DEFAULT_BOT_USERNAME", getenv('TELEGRAM_BOT_USERNAME') ?: "enginebi_bot");
 
 /**
  * Returns a PDO Connection for Supabase (PostgreSQL) or fallback.
