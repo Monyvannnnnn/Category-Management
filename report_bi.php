@@ -812,6 +812,9 @@ if (!$currentUser) {
             <a href="fieldbi.php" class="bi-btn" style="background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.4); color: #34d399;" title="Switch to Field BI App">
                 <i class="fa-solid fa-wheat-field"></i> 🌾 Field BI
             </a>
+            <a href="index.html" class="bi-btn" title="View Order-to-Delivery Process Workflow">
+                <i class="fa-solid fa-route"></i> Workflow
+            </a>
             <a href="index.php" class="bi-btn" title="Categories Management">
                 <i class="fa-solid fa-layer-group"></i> Categories
             </a>
@@ -1469,6 +1472,43 @@ function escapeHtml(str) {
 }
 
 document.addEventListener('DOMContentLoaded', fetchBiData);
+</script>
+
+<!-- Workflow Diagram Modal -->
+<div id="workflowModal" class="workflow-modal-backdrop">
+    <div class="workflow-modal-card">
+        <div class="workflow-modal-header">
+            <div class="workflow-modal-title">
+                <i class="fa-solid fa-route" style="color:#38bdf8;"></i>
+                <span>Order-to-Delivery, Receiving & Payment Flow</span>
+            </div>
+            <div class="workflow-header-actions">
+                <a href="index.html" target="_blank" class="workflow-action-btn" title="Open in New Window / Full Page">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Page
+                </a>
+                <button type="button" class="workflow-action-btn" onclick="closeWorkflowModal()" title="Close Workflow Diagram">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+        <div class="workflow-modal-body">
+            <iframe src="index.html" class="workflow-iframe" title="Process Workflow Diagram"></iframe>
+        </div>
+    </div>
+</div>
+
+<script>
+function openWorkflowModal() {
+    const modal = document.getElementById('workflowModal');
+    if (modal) modal.classList.add('active');
+}
+function closeWorkflowModal() {
+    const modal = document.getElementById('workflowModal');
+    if (modal) modal.classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeWorkflowModal();
+});
 </script>
 
 </body>

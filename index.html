@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Order-to-Delivery, Receiving and Payment Flow Diagram</title>
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-main: #0f141c;
+            --surface-card: #161d2a;
+            --surface-alt: #1a2333;
+            --border-subtle: #242f42;
+            --border-muted: #2f3e57;
+            --primary-color: #6366f1;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --font-family: 'Poppins', Arial, sans-serif;
+            --color-red: #F0324B;
+            --color-orange: #FF8C00;
+            --color-green: #34D399;
+            --color-purple: #A78BFA;
+            --color-pink: #FF5C8A;
+            --color-blue: #38BDF8;
+            --color-telegram: #229ED9;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: var(--bg-main);
+            font-family: var(--font-family);
+            color: var(--text-main);
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Floating Top Dark Glass Header */
+        header {
+            position: absolute;
+            top: 10px;
+            left: 12px;
+            right: 12px;
+            padding: 0.35rem 0.85rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid var(--border-subtle);
+            background: rgba(22, 29, 42, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.35);
+            z-index: 50;
+        }
+
+        .header-title-container {
+            display: flex;
+            flex-direction: column;
+            gap: 0.05rem;
+        }
+
+        h1 {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: #f8fafc;
+            letter-spacing: -0.01em;
+        }
+
+        .subtitle {
+            font-size: 0.65rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .controls {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .btn-control {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+            background-color: var(--surface-alt);
+            border: 1px solid var(--border-muted);
+            color: #f8fafc;
+            font-family: var(--font-family);
+            font-size: 0.7rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            text-decoration: none;
+        }
+
+        .btn-control:hover {
+            background-color: var(--border-subtle);
+            border-color: var(--primary-color);
+            color: #38bdf8;
+        }
+
+        .btn-control:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 2px;
+        }
+
+        .btn-control svg {
+            width: 14px;
+            height: 14px;
+            fill: currentColor;
+        }
+
+        /* Full Viewport Canvas */
+        main {
+            position: absolute;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 30%, #161d2a 0%, #0f141c 100%);
+        }
+
+        .diagram-wrapper {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        svg#workflow-svg {
+            width: 100vw;
+            height: 100vh;
+            display: block;
+            overflow: visible;
+        }
+
+        /* Route Paths Styling */
+        .route-path {
+            fill: none;
+            stroke-width: 3.25px;
+            stroke-linejoin: round;
+            stroke-linecap: round;
+            transition: stroke-width 0.25s ease, opacity 0.25s ease;
+        }
+
+        .route-path.dashed {
+            stroke-dasharray: 7, 7;
+        }
+
+        /* Node Badge Styling */
+        .node-group {
+            cursor: pointer;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .node-circle {
+            fill: #ffffff;
+            stroke-width: 3px;
+            filter: drop-shadow(0 4px 10px rgba(0,0,0,0.6));
+            transition: r 0.2s ease, fill 0.2s ease;
+        }
+
+        .node-group:hover .node-circle,
+        .node-group:focus-visible .node-circle {
+            r: 15.5px;
+            fill: #161d2a;
+        }
+
+        .node-text {
+            font-family: var(--font-family);
+            font-size: 11px;
+            font-weight: 800;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            fill: #0f141c;
+            transition: fill 0.2s ease;
+        }
+
+        .node-group:hover .node-text,
+        .node-group:focus-visible .node-text {
+            fill: #ffffff;
+        }
+
+        .node-group:focus {
+            outline: none;
+        }
+
+        .node-group:focus-visible .node-circle {
+            stroke-dasharray: none;
+            outline: 3px solid #38bdf8;
+            outline-offset: 3px;
+        }
+
+        /* Upright Label Pill & Static Image Styling */
+        .upright-group {
+            pointer-events: none;
+        }
+
+        .hit-target {
+            pointer-events: none;
+        }
+
+        .upright-image-container {
+            pointer-events: none;
+        }
+
+        .upright-label-group {
+            pointer-events: none;
+        }
+
+        .upright-label-text {
+            font-family: var(--font-family);
+            font-size: 11.5px;
+            font-weight: 700;
+            fill: #ffffff;
+            text-anchor: middle;
+            dominant-baseline: central;
+            letter-spacing: -0.01em;
+        }
+
+        /* Motion Packets */
+        .packet-particle {
+            filter: drop-shadow(0 0 6px currentColor);
+        }
+
+        /* Dimming & Highlight states */
+        .dimmed {
+            opacity: 0.2 !important;
+        }
+
+        .highlighted {
+            opacity: 1.0 !important;
+            stroke-width: 4.5px !important;
+        }
+
+        /* Interactive Floating Tooltip */
+        .tooltip {
+            position: absolute;
+            pointer-events: none;
+            background: rgba(15, 23, 42, 0.96);
+            border: 1px solid var(--border-muted);
+            color: #ffffff;
+            padding: 0.65rem 0.95rem;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            transform: translate(-50%, -120%) scale(0.95);
+            transition: opacity 0.2s ease, transform 0.2s ease;
+            z-index: 100;
+            max-width: 270px;
+            line-height: 1.4;
+        }
+
+        .tooltip.visible {
+            opacity: 1;
+            transform: translate(-50%, -120%) scale(1);
+        }
+
+        .tooltip-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 700;
+            font-size: 0.85rem;
+            margin-bottom: 0.2rem;
+        }
+
+        .tooltip-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 20px;
+            height: 20px;
+            padding: 0 4px;
+            border-radius: 50%;
+            color: #fff;
+            font-size: 0.725rem;
+            font-weight: 700;
+        }
+
+        .tooltip-desc {
+            color: #cbd5e1;
+            font-weight: 400;
+        }
+
+        @media (max-width: 768px) {
+            header {
+                top: 8px; left: 8px; right: 8px;
+                padding: 0.5rem 1rem;
+            }
+            h1 { font-size: 1rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="header-title-container">
+            <h1>Order-to-Delivery, Receiving, Payment & Telegram Bot Flow</h1>
+            <div class="subtitle">Dimetric 22.5° Bird's-Eye Process Architecture</div>
+        </div>
+        <div class="controls">
+            <a href="index.php" class="btn-control" title="Return to Dashboard">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span>Dashboard</span>
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <div class="diagram-wrapper">
+            <div id="diagram-tooltip" class="tooltip" role="tooltip"></div>
+            <svg id="workflow-svg" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                    <!-- Uniform Arrowhead Markers for Route Ends -->
+                    <marker id="arrow-red" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#F0324B"/>
+                    </marker>
+                    <marker id="arrow-orange" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#FF8C00"/>
+                    </marker>
+                    <marker id="arrow-green" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#34D399"/>
+                    </marker>
+                    <marker id="arrow-purple" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#A78BFA"/>
+                    </marker>
+                    <marker id="arrow-pink" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#FF5C8A"/>
+                    </marker>
+                    <marker id="arrow-blue" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#38BDF8"/>
+                    </marker>
+                    <marker id="arrow-telegram" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+                        <path d="M 0 1.5 L 9 5 L 0 8.5 Z" fill="#229ED9"/>
+                    </marker>
+
+                    <!-- Light Gaussian Blur for Upright Ellipse Shadows -->
+                    <filter id="shadow-blur">
+                        <feGaussianBlur stdDeviation="3.5"/>
+                    </filter>
+                </defs>
+
+                <!-- Ground Plane Dimmetric Group matrix(0.924 0.383 -0.924 0.383 ox oy) (22.5° Wide Diamond View) -->
+                <g id="ground-plane" transform="matrix(0.924 0.383 -0.924 0.383 900 120)">
+                    <g id="routes-container"></g>
+                </g>
+
+                <!-- Upright Screen-Space Groups (Depth-sorted & Un-squished) -->
+                <g id="upright-container"></g>
+                <g id="nodes-container"></g>
+            </svg>
+        </div>
+    </main>
+
+    <script>
+        const OX = 900;
+        const OY = 120;
+
+        /**
+         * Dimetric Projection Math: 22.5° Wide Three-Quarter Diamond Projection
+         * cos(22.5°) = 0.924, sin(22.5°) = 0.383
+         */
+        function isoProject(x, y) {
+            return {
+                sx: OX + 0.924 * (x - y),
+                sy: OY + 0.383 * (x + y)
+            };
+        }
+
+        /**
+         * Helper to generate smooth rounded corners for Orthogonal (H/V) Path Segments
+         */
+        function buildOrthogonalPath(points, radius = 24) {
+            if (!points || points.length < 2) return '';
+            let d = `M ${points[0].x} ${points[0].y}`;
+
+            for (let i = 1; i < points.length - 1; i++) {
+                const prev = points[i - 1];
+                const curr = points[i];
+                const next = points[i + 1];
+
+                const dx1 = curr.x - prev.x;
+                const dy1 = curr.y - prev.y;
+                const len1 = Math.hypot(dx1, dy1);
+
+                const dx2 = next.x - curr.x;
+                const dy2 = next.y - curr.y;
+                const len2 = Math.hypot(dx2, dy2);
+
+                const r = Math.min(radius, len1 / 2, len2 / 2);
+
+                const p1x = curr.x - (dx1 / len1) * r;
+                const p1y = curr.y - (dy1 / len1) * r;
+
+                const p2x = curr.x + (dx2 / len2) * r;
+                const p2y = curr.y + (dy2 / len2) * r;
+
+                d += ` L ${p1x} ${p1y} Q ${curr.x} ${curr.y} ${p2x} ${p2y}`;
+            }
+
+            d += ` L ${points[points.length - 1].x} ${points[points.length - 1].y}`;
+            return d;
+        }
+
+        /**
+         * Master Workflow Data Definition with Telegram Flow Combined & Expanded Breathing Room
+         */
+        const WORKFLOW_DATA = {
+            routes: [
+                {
+                    id: 'red-route',
+                    color: '#F0324B',
+                    marker: 'url(#arrow-red)',
+                    points: [
+                        { x: 600, y: 150 },
+                        { x: 600, y: 390 },
+                        { x: 600, y: 630 },
+                        { x: 600, y: 870 },
+                        { x: 380, y: 870 },
+                        { x: 380, y: 1080 },
+                        { x: 160, y: 1080 },
+                        { x: 160, y: 1320 },
+                        { x: -60, y: 1320 }
+                    ],
+                    nodes: [
+                        { id: '1', label: '1', title: 'Register Sales Order', x: 600, y: 150, desc: 'Sales rep registers sales order into ERP system.' },
+                        { id: '2', label: '2', title: 'Approve by Sup / Regional / National', x: 600, y: 390, desc: 'Managerial approval hierarchy workflow.' },
+                        { id: '3', label: '3', title: 'Sales Order confirmed by Sales Admin', x: 600, y: 630, desc: 'Sales Admin validates inventory availability & confirms order.' },
+                        { id: '4', label: '4', title: 'Assign Delivery', x: 600, y: 870, desc: 'Logistics allocates fleet vehicle and assigns delivery route.' },
+                        { id: '5', label: '5', title: 'Sum up quantity for picking', x: 380, y: 1080, desc: 'Consolidate items for warehouse picking list generation.' },
+                        { id: '6', label: '6', title: 'Picking', x: 160, y: 1080, desc: 'Warehouse forklift team picks items from storage racks.' },
+                        { id: '7', label: '7', title: 'Inspecting', x: 160, y: 1320, desc: 'Quality assurance checks picked goods against order slip.' },
+                        { id: '8', label: '8', title: 'Loose Area', x: -60, y: 1320, desc: 'Staging loose packages for invoicing and loading.' }
+                    ]
+                },
+                {
+                    id: 'red-branch-8a',
+                    color: '#F0324B',
+                    marker: 'url(#arrow-red)',
+                    points: [{ x: -60, y: 1320 }, { x: -220, y: 1320 }, { x: -220, y: 1200 }],
+                    nodes: [
+                        { id: '8A', label: '8A', title: 'Credit Note', x: -220, y: 1200, desc: 'Credit Note issue for pricing or return adjustments.' }
+                    ]
+                },
+                {
+                    id: 'red-branch-8b',
+                    color: '#F0324B',
+                    marker: 'url(#arrow-red)',
+                    points: [{ x: -60, y: 1320 }, { x: -110, y: 1320 }, { x: -110, y: 1110 }],
+                    nodes: [
+                        { id: '8B', label: '8B', title: 'Pre-Invoice', x: -110, y: 1110, desc: 'Pre-Invoice draft document generated.' }
+                    ]
+                },
+                {
+                    id: 'red-branch-8c',
+                    color: '#F0324B',
+                    marker: 'url(#arrow-red)',
+                    points: [{ x: -60, y: 1320 }, { x: 0, y: 1020 }],
+                    nodes: [
+                        { id: '8C', label: '8C', title: 'Delivery Note', x: 0, y: 1020, desc: 'Delivery Note confirmation accompanying shipment.' }
+                    ]
+                },
+                {
+                    id: 'credit-link',
+                    color: '#38BDF8',
+                    dashed: true,
+                    points: [{ x: 600, y: 630 }, { x: 350, y: 630 }],
+                    nodes: []
+                },
+
+                /* TELEGRAM REAL-TIME BOT PUSH FLOW */
+                {
+                    id: 'telegram-flow',
+                    color: '#229ED9',
+                    dashed: true,
+                    marker: 'url(#arrow-telegram)',
+                    points: [
+                        { x: 600, y: 630 },
+                        { x: 880, y: 630 },
+                        { x: 880, y: 50 },
+                        { x: 600, y: 50 }
+                    ],
+                    nodes: [
+                        { id: 'TG', label: 'TG', title: 'Telegram Real-Time Bot Push', x: 880, y: 630, desc: 'Automatic instant push alerts for orders, stock & payments to Telegram.' }
+                    ]
+                },
+
+                {
+                    id: 'orange-route',
+                    color: '#FF8C00',
+                    marker: 'url(#arrow-orange)',
+                    points: [
+                        { x: -280, y: 1080 },
+                        { x: -280, y: 630 },
+                        { x: 600, y: 630 },
+                        { x: 600, y: 150 }
+                    ],
+                    nodes: [
+                        { id: '9', label: '9', title: 'Load Inventory', x: -280, y: 1080, desc: 'Load packed goods onto delivery trucks.' },
+                        { id: '10', label: '10', title: 'Deliver the goods to store', x: 180, y: 630, desc: 'Transport goods to customer retail store location.' }
+                    ]
+                },
+                {
+                    id: 'green-route',
+                    color: '#34D399',
+                    marker: 'url(#arrow-green)',
+                    points: [
+                        { x: 600, y: 150 },
+                        { x: 600, y: -80 },
+                        { x: -550, y: -80 },
+                        { x: -550, y: 1080 }
+                    ],
+                    nodes: [
+                        { id: '11', label: '11', title: 'Collect payment', x: 600, y: -80, desc: 'Collect payment upon delivery at the store.' },
+                        { id: '12', label: '12', title: 'Clearance & Settlement', x: -550, y: 100, desc: 'Reconcile invoice payments with financial accounts.' },
+                        { id: '11A', label: 'A', title: 'Submit payment', x: -550, y: 280, desc: 'Customer/Store submits electronic or cash payment.' },
+                        { id: '11B', label: 'B', title: 'Receive payment', x: -550, y: 480, desc: 'Finance department confirms payment receipt.' },
+                        { id: '11C', label: 'C', title: 'Return inventory balance', x: -550, y: 680, desc: 'Return undelivered or balance stock to warehouse.' }
+                    ]
+                },
+                {
+                    id: 'purple-route',
+                    color: '#A78BFA',
+                    marker: 'url(#arrow-purple)',
+                    points: [
+                        { x: -480, y: 1560 },
+                        { x: -220, y: 1560 },
+                        { x: -220, y: 1780 },
+                        { x: 40, y: 1780 },
+                        { x: 40, y: 1480 },
+                        { x: 160, y: 1480 },
+                        { x: 160, y: 1080 }
+                    ],
+                    nodes: [
+                        { id: 'PA', label: 'A', title: 'Supplier Deliver the goods', x: -480, y: 1560, desc: 'Supplier truck arrives with fresh stock.' },
+                        { id: 'PB', label: 'B', title: 'Receiving', x: -220, y: 1560, desc: 'Receiving dock logs in incoming inventory shipment.' },
+                        { id: 'PC', label: 'C', title: 'Inspection', x: 40, y: 1780, desc: 'Quality inspection of received supplier stock.' },
+                        { id: 'PD', label: 'D', title: 'Put-Away', x: 160, y: 1480, desc: 'Transfer goods to warehouse racks (connects to Picking).' }
+                    ]
+                },
+                {
+                    id: 'pink-route',
+                    color: '#FF5C8A',
+                    marker: 'url(#arrow-pink)',
+                    points: [
+                        { x: 600, y: 150 },
+                        { x: 880, y: -30 },
+                        { x: 600, y: 150 }
+                    ],
+                    nodes: [
+                        { id: 'M', label: 'M', title: 'Merchandising & Perfect store performing', x: 880, y: -30, desc: 'Merchandiser audit & store display optimization.' }
+                    ]
+                },
+                {
+                    id: 'blue-consumer-route',
+                    color: '#38BDF8',
+                    marker: 'url(#arrow-blue)',
+                    dashed: true,
+                    points: [
+                        { x: 600, y: 150 },
+                        { x: 880, y: 150 },
+                        { x: 1160, y: 150 },
+                        { x: 1440, y: 150 }
+                    ],
+                    nodes: []
+                }
+            ],
+
+            uprights: [
+                { id: 'u-store', x: 600, y: 150, width: 145, height: 125, label: 'STORE', assetImg: 'asset/11a.png', offX: -55, offY: -45, accentColor: '#34D399' },
+                { id: 'u-consumer', x: 880, y: 150, width: 105, height: 115, label: 'Consumer', assetImg: 'asset/img_consumer.png', offX: 0, offY: -25, accentColor: '#38BDF8' },
+                { id: 'u-fuel', x: 1160, y: 150, width: 135, height: 115, label: 'Fuel Station', assetImg: 'asset/Petrolem.png', offX: 0, offY: -25, accentColor: '#38BDF8' },
+                { id: 'u-burger', x: 1440, y: 150, width: 140, height: 115, label: 'Burger Kiosk', assetImg: 'asset/Friend_and_Burger.png', offX: 0, offY: -25, accentColor: '#38BDF8' },
+
+                { id: 'u-sales1', x: 600, y: 150, width: 98, height: 108, label: '1. Register Sales Order', assetImg: 'asset/1.png', offX: 65, offY: 20, accentColor: '#F0324B' },
+                { id: 'u-sales2', x: 600, y: 390, width: 98, height: 108, label: '2. Approve by Sup / Regional', assetImg: 'asset/2.png', offX: 65, offY: 0, accentColor: '#F0324B' },
+                { id: 'u-sales3', x: 600, y: 630, width: 98, height: 108, label: '3. Order Confirmed by Admin', assetImg: 'asset/3.png', offX: 65, offY: 0, accentColor: '#F0324B' },
+                { id: 'u-credit-appr', x: 350, y: 630, width: 88, height: 95, label: 'Credit Approval', assetImg: 'asset/3.png', offX: 0, offY: -35, accentColor: '#38BDF8' },
+                { id: 'u-telegram-bot', x: 880, y: 630, width: 65, height: 65, label: 'Telegram Bot Alert', assetImg: 'asset/3d-icon-social-media-app.png', offX: 60, offY: -25, accentColor: '#229ED9' },
+                { id: 'u-sales4', x: 600, y: 870, width: 98, height: 108, label: '4. Assign Delivery', assetImg: 'asset/1.png', offX: 65, offY: 0, accentColor: '#F0324B' },
+
+                { id: 'u-terminal', x: 380, y: 1080, width: 65, height: 68, label: '5. Sum Qty for Picking', assetImg: 'asset/5.png', offX: 0, offY: -40, accentColor: '#F0324B' },
+                { id: 'u-forklift', x: 160, y: 1080, width: 135, height: 115, label: '6. Picking', assetImg: 'asset/3d-rendering-delivery-icon (1).png', offX: 0, offY: -40, accentColor: '#F0324B' },
+                { id: 'u-inspect', x: 160, y: 1320, width: 105, height: 115, label: '7. Inspecting', assetImg: 'asset/—Pngtree—3d checklist with green checkmarks_23591523.png', offX: 65, offY: 0, accentColor: '#F0324B' },
+                { id: 'u-loose', x: -60, y: 1320, width: 115, height: 110, label: '8. Loose Area', assetImg: 'asset/receiving.png', offX: 0, offY: 45, accentColor: '#F0324B' },
+
+                { id: 'u-doc8a', x: -220, y: 1200, width: 72, height: 80, label: '8A. Credit Note', assetImg: 'asset/3.png', offX: -50, offY: 0, accentColor: '#F0324B' },
+                { id: 'u-doc8b', x: -110, y: 1110, width: 72, height: 80, label: '8B. Pre-Invoice', assetImg: 'asset/3.png', offX: 0, offY: -40, accentColor: '#F0324B' },
+                { id: 'u-doc8c', x: 0, y: 1020, width: 72, height: 80, label: '8C. Delivery Note', assetImg: 'asset/3.png', offX: 50, offY: -40, accentColor: '#F0324B' },
+
+                { id: 'u-truck9', x: -280, y: 1080, width: 135, height: 115, label: '9. Load Inventory', assetImg: 'asset/9.png', offX: -70, offY: 0, accentColor: '#FF8C00' },
+                { id: 'u-deliver10', x: 180, y: 630, width: 105, height: 112, label: '10. Deliver Goods to Store', assetImg: 'asset/10.png', offX: 0, offY: -50, accentColor: '#FF8C00' },
+
+                { id: 'u-pay11', x: 600, y: -80, width: 135, height: 120, label: '11. Collect Payment', assetImg: 'asset/11a.png', offX: 70, offY: 0, accentColor: '#34D399' },
+                { id: 'u-settlement12', x: -550, y: 100, width: 100, height: 110, label: '12. Clearance & Settlement', assetImg: 'asset/—Pngtree—3d checklist with green checkmarks_23591523.png', offX: 55, offY: 0, accentColor: '#34D399' },
+                { id: 'u-payA', x: -550, y: 280, width: 105, height: 112, label: 'A. Submit Payment', assetImg: 'asset/11b.png', offX: -70, offY: 0, accentColor: '#34D399' },
+                { id: 'u-payB', x: -550, y: 480, width: 105, height: 112, label: 'B. Receive Payment', assetImg: 'asset/11b.png', offX: -70, offY: 0, accentColor: '#34D399' },
+                { id: 'u-payC', x: -550, y: 700, width: 110, height: 112, label: 'C. Return Inventory Balance', assetImg: 'asset/11c.png', offX: -70, offY: 0, accentColor: '#34D399' },
+
+                { id: 'u-supplier-truck', x: -480, y: 1560, width: 145, height: 120, label: 'A. Supplier Deliver Goods', assetImg: 'asset/3d-rendering-delivery-icon.png', offX: -70, offY: 0, accentColor: '#A78BFA' },
+                { id: 'u-receiving', x: -220, y: 1560, width: 115, height: 110, label: 'B. Receiving', assetImg: 'asset/receiving.png', offX: 0, offY: 45, accentColor: '#A78BFA' },
+                { id: 'u-inspect-p', x: 40, y: 1780, width: 105, height: 115, label: 'C. Inspection', assetImg: 'asset/—Pngtree—3d checklist with green checkmarks_23591523.png', offX: 0, offY: 45, accentColor: '#A78BFA' },
+                { id: 'u-putaway', x: 160, y: 1480, width: 115, height: 110, label: 'D. Put-Away', assetImg: 'asset/receiving.png', offX: 65, offY: 0, accentColor: '#A78BFA' },
+
+                { id: 'u-merchandising', x: 880, y: -30, width: 105, height: 112, label: 'M. Merchandising & Display', assetImg: 'asset/merchandising.png', offX: 65, offY: 0, accentColor: '#FF5C8A' }
+            ]
+        };
+
+        function getUprightContent(w, h, assetImg) {
+            if (!assetImg) return '';
+            return `<image href="${assetImg}" x="0" y="0" width="${w}" height="${h}" preserveAspectRatio="xMidYMid meet"/>`;
+        }
+
+        function renderLabelBadge(label, accentColor, h) {
+            if (!label) return '';
+            const fontCharWidth = 7.2;
+            const padding = 20;
+            const textWidth = label.length * fontCharWidth;
+            const pillWidth = Math.max(90, textWidth + padding);
+            const pillHeight = 26;
+            const pillX = -pillWidth / 2;
+            const pillY = -h - 32;
+
+            return `
+                <g class="upright-label-group">
+                    <rect class="upright-label-bg" x="${pillX}" y="${pillY}" width="${pillWidth}" height="${pillHeight}" rx="7" 
+                          fill="rgba(15, 23, 42, 0.92)" stroke="${accentColor || '#38bdf8'}" stroke-width="1.5" 
+                          filter="drop-shadow(0 4px 10px rgba(0,0,0,0.8))"/>
+                    <text class="upright-label-text" x="0" y="${pillY + pillHeight / 2 + 1}">${label}</text>
+                </g>
+            `;
+        }
+
+        /**
+         * Main Render Function
+         */
+        function renderDiagram() {
+            const routesContainer = document.getElementById('routes-container');
+            const nodesContainer = document.getElementById('nodes-container');
+            const uprightContainer = document.getElementById('upright-container');
+
+            routesContainer.innerHTML = '';
+            nodesContainer.innerHTML = '';
+            uprightContainer.innerHTML = '';
+
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            // 1. Render Orthogonal Routes & Step Badges
+            WORKFLOW_DATA.routes.forEach(route => {
+                const pathId = `path-${route.id}`;
+                const pathD = buildOrthogonalPath(route.points, 24);
+
+                route.points.forEach(p => {
+                    const proj = isoProject(p.x, p.y);
+                    minX = Math.min(minX, proj.sx);
+                    maxX = Math.max(maxX, proj.sx);
+                    minY = Math.min(minY, proj.sy);
+                    maxY = Math.max(maxY, proj.sy);
+                });
+
+                // Route Path
+                const pathEl = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                pathEl.setAttribute('id', pathId);
+                pathEl.setAttribute('d', pathD);
+                pathEl.setAttribute('class', `route-path ${route.dashed ? 'dashed' : ''}`);
+                pathEl.setAttribute('stroke', route.color);
+                if (route.marker) {
+                    pathEl.setAttribute('marker-end', route.marker);
+                }
+                pathEl.dataset.routeId = route.id;
+                routesContainer.appendChild(pathEl);
+
+                // Motion Packets along Route
+                if (!route.dashed) {
+                    const particleGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    particleGroup.setAttribute('class', 'packet-particle');
+                    particleGroup.style.color = route.color;
+
+                    const circleParticle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circleParticle.setAttribute('r', '6.5');
+                    circleParticle.setAttribute('fill', route.color);
+                    circleParticle.setAttribute('stroke', '#ffffff');
+                    circleParticle.setAttribute('stroke-width', '2');
+                    particleGroup.appendChild(circleParticle);
+
+                    const animMotion = document.createElementNS('http://www.w3.org/2000/svg', 'animateMotion');
+                    animMotion.setAttribute('dur', '8s');
+                    animMotion.setAttribute('repeatCount', 'indefinite');
+                    animMotion.setAttribute('rotate', 'auto');
+
+                    const mpath = document.createElementNS('http://www.w3.org/2000/svg', 'mpath');
+                    mpath.setAttribute('href', `#${pathId}`);
+                    mpath.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', `#${pathId}`);
+                    animMotion.appendChild(mpath);
+
+                    particleGroup.appendChild(animMotion);
+                    routesContainer.appendChild(particleGroup);
+
+                    try {
+                        animMotion.beginElement();
+                    } catch (e) {}
+                }
+
+                // Numbered White Circle Step Badges in Screen Space
+                route.nodes.forEach(node => {
+                    const proj = isoProject(node.x, node.y);
+                    const nodeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    nodeG.setAttribute('class', 'node-group');
+                    nodeG.setAttribute('transform', `translate(${proj.sx.toFixed(1)}, ${proj.sy.toFixed(1)})`);
+                    nodeG.setAttribute('tabindex', '0');
+                    nodeG.setAttribute('role', 'button');
+                    nodeG.setAttribute('aria-label', `Step ${node.label}: ${node.title}`);
+                    nodeG.dataset.routeId = route.id;
+                    nodeG.dataset.nodeId = node.id;
+                    nodeG.dataset.title = node.title;
+                    nodeG.dataset.desc = node.desc;
+                    nodeG.dataset.color = route.color;
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('class', 'node-circle');
+                    circle.setAttribute('cx', '0');
+                    circle.setAttribute('cy', '0');
+                    circle.setAttribute('r', '13');
+                    circle.setAttribute('stroke', route.color);
+
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('class', 'node-text');
+                    text.setAttribute('x', '0');
+                    text.setAttribute('y', '0');
+                    text.textContent = node.label;
+
+                    nodeG.appendChild(circle);
+                    nodeG.appendChild(text);
+
+                    nodeG.addEventListener('mouseenter', handleNodeHover);
+                    nodeG.addEventListener('mouseleave', handleNodeLeave);
+                    nodeG.addEventListener('focus', handleNodeHover);
+                    nodeG.addEventListener('blur', handleNodeLeave);
+
+                    nodesContainer.appendChild(nodeG);
+                });
+            });
+
+            // 2. Depth Sort Upright Billboards by screen Y (Painter's Algorithm)
+            WORKFLOW_DATA.uprights.forEach(u => {
+                const posX = u.x + (u.offX || 0);
+                const posY = u.y + (u.offY || 0);
+                const proj = isoProject(posX, posY);
+                u.sx = proj.sx;
+                u.sy = proj.sy;
+
+                minX = Math.min(minX, u.sx - u.width / 2 - 30);
+                maxX = Math.max(maxX, u.sx + u.width / 2 + 30);
+                minY = Math.min(minY, u.sy - u.height - 65);
+                maxY = Math.max(maxY, u.sy + 30);
+            });
+
+            WORKFLOW_DATA.uprights.sort((a, b) => a.sy - b.sy);
+
+            // 3. Render Image Billboards & Upright Step Badges with Static Hit Target (Zero Hover Glitch)
+            WORKFLOW_DATA.uprights.forEach(u => {
+                const uprightG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                uprightG.setAttribute('id', u.id);
+                uprightG.setAttribute('class', 'upright-group');
+                uprightG.setAttribute('transform', `translate(${u.sx}, ${u.sy})`);
+
+                const shadowRx = Math.max(14, u.width * 0.38);
+                const shadowRy = Math.max(8, u.width * 0.12);
+
+                const hitBoxMarkup = `
+                    <!-- Static Invisible Hit Target prevents hover glitching completely -->
+                    <rect class="hit-target" x="${-u.width / 2 - 12}" y="${-u.height - 38}" width="${u.width + 24}" height="${u.height + 48}" fill="transparent"/>
+                `;
+
+                const imageMarkup = u.assetImg ? `
+                    <!-- Dark Ellipse Ground Shadow -->
+                    <ellipse cx="0" cy="0" rx="${shadowRx}" ry="${shadowRy}" fill="#000000" fill-opacity="0.45" filter="url(#shadow-blur)"/>
+                    
+                    <!-- Moderately Scaled Asset Image Bottom-Center Anchored -->
+                    <g class="upright-image-container" transform="translate(${-u.width / 2}, ${-u.height})">
+                        ${getUprightContent(u.width, u.height, u.assetImg)}
+                    </g>
+                ` : '';
+
+                const labelMarkup = renderLabelBadge(u.label, u.accentColor, u.height);
+
+                uprightG.innerHTML = `
+                    ${hitBoxMarkup}
+                    ${imageMarkup}
+                    ${labelMarkup}
+                `;
+
+                uprightContainer.appendChild(uprightG);
+            });
+
+            // 4. Auto-Compute ViewBox for Dimetric Projection
+            const pad = 80;
+            minX -= pad;
+            minY -= pad;
+            maxX += pad;
+            maxY += pad;
+
+            const vbWidth = Math.max(1600, maxX - minX);
+            const vbHeight = Math.max(900, maxY - minY);
+
+            const svg = document.getElementById('workflow-svg');
+            svg.setAttribute('viewBox', `${minX.toFixed(1)} ${minY.toFixed(1)} ${vbWidth.toFixed(1)} ${vbHeight.toFixed(1)}`);
+            try {
+                svg.unpauseAnimations();
+            } catch(e) {}
+        }
+
+        /**
+         * Interactive Tooltip & Highlight Event Handlers
+         */
+        const tooltipEl = document.getElementById('diagram-tooltip');
+
+        function handleNodeHover(e) {
+            const target = e.currentTarget;
+            const routeId = target.dataset.routeId;
+            const title = target.dataset.title;
+            const desc = target.dataset.desc;
+            const color = target.dataset.color;
+            const nodeTextEl = target.querySelector('.node-text');
+            const label = nodeTextEl ? nodeTextEl.textContent : (target.dataset.nodeId || '');
+
+            document.querySelectorAll('.route-path').forEach(path => {
+                if (path.dataset.routeId === routeId) {
+                    path.classList.add('highlighted');
+                } else {
+                    path.classList.add('dimmed');
+                }
+            });
+
+            document.querySelectorAll('.node-group').forEach(ng => {
+                if (ng.dataset.routeId !== routeId) {
+                    ng.classList.add('dimmed');
+                }
+            });
+
+            tooltipEl.innerHTML = `
+                <div class="tooltip-header">
+                    <span class="tooltip-badge" style="background:${color}">${label}</span>
+                    <span>${title}</span>
+                </div>
+                <div class="tooltip-desc">${desc}</div>
+            `;
+
+            const bbox = target.getBoundingClientRect();
+            const wrapperBbox = document.querySelector('.diagram-wrapper').getBoundingClientRect();
+            
+            const left = bbox.left - wrapperBbox.left + (bbox.width / 2);
+            const top = bbox.top - wrapperBbox.top;
+
+            tooltipEl.style.left = `${left}px`;
+            tooltipEl.style.top = `${top}px`;
+            tooltipEl.classList.add('visible');
+        }
+
+        function handleNodeLeave() {
+            document.querySelectorAll('.route-path').forEach(path => {
+                path.classList.remove('highlighted', 'dimmed');
+            });
+            document.querySelectorAll('.node-group').forEach(ng => {
+                ng.classList.remove('dimmed');
+            });
+            tooltipEl.classList.remove('visible');
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            renderDiagram();
+        });
+    </script>
+</body>
+</html>

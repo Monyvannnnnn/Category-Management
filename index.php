@@ -133,6 +133,9 @@ if (isset($_GET["action"]) && $_GET["action"] === "read") {
                         <button type="button" class="add-btn telegram-push-btn" id="openPushModalBtn" data-tooltip="Report Push Settings" aria-label="Report Push Settings">
                             <i class="fa-solid fa-gear"></i>
                         </button>
+                        <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='index.html'" data-tooltip="Process Workflow Diagram" aria-label="Process Workflow Diagram">
+                            <i class="fa-solid fa-route"></i>
+                        </button>
                         <button type="button" class="add-btn nav-link-btn" onclick="window.location.href='report_bi.php'" data-tooltip="BI Analytics Report" aria-label="BI Analytics Report">
                             <img src="https://img.icons8.com/ios/50/statistics.png" alt="statistics" style="width: 20px; height: 20px; filter: brightness(0) invert(1); vertical-align: middle;">
                         </button>
@@ -2997,101 +3000,44 @@ $(document).on('click', '[id^="btnPush"]', function() {
     const btn = $(this);
     if (btn.hasClass('push-report-card')) return;
     const originalText = btn.html();
-    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Pushing...');
-    
-    setTimeout(() => {
-        btn.prop('disabled', false).html(originalText);
-    }, 2500);
 });</script>
 
-</html>     btnDisconnect.addEventListener('click', function() {
-                showCustomConfirmDialog({
-                    title: "Disconnect Telegram Account",
-                    message: "Are you sure you want to disconnect your Telegram account? You will stop receiving real-time stock alerts.",
-                    confirmText: "Disconnect",
-                    cancelText: "Cancel",
-                    icon: "fa-plug-circle-xmark",
-                    iconColor: "#ef4444",
-                    confirmBg: "linear-gradient(135deg, #ef4444, #dc2626)",
-                    onConfirm: function() {
-                        fetch('telegram_settings.php?action=disconnect', { method: 'POST' })
-                            .then(r => r.json())
-                            .then(data => {
-                                if (data.success) {
-                                    fetchTelegramStatus();
-                                    if (window.DevExpress && DevExpress.ui && DevExpress.ui.notify) {
-                                        DevExpress.ui.notify("Telegram account disconnected.", "info", 3000);
-                                    }
-                                }
-                            });
-                    }
-                });
-            });
-        }
-
-        if (customBotForm) {
-            customBotForm.addEventListener('submit', function(e) {
-                e.preventDefault();
-                const token = cfgToken.value.trim();
-                const username = cfgUsername.value.trim();
-
-                fetch('telegram_settings.php?action=save_bot', {
-                    method: 'POST',
-                    body: JSON.stringify({ bot_token: token, bot_username: username }),
-                    headers: { 'Content-Type': 'application/json' }
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Custom Telegram Bot saved successfully!');
-                        fetchTelegramStatus();
-                    }
-                });
-            });
-        }
-    });
-    </script>
-
-</body>
+<!-- Workflow Diagram Modal -->
+<div id="workflowModal" class="workflow-modal-backdrop">
+    <div class="workflow-modal-card">
+        <div class="workflow-modal-header">
+            <div class="workflow-modal-title">
+                <i class="fa-solid fa-route" style="color:#38bdf8;"></i>
+                <span>Order-to-Delivery, Receiving & Payment Flow</span>
+            </div>
+            <div class="workflow-header-actions">
+                <a href="index.html" target="_blank" class="workflow-action-btn" title="Open in New Window / Full Page">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Open Full Page
+                </a>
+                <button type="button" class="workflow-action-btn" onclick="closeWorkflowModal()" title="Close Workflow Diagram">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+        </div>
+        <div class="workflow-modal-body">
+            <iframe src="index.html" class="workflow-iframe" title="Process Workflow Diagram"></iframe>
+        </div>
+    </div>
+</div>
 
 <script>
-// Disabled Loading Overlay per user request
-var LoadingOverlay = window.LoadingOverlay || { show() {}, hide() {} };
+function openWorkflowModal() {
+    const modal = document.getElementById('workflowModal');
+    if (modal) modal.classList.add('active');
+}
+function closeWorkflowModal() {
+    const modal = document.getElementById('workflowModal');
+    if (modal) modal.classList.remove('active');
+}
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeWorkflowModal();
+});
+</script>
 
-window.setCardLoading = window.setCardLoading || function($btn, isLoading, statusText) {
-    if (!$btn || !$btn.length) return;
-    if (isLoading) {
-        if (!$btn.data("orig-html")) {
-            $btn.data("orig-html", $btn.html());
-        }
-        $btn.addClass("is-loading btn-loading").prop("disabled", true);
-        var $arrow = $btn.find(".report-arrow");
-        if ($arrow.length) {
-            $arrow.removeClass("fa-chevron-right").addClass("fa-spinner fa-spin").css({ "color": "#38bdf8", "font-size": "16px" });
-        }
-        if (statusText) {
-            $btn.find(".report-desc").text(statusText);
-        }
-    } else {
-        var origHtml = $btn.data("orig-html");
-        if (origHtml) {
-            $btn.html(origHtml);
-            $btn.removeData("orig-html");
-        }
-        $btn.removeClass("is-loading btn-loading").prop("disabled", false);
-    }
-};
-
-// Button loading for push buttons
-$(document).on('click', '[id^="btnPush"]', function() {
-    const btn = $(this);
-    if (btn.hasClass('push-report-card')) return;
-    const originalText = btn.html();
-    btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Pushing...');
-    
-    setTimeout(() => {
-        btn.prop('disabled', false).html(originalText);
-    }, 2500);
-});</script>
-
+</body>
 </html>
