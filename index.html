@@ -125,6 +125,326 @@
             fill: currentColor;
         }
 
+        /* Search Box in Header */
+        .search-box {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 10px;
+            width: 16px;
+            height: 16px;
+            fill: #64748b;
+            pointer-events: none;
+        }
+
+        #step-search {
+            font-family: var(--font-family);
+            font-size: 0.8rem;
+            padding: 0.35rem 0.75rem 0.35rem 2.1rem;
+            border-radius: 9999px;
+            border: 1px solid var(--border-muted);
+            background: var(--surface-alt);
+            color: #0f172a;
+            outline: none;
+            width: 220px;
+            transition: all 0.2s ease;
+        }
+
+        #step-search:focus {
+            border-color: var(--primary-color);
+            background: #ffffff;
+            width: 260px;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Filter Toolbar */
+        .filter-toolbar {
+            position: absolute;
+            top: 60px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid var(--border-subtle);
+            padding: 0.3rem 0.6rem;
+            border-radius: 9999px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+            backdrop-filter: blur(10px);
+            z-index: 45;
+            max-width: 95vw;
+            overflow-x: auto;
+        }
+
+        .filter-chip {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            font-family: var(--font-family);
+            font-size: 0.725rem;
+            font-weight: 600;
+            color: #475569;
+            background: transparent;
+            border: 1px solid transparent;
+            padding: 0.25rem 0.6rem;
+            border-radius: 9999px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: all 0.2s ease;
+        }
+
+        .chip-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+        }
+
+        .filter-chip:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+        }
+
+        .filter-chip.active {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        .filter-chip.active .chip-dot {
+            box-shadow: 0 0 0 2px rgba(255,255,255,0.4);
+        }
+
+        /* Zoom Controls */
+        .zoom-controls {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            background: rgba(255, 255, 255, 0.94);
+            border: 1px solid var(--border-subtle);
+            padding: 0.35rem;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            z-index: 45;
+        }
+
+        .zoom-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            color: #0f172a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .zoom-btn:hover {
+            background: #0f172a;
+            color: #ffffff;
+            border-color: #0f172a;
+        }
+
+        .zoom-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Side Drawer */
+        .step-drawer {
+            position: fixed;
+            top: 0;
+            right: -380px;
+            width: 360px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.96);
+            backdrop-filter: blur(16px);
+            border-left: 1px solid var(--border-subtle);
+            box-shadow: -10px 0 30px rgba(0, 0, 0, 0.12);
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            transition: right 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .step-drawer.open {
+            right: 0;
+        }
+
+        .drawer-header {
+            padding: 1.25rem;
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #f8fafc;
+        }
+
+        .drawer-badge-title {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .drawer-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 30px;
+            height: 30px;
+            padding: 0 6px;
+            border-radius: 50%;
+            background: #0284c7;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 0.9rem;
+        }
+
+        .drawer-title {
+            font-size: 1rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin: 0;
+        }
+
+        .drawer-close-btn {
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .drawer-close-btn:hover {
+            background: #e2e8f0;
+            color: #0f172a;
+        }
+
+        .drawer-body {
+            padding: 1.25rem;
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1.25rem;
+        }
+
+        .drawer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+
+        .drawer-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+        }
+
+        .drawer-tag {
+            display: inline-block;
+            align-self: flex-start;
+            padding: 0.25rem 0.65rem;
+            border-radius: 6px;
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .drawer-text {
+            font-size: 0.9rem;
+            color: #334155;
+            line-height: 1.5;
+        }
+
+        .drawer-role-box {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem;
+            border-radius: 10px;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+        }
+
+        .role-icon {
+            font-size: 1.25rem;
+        }
+
+        .role-sub {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .drawer-info-pill {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #0f172a;
+        }
+
+        .drawer-footer {
+            padding: 1rem 1.25rem;
+            border-top: 1px solid var(--border-subtle);
+            background: #f8fafc;
+        }
+
+        .drawer-action-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.65rem;
+            border-radius: 8px;
+            background: #0f172a;
+            color: #ffffff;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+
+        .drawer-action-btn:hover {
+            background: #0284c7;
+        }
+
+        /* Pulse animation for search highlight */
+        @keyframes pulseHalo {
+            0% { r: 17px; stroke-width: 3.5px; opacity: 1; }
+            50% { r: 24px; stroke-width: 6px; opacity: 0.8; }
+            100% { r: 17px; stroke-width: 3.5px; opacity: 1; }
+        }
+
+        .search-matched .node-circle {
+            animation: pulseHalo 1.5s infinite ease-in-out;
+            stroke: #0284c7 !important;
+            fill: #0f172a !important;
+        }
+
+        .search-matched .node-text {
+            fill: #ffffff !important;
+            font-size: 16px !important;
+        }
+
         /* Full Viewport Canvas */
         main {
             position: absolute;
@@ -375,12 +695,99 @@
             <div class="subtitle">Dimetric 22.5° Bird's-Eye Process Architecture</div>
         </div>
         <div class="controls">
+            <div class="search-box">
+                <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                <input type="text" id="step-search" placeholder="Search step (e.g. 6, Picking, Payment)..." aria-label="Search workflow step">
+            </div>
+            <button type="button" class="btn-control" id="btn-export-png" title="Export Diagram as PNG Image">
+                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .58l2.59-2.58L17 11.41l-5 5-5-5 1.41-1.41L11 12.58V3h2v9.58z"/></svg>
+                <span>Export PNG</span>
+            </button>
             <a href="index.php" class="btn-control" title="Return to Dashboard">
                 <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
                 <span>Dashboard</span>
             </a>
         </div>
     </header>
+
+    <!-- Floating Interactive Flow Filter Bar -->
+    <div class="filter-toolbar" role="toolbar" aria-label="Filter workflow routes">
+        <button class="filter-chip active" data-flow="all">
+            <span class="chip-dot" style="background:#0f172a"></span> All Flows
+        </button>
+        <button class="filter-chip" data-flow="red-route">
+            <span class="chip-dot" style="background:#F0324B"></span> Sales Order
+        </button>
+        <button class="filter-chip" data-flow="orange-route">
+            <span class="chip-dot" style="background:#FF8C00"></span> Logistics Delivery
+        </button>
+        <button class="filter-chip" data-flow="green-route">
+            <span class="chip-dot" style="background:#10B981"></span> Payment & Settlement
+        </button>
+        <button class="filter-chip" data-flow="purple-route">
+            <span class="chip-dot" style="background:#8B5CF6"></span> Supplier Receiving
+        </button>
+        <button class="filter-chip" data-flow="pink-route">
+            <span class="chip-dot" style="background:#EC4899"></span> Merchandising
+        </button>
+        <button class="filter-chip" data-flow="blue-telegram-route">
+            <span class="chip-dot" style="background:#0088CC"></span> Telegram Alerts
+        </button>
+    </div>
+
+    <!-- Floating Canvas Zoom Controls -->
+    <div class="zoom-controls">
+        <button class="zoom-btn" id="zoom-in" title="Zoom In (+)">
+            <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </button>
+        <button class="zoom-btn" id="zoom-out" title="Zoom Out (-)">
+            <svg viewBox="0 0 24 24"><path d="M19 13H5v-2h14v2z"/></svg>
+        </button>
+        <button class="zoom-btn" id="zoom-reset" title="Reset View (⟲)">
+            <svg viewBox="0 0 24 24"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+        </button>
+    </div>
+
+    <!-- Slide-Over Step Detail Drawer -->
+    <div id="step-drawer" class="step-drawer" aria-hidden="true">
+        <div class="drawer-header">
+            <div class="drawer-badge-title">
+                <span id="drawer-badge" class="drawer-badge">1</span>
+                <h2 id="drawer-title" class="drawer-title">Register Sales Order</h2>
+            </div>
+            <button class="drawer-close-btn" id="drawer-close" title="Close Side Drawer">&times;</button>
+        </div>
+        <div class="drawer-body">
+            <div class="drawer-section">
+                <div class="drawer-label">Flow Category</div>
+                <div id="drawer-category" class="drawer-tag">Sales Department</div>
+            </div>
+            <div class="drawer-section">
+                <div class="drawer-label">Step Description</div>
+                <p id="drawer-desc" class="drawer-text">Sales rep registers sales order into ERP system.</p>
+            </div>
+            <div class="drawer-section">
+                <div class="drawer-label">Assigned Roles & System</div>
+                <div class="drawer-role-box">
+                    <span class="role-icon">👤</span>
+                    <div>
+                        <strong id="drawer-role">Sales Representative / Admin</strong>
+                        <div class="role-sub">ERP Order Entry Module</div>
+                    </div>
+                </div>
+            </div>
+            <div class="drawer-section">
+                <div class="drawer-label">Estimated Duration</div>
+                <div id="drawer-duration" class="drawer-info-pill">⏱️ 3–5 minutes</div>
+            </div>
+        </div>
+        <div class="drawer-footer">
+            <a id="drawer-action-link" href="products.php" class="drawer-action-btn">
+                <span>Open System Module</span>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>
+            </a>
+        </div>
+    </div>
 
     <main>
         <div class="diagram-wrapper">
@@ -812,6 +1219,7 @@
                     nodeG.addEventListener('mouseleave', handleNodeLeave);
                     nodeG.addEventListener('focus', handleNodeHover);
                     nodeG.addEventListener('blur', handleNodeLeave);
+                    nodeG.addEventListener('click', () => handleNodeClick(node, route));
 
                     nodesContainer.appendChild(nodeG);
                 });
@@ -870,6 +1278,10 @@
                         ${labelMarkup}
                     </g>
                 `;
+
+                uprightG.addEventListener('click', () => {
+                    handleNodeClick({ label: u.label, title: u.label, desc: 'Operational process billboard node.' }, { id: 'red-route' });
+                });
 
                 uprightContainer.appendChild(uprightG);
             });
@@ -948,8 +1360,198 @@
             tooltipEl.classList.remove('visible');
         }
 
+        function getCategoryName(routeId) {
+            switch(routeId) {
+                case 'red-route': return 'Sales Department';
+                case 'orange-route': return 'Logistics & Delivery';
+                case 'green-route': return 'Finance & Payment';
+                case 'purple-route': return 'Warehouse Receiving';
+                case 'pink-route': return 'Merchandising & Store';
+                case 'blue-telegram-route': return 'Telegram Bot Automation';
+                default: return 'Process Operations';
+            }
+        }
+
+        function getRoleName(label) {
+            switch(String(label)) {
+                case '1': return 'Sales Representative';
+                case '2': return 'Supervisor / Manager';
+                case '3': return 'Sales Admin';
+                case '4': return 'Logistics Dispatcher';
+                case '5': case '6': return 'Warehouse Operator';
+                case '7': case 'PC': return 'Quality Inspector';
+                case '8': case '8A': case '8B': case '8C': return 'Inventory Administrator';
+                case '9': case '10': return 'Delivery Driver';
+                case '11': case '12': case '11A': case '11B': case '11C': return 'Finance / Cashier';
+                case 'PA': case 'PB': case 'PD': return 'Receiving Dock Clerk';
+                case 'M': return 'Merchandiser';
+                default: return 'Operations Specialist';
+            }
+        }
+
+        function handleNodeClick(node, route) {
+            const drawerEl = document.getElementById('step-drawer');
+            if (!drawerEl) return;
+
+            document.getElementById('drawer-badge').textContent = node.label || '1';
+            document.getElementById('drawer-title').textContent = node.title || 'Step Detail';
+            document.getElementById('drawer-desc').textContent = node.desc || 'Operational step detail.';
+            document.getElementById('drawer-category').textContent = getCategoryName(route ? route.id : '');
+            document.getElementById('drawer-role').textContent = getRoleName(node.label);
+            
+            const actionLink = document.getElementById('drawer-action-link');
+            if (actionLink) {
+                if (['11', '12', '11A', '11B', '11C'].includes(String(node.label))) {
+                    actionLink.href = 'report_bi.php';
+                    actionLink.querySelector('span').textContent = 'Open Financial Report';
+                } else if (['PA', 'PB', 'PC', 'PD', '5', '6', '7', '8'].includes(String(node.label))) {
+                    actionLink.href = 'products.php';
+                    actionLink.querySelector('span').textContent = 'Open Inventory Products';
+                } else {
+                    actionLink.href = 'index.php';
+                    actionLink.querySelector('span').textContent = 'Open Sales Dashboard';
+                }
+            }
+
+            drawerEl.classList.add('open');
+            drawerEl.setAttribute('aria-hidden', 'false');
+        }
+
+        function closeStepDrawer() {
+            const drawerEl = document.getElementById('step-drawer');
+            if (drawerEl) {
+                drawerEl.classList.remove('open');
+                drawerEl.setAttribute('aria-hidden', 'true');
+            }
+        }
+
+        function initInteractiveFeatures() {
+            // 1. Flow Filter Chips
+            document.querySelectorAll('.filter-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    const selectedFlow = chip.dataset.flow;
+
+                    document.querySelectorAll('.route-path').forEach(path => {
+                        if (selectedFlow === 'all' || path.dataset.routeId === selectedFlow) {
+                            path.classList.remove('dimmed');
+                            if (selectedFlow !== 'all') path.classList.add('highlighted');
+                            else path.classList.remove('highlighted');
+                        } else {
+                            path.classList.add('dimmed');
+                            path.classList.remove('highlighted');
+                        }
+                    });
+
+                    document.querySelectorAll('.node-group').forEach(ng => {
+                        if (selectedFlow === 'all' || ng.dataset.routeId === selectedFlow) {
+                            ng.classList.remove('dimmed');
+                        } else {
+                            ng.classList.add('dimmed');
+                        }
+                    });
+                });
+            });
+
+            // 2. Step Search Input
+            const searchInput = document.getElementById('step-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', (e) => {
+                    const query = e.target.value.toLowerCase().trim();
+                    document.querySelectorAll('.node-group').forEach(ng => {
+                        const title = (ng.dataset.title || '').toLowerCase();
+                        const desc = (ng.dataset.desc || '').toLowerCase();
+                        const label = (ng.dataset.nodeId || '').toLowerCase();
+
+                        if (!query) {
+                            ng.classList.remove('search-matched', 'dimmed');
+                        } else if (title.includes(query) || desc.includes(query) || label === query) {
+                            ng.classList.add('search-matched');
+                            ng.classList.remove('dimmed');
+                        } else {
+                            ng.classList.remove('search-matched');
+                            ng.classList.add('dimmed');
+                        }
+                    });
+                });
+            }
+
+            // 3. Side Drawer Close Listeners
+            document.getElementById('drawer-close')?.addEventListener('click', closeStepDrawer);
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeStepDrawer();
+            });
+
+            // 4. Zoom Controls
+            let zoomFactor = 1.0;
+            function applyZoomStep(factor) {
+                zoomFactor = Math.max(0.6, Math.min(2.5, zoomFactor * factor));
+                renderDiagramWithZoom(zoomFactor);
+            }
+
+            document.getElementById('zoom-in')?.addEventListener('click', () => applyZoomStep(1.25));
+            document.getElementById('zoom-out')?.addEventListener('click', () => applyZoomStep(0.8));
+            document.getElementById('zoom-reset')?.addEventListener('click', () => {
+                zoomFactor = 1.0;
+                renderDiagram();
+            });
+
+            // 5. Export PNG Canvas Handler
+            document.getElementById('btn-export-png')?.addEventListener('click', exportDiagramPNG);
+        }
+
+        function renderDiagramWithZoom(zoom = 1.0) {
+            const svg = document.getElementById('workflow-svg');
+            if (!svg) return;
+            const vb = svg.getAttribute('viewBox');
+            if (!vb) return;
+            const parts = vb.split(' ').map(Number);
+            if (parts.length < 4) return;
+            
+            const origW = parts[2];
+            const origH = parts[3];
+            const targetW = origW / zoom;
+            const targetH = origH / zoom;
+            const cx = parts[0] + origW / 2;
+            const cy = parts[1] + origH / 2;
+            const newX = cx - targetW / 2;
+            const newY = cy - targetH / 2;
+
+            svg.setAttribute('viewBox', `${newX.toFixed(1)} ${newY.toFixed(1)} ${targetW.toFixed(1)} ${targetH.toFixed(1)}`);
+        }
+
+        function exportDiagramPNG() {
+            const svg = document.getElementById('workflow-svg');
+            if (!svg) return;
+            const serializer = new XMLSerializer();
+            const svgString = serializer.serializeToString(svg);
+
+            const img = new Image();
+            const svgBlob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 2400;
+                canvas.height = 1350;
+                const ctx = canvas.getContext('2d');
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                URL.revokeObjectURL(url);
+
+                const link = document.createElement('a');
+                link.download = 'Order_to_Delivery_Workflow_Diagram.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+            };
+            img.src = url;
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             renderDiagram();
+            initInteractiveFeatures();
             window.addEventListener('resize', renderDiagram);
         });
     </script>
