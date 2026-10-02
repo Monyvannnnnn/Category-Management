@@ -321,11 +321,31 @@ if (!$currentUser) {
         .chart-card {
             background: var(--surface-card, #161d2a);
             border: 1px solid var(--border-subtle, #242f42);
-            border-radius: 8px;
-            padding: 8px 10px;
+            border-radius: 10px;
+            padding: 10px 12px;
             display: flex;
             flex-direction: column;
-            gap: 4px;
+            gap: 6px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.18);
+            transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+        }
+
+        .chart-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, #6366f1, #38bdf8, #10b981, #f59e0b);
+            opacity: 0.7;
+        }
+
+        .chart-card:hover {
+            border-color: rgba(99, 102, 241, 0.4);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.12);
         }
 
         .chart-card-header {
@@ -1067,6 +1087,37 @@ let categoryCountChartInstance = null;
 Chart.defaults.color = '#94a3b8';
 Chart.defaults.font.family = "'Poppins', sans-serif";
 
+// Custom Chart.js Plugin for Center Text on Doughnut / Speedometer Charts
+const centerTextPlugin = {
+    id: 'centerText',
+    beforeDraw(chart) {
+        if (!chart.config.options.plugins || !chart.config.options.plugins.centerText) return;
+        const opts = chart.config.options.plugins.centerText;
+        if (!opts.display) return;
+        const { width, height, ctx } = chart;
+        ctx.save();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        const isSemiCircle = chart.config.options.circumference === 180;
+        const centerX = width / 2;
+        const centerY = isSemiCircle ? (chart.chartArea ? (chart.chartArea.top + chart.chartArea.bottom) / 1.32 : height * 0.7) : (chart.chartArea ? (chart.chartArea.top + chart.chartArea.bottom) / 2 : height / 2);
+        
+        if (opts.title) {
+            ctx.font = "700 16px 'Poppins', sans-serif";
+            ctx.fillStyle = opts.titleColor || '#f8fafc';
+            ctx.fillText(opts.title, centerX, centerY - (opts.subtitle ? 7 : 0));
+        }
+        if (opts.subtitle) {
+            ctx.font = "500 10px 'Poppins', sans-serif";
+            ctx.fillStyle = opts.subtitleColor || '#94a3b8';
+            ctx.fillText(opts.subtitle, centerX, centerY + (opts.title ? 11 : 0));
+        }
+        ctx.restore();
+    }
+};
+Chart.register(centerTextPlugin);
+
 async function fetchBiData() {
     const refreshBtn = document.getElementById('refreshBtn');
     if (refreshBtn) refreshBtn.innerHTML = '<i class="fa-solid fa-rotate fa-spin"></i> Loading...';
@@ -1184,6 +1235,9 @@ function renderCharts(data) {
     const lowStock = Number(data.stock_status.low_stock || 0);
     const outStock = Number(data.stock_status.out_of_stock || 0);
 
+    const totalStockItems = inStock + lowStock + outStock;
+    const healthRatePct = totalStockItems > 0 ? Math.round((inStock / totalStockItems) * 100) : 0;
+
     stockStatusChartInstance = new Chart(ctx2, {
         type: 'doughnut',
         data: {
@@ -1208,6 +1262,12 @@ function renderCharts(data) {
             rotation: -90,
             cutout: '72%',
             plugins: {
+                centerText: {
+                    display: true,
+                    title: `${healthRatePct}%`,
+                    subtitle: 'Stock Health',
+                    titleColor: healthRatePct >= 80 ? '#4ade80' : (healthRatePct >= 50 ? '#f59e0b' : '#f87171')
+                },
                 legend: { 
                     position: 'bottom',
                     labels: { boxWidth: 12, padding: 14, color: '#94a3b8', font: { size: 11 } } 
@@ -1287,6 +1347,7 @@ function renderCharts(data) {
     // 4. Products Count by Category Modern Doughnut Chart
     const catCountLabels = data.category_metrics.filter(c => c.product_count > 0).slice(0, 7).map(c => c.name);
     const catCountData = data.category_metrics.filter(c => c.product_count > 0).slice(0, 7).map(c => c.product_count);
+    const totalCatItems = catCountData.reduce((a, b) => a + Number(b), 0);
 
     const ctx4 = document.getElementById('categoryCountChart').getContext('2d');
     if (categoryCountChartInstance) categoryCountChartInstance.destroy();
@@ -1311,6 +1372,12 @@ function renderCharts(data) {
             maintainAspectRatio: false,
             cutout: '66%',
             plugins: {
+                centerText: {
+                    display: true,
+                    title: `${totalCatItems}`,
+                    subtitle: 'Top Items',
+                    titleColor: '#8b5cf6'
+                },
                 legend: { 
                     position: 'bottom', 
                     labels: { boxWidth: 12, padding: 12, color: '#94a3b8', font: { size: 10.5 } } 

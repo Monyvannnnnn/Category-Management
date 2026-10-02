@@ -52,17 +52,25 @@
             top: 10px;
             left: 12px;
             right: 12px;
-            padding: 0.35rem 0.85rem;
+            padding: 0.5rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            border: 1px solid var(--border-subtle);
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-radius: 10px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+            z-index: 50;
+        }
+
+        .header-top-row {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid var(--border-subtle);
-            background: rgba(255, 255, 255, 0.92);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-            border-radius: 8px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-            z-index: 50;
+            gap: 0.75rem;
+            flex-wrap: wrap;
         }
 
         .header-title-container {
@@ -88,6 +96,7 @@
             display: flex;
             align-items: center;
             gap: 0.5rem;
+            flex-wrap: wrap;
         }
 
         .btn-control {
@@ -161,24 +170,22 @@
             box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
         }
 
-        /* Filter Toolbar */
+        /* Integrated Filter Toolbar Sub-Row */
         .filter-toolbar {
-            position: absolute;
-            top: 60px;
-            left: 50%;
-            transform: translateX(-50%);
             display: flex;
             align-items: center;
+            justify-content: center;
             gap: 0.4rem;
-            background: rgba(255, 255, 255, 0.94);
-            border: 1px solid var(--border-subtle);
-            padding: 0.3rem 0.6rem;
-            border-radius: 9999px;
-            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-            backdrop-filter: blur(10px);
-            z-index: 45;
-            max-width: 95vw;
+            background: transparent;
+            border: none;
+            border-top: 1px solid rgba(226, 232, 240, 0.8);
+            padding: 0.35rem 0 0 0;
+            border-radius: 0;
+            box-shadow: none;
+            backdrop-filter: none;
+            max-width: 100%;
             overflow-x: auto;
+            flex-wrap: wrap;
         }
 
         .filter-chip {
@@ -680,60 +687,76 @@
 
         @media (max-width: 768px) {
             header {
-                top: 8px; left: 8px; right: 8px;
-                padding: 0.5rem 1rem;
+                top: 6px; left: 6px; right: 6px;
+                padding: 0.4rem 0.65rem;
             }
-            h1 { font-size: 1rem; }
+            .header-top-row {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 0.4rem;
+            }
+            .controls {
+                justify-content: space-between;
+                width: 100%;
+            }
+            #step-search { width: 140px; }
+            #step-search:focus { width: 160px; }
+            h1 { font-size: 0.925rem; }
+            .filter-toolbar {
+                justify-content: flex-start;
+            }
         }
     </style>
 </head>
 <body>
 
     <header>
-        <div class="header-title-container">
-            <h1>Order-to-Delivery, Receiving, Payment & Telegram Bot Flow</h1>
-            <div class="subtitle">Dimetric 22.5° Bird's-Eye Process Architecture</div>
-        </div>
-        <div class="controls">
-            <div class="search-box">
-                <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
-                <input type="text" id="step-search" placeholder="Search step (e.g. 6, Picking, Payment)..." aria-label="Search workflow step">
+        <div class="header-top-row">
+            <div class="header-title-container">
+                <h1>Order-to-Delivery, Receiving, Payment & Telegram Bot Flow</h1>
+                <div class="subtitle">Dimetric 22.5° Bird's-Eye Process Architecture</div>
             </div>
-            <button type="button" class="btn-control" id="btn-export-png" title="Export Diagram as PNG Image">
-                <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .58l2.59-2.58L17 11.41l-5 5-5-5 1.41-1.41L11 12.58V3h2v9.58z"/></svg>
-                <span>Export PNG</span>
+            <div class="controls">
+                <div class="search-box">
+                    <svg class="search-icon" viewBox="0 0 24 24"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+                    <input type="text" id="step-search" placeholder="Search step (e.g. 6, Picking, Payment)..." aria-label="Search workflow step">
+                </div>
+                <button type="button" class="btn-control" id="btn-export-png" title="Export Diagram as PNG Image">
+                    <svg viewBox="0 0 24 24"><path d="M19 12v7H5v-7H3v7c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2v-7h-2zm-6 .58l2.59-2.58L17 11.41l-5 5-5-5 1.41-1.41L11 12.58V3h2v9.58z"/></svg>
+                    <span>Export PNG</span>
+                </button>
+                <a href="index.php" class="btn-control" title="Return to Dashboard">
+                    <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                    <span>Dashboard</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Integrated Flow Filter Bar -->
+        <div class="filter-toolbar" role="toolbar" aria-label="Filter workflow routes">
+            <button class="filter-chip active" data-flow="all">
+                <span class="chip-dot" style="background:#0f172a"></span> All Flows
             </button>
-            <a href="index.php" class="btn-control" title="Return to Dashboard">
-                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
-                <span>Dashboard</span>
-            </a>
+            <button class="filter-chip" data-flow="red-route">
+                <span class="chip-dot" style="background:#F0324B"></span> Sales Order
+            </button>
+            <button class="filter-chip" data-flow="orange-route">
+                <span class="chip-dot" style="background:#FF8C00"></span> Logistics Delivery
+            </button>
+            <button class="filter-chip" data-flow="green-route">
+                <span class="chip-dot" style="background:#10B981"></span> Payment & Settlement
+            </button>
+            <button class="filter-chip" data-flow="purple-route">
+                <span class="chip-dot" style="background:#8B5CF6"></span> Supplier Receiving
+            </button>
+            <button class="filter-chip" data-flow="pink-route">
+                <span class="chip-dot" style="background:#EC4899"></span> Merchandising
+            </button>
+            <button class="filter-chip" data-flow="blue-telegram-route">
+                <span class="chip-dot" style="background:#0088CC"></span> Telegram Alerts
+            </button>
         </div>
     </header>
-
-    <!-- Floating Interactive Flow Filter Bar -->
-    <div class="filter-toolbar" role="toolbar" aria-label="Filter workflow routes">
-        <button class="filter-chip active" data-flow="all">
-            <span class="chip-dot" style="background:#0f172a"></span> All Flows
-        </button>
-        <button class="filter-chip" data-flow="red-route">
-            <span class="chip-dot" style="background:#F0324B"></span> Sales Order
-        </button>
-        <button class="filter-chip" data-flow="orange-route">
-            <span class="chip-dot" style="background:#FF8C00"></span> Logistics Delivery
-        </button>
-        <button class="filter-chip" data-flow="green-route">
-            <span class="chip-dot" style="background:#10B981"></span> Payment & Settlement
-        </button>
-        <button class="filter-chip" data-flow="purple-route">
-            <span class="chip-dot" style="background:#8B5CF6"></span> Supplier Receiving
-        </button>
-        <button class="filter-chip" data-flow="pink-route">
-            <span class="chip-dot" style="background:#EC4899"></span> Merchandising
-        </button>
-        <button class="filter-chip" data-flow="blue-telegram-route">
-            <span class="chip-dot" style="background:#0088CC"></span> Telegram Alerts
-        </button>
-    </div>
 
     <!-- Floating Canvas Zoom Controls -->
     <div class="zoom-controls">
@@ -1258,12 +1281,13 @@
 
                 const shadowMarkup = u.assetImg ? `
                     <!-- Dark Ellipse Ground Shadow -->
-                    <ellipse class="ground-shadow" cx="0" cy="0" rx="${shadowRx}" ry="${shadowRy}" fill="#000000" fill-opacity="0.15" filter="url(#shadow-blur)"/>
+                    <ellipse class="ground-shadow" cx="0" cy="0" rx="${shadowRx}" ry="${shadowRy}" fill="#000000" fill-opacity="0.18" filter="url(#shadow-blur)"/>
                 ` : '';
 
+                const imgYOffset = Math.round(u.height * 0.12) + 4;
                 const imageMarkup = u.assetImg ? `
                     <!-- Moderately Scaled Asset Image Bottom-Center Anchored -->
-                    <g class="upright-image-container" transform="translate(${-u.width / 2}, ${-u.height})">
+                    <g class="upright-image-container" transform="translate(${-u.width / 2}, ${-u.height + imgYOffset})">
                         ${getUprightContent(u.width, u.height, u.assetImg)}
                     </g>
                 ` : '';
